@@ -1,14 +1,18 @@
 package app_lib
 
 import (
-	"html/template"
 	"net/http"
 	"sync"
+	"html/template"
 )
 
 var lb *App
 
 // DOGFUNC - функции
+func SplitIndex(arg []string) (result string) {
+	return lb.SplitIndex(arg)
+}
+
 func Time(arg []string) (result string) {
 	return lb.Time(arg)
 }
@@ -25,7 +29,7 @@ func ConfigValue(arg []string) (result string) {
 	return lb.ConfigValue(arg)
 }
 
-func Path(d Data, arg []string) (result string) {
+func Path(d []Data, arg []string) (result string) {
 	return lb.Path(d, arg)
 }
 
@@ -41,25 +45,27 @@ func UserRole(r *http.Request, arg []string) (result string) {
 	return lb.UserRole(r, arg)
 }
 
-func Obj(d Data, arg []string) (result string) {
+func Obj(d []Data, arg []string) (result string) {
 	return lb.Obj(d, arg)
 }
 
-func FieldValue(d Data, arg []string) (result string) {
+func FieldValue(d []Data, arg []string) (result string) {
 	return lb.FieldValue(d, arg)
 }
 
-func FieldSrc(d Data, arg []string) (result string) {
+func FieldSrc(d []Data, arg []string) (result string) {
 	return lb.FieldSrc(d, arg)
 }
 
-func FieldSplit(d Data, arg []string) (result string) {
+func FieldSplit(d []Data, arg []string) (result string) {
 	return lb.FieldSplit(d, arg)
 }
 
-func DogParse(p string, r *http.Request, queryData *Data, values map[string]interface{}) (result string) {
+func DogParse(p string, r *http.Request, queryData *[]Data, values map[string]interface{}) (result string) {
 	return lb.DogParse(p, r, queryData, values)
 }
+
+
 
 // FUNCTION - функции
 func hash(str string) string {
@@ -94,7 +100,7 @@ func ErrorModuleBuild(stat map[string]interface{}, buildChan chan ModuleResult, 
 	lb.ErrorModuleBuild(stat, buildChan, timerRun, errT)
 }
 
-func QueryWorker(queryUID, dataname string, source []map[string]string, r *http.Request) interface{} {
+func QueryWorker(queryUID, dataname string, source[]map[string]string, r *http.Request) interface{} {
 	return lb.QueryWorker(queryUID, dataname, source, r)
 }
 
@@ -109,6 +115,7 @@ func ModuleError(err interface{}, r *http.Request) template.HTML {
 func GUIQuery(tquery string, r *http.Request) Response {
 	return lb.GUIQuery(tquery, r)
 }
+
 
 // HANDLER - функции
 func ProxyPing(w http.ResponseWriter, r *http.Request) {
@@ -135,6 +142,7 @@ func TBlock(r *http.Request, block Data, Config map[string]string) template.HTML
 	return lb.TBlock(r, block, Config)
 }
 
+
 // CACHE - функции
 func SetCahceKey(r *http.Request, p Data) (key, keyParam string) {
 	return lb.SetCahceKey(r, p)
@@ -155,6 +163,7 @@ func cacheUpdate(key string, block Data, r *http.Request, page Data, values map[
 func refreshTime(options Data) int {
 	return lb.refreshTime(options)
 }
+
 
 // LOGGER - фукнция
 func LoggerHTTP(inner http.Handler, name string) http.Handler {

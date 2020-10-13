@@ -10,39 +10,41 @@ import (
 )
 
 type App struct {
-	State    map[string]string
-	Logger   *logger.Log
-	UrlGUI   string `json:"url_gui"`
-	UrlAPI   string `json:"url_api"`
-	DB       *reindexer.Reindexer
+	State 	map[string]string
+	Logger  *logger.Log
+	UrlGUI string `json:"url_gui"`
+	UrlAPI string `json:"url_api"`
+	DB *reindexer.Reindexer
 	PageSize int
-	Status   string
-	Count    string
+	Status string
+	Count string
 }
+
 
 var t *template.Template
 var result template.HTML
 var debugMode = true
-var FlagParallel = true // флаг генерации блоков в параллельном режиме
+var FlagParallel = true		// флаг генерации блоков в параллельном режиме
 var Metric template.HTML
 var State = map[string]string{}
 
 var Domain, Title, UidAPP, ClientPath, UidPrecess string
 var UrlAPI, UrlGUI string
 
+
 type Pong struct {
-	Name    string
+	Name 	string
 	Version string
-	Port    int
-	Pid     string
-	State   string
+	Port 	int
+	Pid 	string
+	State	string
 }
 
 type ModuleResult struct {
-	id     string
+	id string
 	result template.HTML
-	stat   map[string]interface{}
-	err    error
+	stat map[string]interface{}
+	err error
 }
 
 //type ProfileData struct {
@@ -65,42 +67,43 @@ type ModuleResult struct {
 //}
 
 type ProfileData struct {
-	Hash           string
-	Email          string
-	Uid            string
-	First_name     string
-	Last_name      string
-	Photo          string
-	Age            string
-	City           string
-	Country        string
-	Status         string // - src поля Status в профиле (иногда необходимо для доп.фильтрации)
-	Raw            []Data // объект пользователя (нужен при сборки проекта для данного юзера при добавлении прав на базу)
-	Tables         []Data
-	Roles          []Data
-	Homepage       string
-	Maket          string
-	UpdateFlag     bool
-	UpdateData     []Data
-	CurrentRole    Data
-	CurrentProfile Data
-	Navigator      []*Items
+	Hash       		string
+	Email       	string
+	Uid         	string
+	First_name  	string
+	Last_name   	string
+	Photo       	string
+	Age       		string
+	City        	string
+	Country     	string
+	Status 			string 	// - src поля Status в профиле (иногда необходимо для доп.фильтрации)
+	Raw	       		[]Data	// объект пользователя (нужен при сборки проекта для данного юзера при добавлении прав на базу)
+	Tables      	[]Data
+	Roles       	[]Data
+	Homepage		string
+	Maket			string
+	UpdateFlag 		bool
+	UpdateData 		[]Data
+	CurrentRole 	Data
+	CurrentProfile 	Data
+	Navigator   	[]*Items
 }
 
+
 type Items struct {
-	Title        string   `json:"title"`
-	ExtentedLink string   `json:"extentedLink"`
-	Uid          string   `json:"uid"`
-	Source       string   `json:"source"`
-	Icon         string   `json:"icon"`
-	Leader       string   `json:"leader"`
-	Order        string   `json:"order"`
-	Type         string   `json:"type"`
-	Preview      string   `json:"preview"`
-	Url          string   `json:"url"`
-	Sub          []string `json:"sub"`
-	Incl         []*Items `json:"incl"`
-	Class        string   `json:"class"`
+	Title  			string   	`json:"title"`
+	ExtentedLink 	string 		`json:"extentedLink"`
+	Uid    			string   	`json:"uid"`
+	Source 			string   	`json:"source"`
+	Icon   			string   	`json:"icon"`
+	Leader 			string   	`json:"leader"`
+	Order  			string   	`json:"order"`
+	Type   			string   	`json:"type"`
+	Preview			string   	`json:"preview"`
+	Url    			string   	`json:"url"`
+	Sub    			[]string 	`json:"sub"`
+	Incl   			[]*Items 	`json:"incl"`
+	Class 			string 		`json:"class"`
 }
 
 type Request struct {
@@ -108,25 +111,25 @@ type Request struct {
 }
 
 type Response struct {
-	Data    interface{} `json:"data"`
-	Status  RestStatus  `json:"status"`
-	Metrics Metrics     `json:"metrics"`
+	Data   	interface{} 	`json:"data"`
+	Status 	RestStatus    	`json:"status"`
+	Metrics Metrics 		`json:"metrics"`
 }
 
 type Metrics struct {
-	ResultSize    int    `json:"result_size"`
-	ResultCount   int    `json:"result_count"`
-	ResultOffset  int    `json:"result_offset"`
-	ResultLimit   int    `json:"result_limit"`
-	ResultPage    int    `json:"result_page"`
-	TimeExecution string `json:"time_execution"`
-	TimeQuery     string `json:"time_query"`
+	ResultSize     	int `json:"result_size"`
+	ResultCount     int `json:"result_count"`
+	ResultOffset    int `json:"result_offset"`
+	ResultLimit     int `json:"result_limit"`
+	ResultPage 		int `json:"result_page"`
+	TimeExecution   string `json:"time_execution"`
+	TimeQuery   	string `json:"time_query"`
 
-	PageLast    int   `json:"page_last"`
-	PageCurrent int   `json:"page_current"`
-	PageList    []int `json:"page_list"`
-	PageFrom    int   `json:"page_from"`
-	PageTo      int   `json:"page_to"`
+	PageLast		int `json:"page_last"`
+	PageCurrent		int `json:"page_current"`
+	PageList		[]int `json:"page_list"`
+	PageFrom		int `json:"page_from"`
+	PageTo			int `json:"page_to"`
 }
 
 type RestStatus struct {
@@ -137,11 +140,15 @@ type RestStatus struct {
 }
 
 type ResponseData struct {
-	Data    []Data      `json:"data"`
-	Res     interface{} `json:"res"`
-	Status  RestStatus  `json:"status"`
-	Metrics Metrics     `json:"metrics"`
+	Data      []Data        `json:"data"`
+	Res   	  interface{} 	`json:"res"`
+	Status    RestStatus    `json:"status"`
+	Metrics   Metrics 		`json:"metrics"`
 }
+
+
+
+
 
 // ------------------------------------------
 // ------------------------------------------
@@ -157,58 +164,62 @@ type Attribute struct {
 	Editor string `json:"editor"`
 }
 
+
 type Data struct {
-	Uid        string               `json:"uid"`
-	Id         string               `json:"id"`
-	Source     string               `json:"source"`
-	Parent     string               `json:"parent"`
-	Type       string               `json:"type"`
-	Title      string               `json:"title"`
-	Rev        string               `json:"rev"`
-	Сopies     string               `json:"copies"`
-	Attributes map[string]Attribute `json:"attributes"`
+	Uid        		string               `json:"uid"`
+	Id         		string               `json:"id"`
+	Source     		string               `json:"source"`
+	Parent     		string               `json:"parent"`
+	Type       		string               `json:"type"`
+	Title      		string               `json:"title"`
+	Rev        		string               `json:"rev"`
+	Сopies			string 				 `json:"copies"`
+	Attributes 		map[string]Attribute `json:"attributes"`
 }
 
 type DataTree struct {
-	Uid        string               `json:"uid"`
-	Id         string               `json:"id"`
-	Source     string               `json:"source"`
-	Parent     string               `json:"parent"`
-	Type       string               `json:"type"`
-	Title      string               `json:"title"`
-	Rev        string               `json:"rev"`
-	Сopies     string               `json:"copies"`
-	Attributes map[string]Attribute `json:"attributes"`
-	Sub        []string             `json:"sub"`
-	Incl       []*DataTree          `json:"incl"`
+	Uid        		string               `json:"uid"`
+	Id         		string               `json:"id"`
+	Source     		string               `json:"source"`
+	Parent     		string               `json:"parent"`
+	Type       		string               `json:"type"`
+	Title      		string               `json:"title"`
+	Rev        		string               `json:"rev"`
+	Сopies			string 				 `json:"copies"`
+	Attributes 		map[string]Attribute `json:"attributes"`
+	Sub    			[]string 			 `json:"sub"`
+	Incl   			[]*DataTree 		 `json:"incl"`
 }
 
 type DataTreeOut struct {
-	Uid        string               `json:"uid"`
-	Id         string               `json:"id"`
-	Source     string               `json:"source"`
-	Parent     string               `json:"parent"`
-	Type       string               `json:"type"`
-	Title      string               `json:"title"`
-	Rev        string               `json:"rev"`
-	Сopies     string               `json:"copies"`
-	Attributes map[string]Attribute `json:"attributes"`
-	Sub        []string             `json:"sub"`
-	Incl       []DataTree           `json:"incl"`
+	Uid        		string               `json:"uid"`
+	Id         		string               `json:"id"`
+	Source     		string               `json:"source"`
+	Parent     		string               `json:"parent"`
+	Type       		string               `json:"type"`
+	Title      		string               `json:"title"`
+	Rev        		string               `json:"rev"`
+	Сopies			string 				 `json:"copies"`
+	Attributes 		map[string]Attribute `json:"attributes"`
+	Sub    			[]string 			 `json:"sub"`
+	Incl   			[]DataTree 		 `json:"incl"`
 }
 
+
 type ValueCache struct {
-	Uid      string   `reindex:"uid,,pk"`
-	Link     []string `reindex:"link"`
-	Value    string   `reindex:"value"`
-	Deadtime string   `reindex:"deadtime"`
-	Status   string   `reindex:"status"`
-	Url      string   `reindex:"url"`
+	Uid 		string 	`reindex:"uid,,pk"`
+	Link 		[]string `reindex:"link"`
+	Value    	string 	`reindex:"value"`
+	Deadtime    string 	`reindex:"deadtime"`
+	Status 		string  `reindex:"status"`
+	Url			string 	`reindex:"url"`
 }
+
 
 // возвращаем необходимый значение атрибута для объекта если он есть, инае пусто
 // а также из заголовка объекта
 func (p *Data) Attr(name, element string) (result string, found bool) {
+
 
 	if _, found := p.Attributes[name]; found {
 
@@ -257,7 +268,7 @@ func (p *Data) Attr(name, element string) (result string, found bool) {
 }
 
 // заменяем значение аттрибутов в объекте профиля
-func (p *Data) AttrSet(name, element, value string) bool {
+func (p *Data) AttrSet(name, element, value string) bool  {
 	g := Attribute{}
 
 	for k, v := range p.Attributes {
@@ -288,54 +299,58 @@ func (p *Data) AttrSet(name, element, value string) bool {
 		}
 	}
 
+
 	return false
 }
 
+
+
 // ------------------------------------------
 // ------------------------------------------
 // ------------------------------------------
 // ------------------------------------------
 
+
 // элемент конфигурации - поле
 type Element struct {
-	Type   string
+	Type string
 	Source interface{}
 }
 
 // элемент конфигурации - поле
 type ErrorForm struct {
 	Err interface{}
-	R   interface{}
+	R  	interface{}
 }
 
 type Page struct {
-	Title   string                 `json:"title"`
-	Prefix  interface{}            `json:"prefix"`
-	Request interface{}            `json:"request"`
-	Domain  string                 `json:"domain"`
-	Blocks  map[string]interface{} `json:"blocks"`
-	Data    interface{}            `json:"data"`
-	Shema   interface{}            `json:"shema"`
-	CSS     []string               `json:"css"`
-	JS      []string               `json:"js"`
-	JSH     []string               `json:"jsh"`
-	CSSC    []string               `json:"cssc"`
-	JSC     []string               `json:"jsc"`
-	Metric  template.HTML          `json:"metric"`
-	Stat    []interface{}          `json:"stat"`
+	Title       string `json:"title"`
+	Prefix 		interface{} `json:"prefix"`
+	Request 	interface{} `json:"request"`
+	Domain 		string `json:"domain"`
+	Blocks 		map[string]interface{} `json:"blocks"`
+	Data 		interface{} `json:"data"`
+	Shema 		interface{} `json:"shema"`
+	CSS 		[]string `json:"css"`
+	JS 			[]string `json:"js"`
+	JSH 		[]string `json:"jsh"`
+	CSSC		[]string `json:"cssc"`
+	JSC 		[]string `json:"jsc"`
+	Metric		template.HTML `json:"metric"`
+	Stat 		[]interface{} `json:"stat"`
 }
 
 type Block struct {
-	Page             interface{}            `json:"page"`
-	Data             interface{}            `json:"data"`
-	Configuration    interface{}            `json:"configuration"`
-	ConfigurationRaw string                 `json:"configuration_raw"`
-	Value            map[string]interface{} `json:"value"`
-	CSS              []string               `json:"css"`
-	JS               []string               `json:"js"`
-	Metric           template.HTML          `json:"metric"`
-	Request          *http.Request
-	mx               sync.Mutex
+	Page 				interface{} `json:"page"`
+	Data 				interface{} `json:"data"`
+	Configuration   	interface{} `json:"configuration"`
+	ConfigurationRaw   	string `json:"configuration_raw"`
+	Value				map[string]interface{} `json:"value"`
+	CSS 				[]string `json:"css"`
+	JS 					[]string `json:"js"`
+	Metric				template.HTML `json:"metric"`
+	Request				*http.Request
+	mx 					sync.Mutex
 }
 
 func (p *Block) Set(key, value string) {

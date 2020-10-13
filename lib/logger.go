@@ -19,7 +19,7 @@ func (c *App) LoggerHTTP(inner http.Handler, name string) http.Handler {
 
 		inner.ServeHTTP(w, r)
 
-		if name != "ProxyPing" && false == true {
+		if name != "ProxyPing"  && false == true {
 			c.Logger.Info(
 				"Query: %s %s %s %s",
 				r.Method,

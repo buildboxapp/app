@@ -13,29 +13,29 @@ import (
 ////////////////////////////////////////////////////////////
 
 type Formula struct {
-	Value    string `json:"value"`
-	Document Data   `json:"document"`
-	Request  *http.Request
-	Inserts  []*Insert
-	Values   map[string]interface{} //  параметры переданные в шаблон при генерации страницы (доступны в шаблоне как $.Value)
-	App      *App
+	Value 		string `json:"value"`
+	Document 	[]Data `json:"document"`
+	Request		*http.Request
+	Inserts		[]*Insert
+	Values     	map[string]interface{}	//  параметры переданные в шаблон при генерации страницы (доступны в шаблоне как $.Value)
+	App 		*App
 }
 
 // Вставка - это одна функция, которая может иметь вложения
 // Text - строка вставки, по которому мы будем заменять в общем тексте
 type Insert struct {
-	Text      string   `json:"text"`
-	Arguments []string `json:"arguments"`
-	Result    string   `json:"result"`
-	Functions Function
+	Text 		string 		`json:"text"`
+	Arguments 	[]string 	`json:"arguments"`
+	Result		string 		`json:"result"`
+	Functions	Function
 }
 
 // Исчисляемая фукнция с аргументами и параметрами
 // может иметь вложения
 type Function struct {
-	Name      string   `json:"name"`
-	Arguments []string `json:"arguments"`
-	Result    string   `json:"result"`
+	Name 		string 		`json:"name"`
+	Arguments 	[]string 	`json:"arguments"`
+	Result 		string 		`json:"result"`
 }
 
 ////////////////////////////////////////////////////////////
@@ -54,16 +54,18 @@ func (p *Formula) Replace() (result string) {
 	return p.Value
 }
 
-func (p *Formula) Parse() bool {
+func (p *Formula) Parse() bool  {
 
 	if p.Value == "" {
 		return false
 	}
 
-	content := []byte(p.Value)
+	//content := []byte(p.Value)
+	//pattern := regexp.MustCompile(`@(\w+)\(([\w]+)(?:,\s*([\w]+))*\)`)
+	value := p.Value
 
-	pattern := regexp.MustCompile(`@(\w+)\(([\w]+)(?:,\s*([\w]+))*\)`)
-	allIndexes := pattern.FindAllSubmatch(content, -1)
+	pattern := regexp.MustCompile(`@(\w+)\(\s*('[^']*'|#[^#]*#|[^,()@]*?)\s*(?:,\s*('[^']*'|#[^#]*#|[^,()@]*?)\s*)?(?:,\s*('[^']*'|#[^#]*#|[^,()@]*?)\s*)?(?:,\s*('[^']*'|#[^#]*#|[^,()@]*?)\s*)?(?:,\s*('[^']*'|#[^#]*#|[^,()@]*?)\s*)?\)`)
+	allIndexes := pattern.FindAllStringSubmatch(value, -1)
 
 	for _, loc := range allIndexes {
 
@@ -78,7 +80,7 @@ func (p *Formula) Parse() bool {
 		strFunc1 = strings.Replace(strFunc1, ")", "", -1)
 		f1 := strings.Split(strFunc1, "(")
 
-		if len(f1) == 1 { // если не нашли ( значит неверно задана @-фукнций
+		if len(f1) == 1 {	// если не нашли ( значит неверно задана @-фукнций
 			return false
 		}
 
@@ -117,13 +119,16 @@ func (p *Formula) Parse() bool {
 		//	}
 		//}
 	}
+
 	return true
 }
 
-func (p *Formula) Calculate() {
+func (p *Formula) Calculate()  {
 
 	for k, v := range p.Inserts {
 		param := strings.ToUpper(v.Functions.Name)
+
+		fmt.Println("param: ", param)
 
 		switch param {
 		case "RAND":
@@ -145,6 +150,9 @@ func (p *Formula) Calculate() {
 		case "URL":
 			p.Inserts[k].Result = FuncURL(p.Request, v.Functions.Arguments)
 
+		case "SPLITINDEX":
+			p.Inserts[k].Result = SplitIndex(v.Functions.Arguments)
+
 		case "TPLVALUE":
 			p.Inserts[k].Result = TplValue(p.Values, v.Functions.Arguments)
 		case "CONFIGVALUE":
@@ -161,6 +169,7 @@ func (p *Formula) Calculate() {
 	}
 
 }
+
 
 ///////////////////////////////////////////////////
 // Фукнции @ обработки
@@ -197,6 +206,7 @@ func (c *App) TplValue(v map[string]interface{}, arg []string) (result string) {
 	return fmt.Sprint(result)
 }
 
+
 // Получение значений из конфигурации проекта (хранится State в объекте приложение App)
 func (c *App) ConfigValue(arg []string) (result string) {
 	var valueDefault string
@@ -228,6 +238,48 @@ func (c *App) ConfigValue(arg []string) (result string) {
 	return fmt.Sprint(result)
 }
 
+// Получаем значение из разделенной строки по номер
+// параметры:
+// str - текст (строка)
+// sep - разделитель (строка)
+// index - порядковый номер (число) (от 0) возвращаемого элемента
+// default - значение по-умолчанию (не обязательно)
+func (c *App) SplitIndex(arg []string) (result string) {
+	var valueDefault string
+
+	if len(arg) > 0 {
+
+		str := Replace(arg[0], "'", "", -1)
+		sep := Replace(arg[1], "'", "", -1)
+		index := Replace(arg[2], "'", "", -1)
+		defaultV := Replace(arg[3], "'", "", -1)
+
+		in, err := strconv.Atoi(index)
+		if err != nil {
+			result = "Error! Index must be a number."
+		}
+		if len(arg) == 4 {
+			valueDefault = defaultV
+		}
+
+		slice_str := strings.Split(str, sep)
+		result = slice_str[in]
+
+		fmt.Println(str)
+		fmt.Println(sep)
+		fmt.Println(in)
+		fmt.Println(slice_str)
+	}
+	if result == "" {
+		result = valueDefault
+	}
+
+
+	fmt.Println(result)
+
+	return result
+}
+
 // Получение идентификатор User-а
 func (c *App) Time(arg []string) (result string) {
 	var valueDefault string
@@ -240,12 +292,41 @@ func (c *App) Time(arg []string) (result string) {
 		}
 
 		switch param {
-		case "NOW", "THIS":
+		case "NOW","THIS":
 			result = time.Now().Format(time.RFC3339)
 		default:
 			result = time.Now().String()
 		}
 
+	}
+	if result == "" {
+		result = valueDefault
+	}
+
+	return result
+}
+
+// Получение идентификатор User-а
+func (c *App) TimeFormat(arg []string) (result string) {
+	var valueDefault string
+
+	if len(arg) > 0 {
+
+		thisdate := strings.ToUpper(arg[0])	// переданное время (строка) можно вручную или Now (текущее)
+		mask := strings.ToUpper(arg[1])		// маска для перевода переданного времени в Time
+		format := strings.ToUpper(arg[2])	// формат преобразования времени (как вывести)
+		if len(arg) == 4 {
+			valueDefault = strings.ToUpper(arg[2])
+		}
+
+		ss := thisdate
+		switch thisdate {
+		case "NOW":
+			ss = time.Now().UTC().String()
+			mask = "UTC"
+		}
+
+		result = timeformat(ss, mask, format)
 	}
 	if result == "" {
 		result = valueDefault
@@ -271,11 +352,12 @@ func (c *App) FuncURL(r *http.Request, arg []string) (result string) {
 		result = valueDefault
 	}
 
+
 	return result
 }
 
 // Вставляем значения системных полей объекта
-func (c *App) Path(d Data, arg []string) (result string) {
+func (c *App) Path(d []Data, arg []string) (result string) {
 	var valueDefault string
 
 	if len(arg) > 0 {
@@ -312,6 +394,10 @@ func (c *App) Path(d Data, arg []string) (result string) {
 
 // Получение идентификатор User-а (для Cockpit-a)
 func (c *App) UserObj(r *http.Request, arg []string) (result string) {
+
+	fmt.Println("User")
+	fmt.Println(arg)
+
 	var valueDefault string
 
 	if len(arg) > 0 {
@@ -327,9 +413,10 @@ func (c *App) UserObj(r *http.Request, arg []string) (result string) {
 
 		json.Unmarshal([]byte(marshal(ctxUser)), &uu)
 
+
 		if &uu != nil {
 			switch param {
-			case "UID", "ID":
+			case "UID","ID":
 				result = uu.Uid
 			case "PHOTO":
 				result = uu.Photo
@@ -370,7 +457,7 @@ func (c *App) UserProfile(r *http.Request, arg []string) (result string) {
 			role := uu.CurrentRole
 
 			switch param {
-			case "UID", "ID":
+			case "UID","ID":
 				result = role.Uid
 			case "TITLE":
 				result = role.Title
@@ -402,7 +489,7 @@ func (c *App) UserRole(r *http.Request, arg []string) (result string) {
 			role := uu.CurrentRole
 
 			switch param {
-			case "UID", "ID":
+			case "UID","ID":
 				result = role.Uid
 			case "TITLE":
 				result = role.Title
@@ -425,9 +512,11 @@ func (c *App) UserRole(r *http.Request, arg []string) (result string) {
 	return result
 }
 
-// Вставляем значения системных полей объекта
-func (c *App) Obj(d Data, arg []string) (result string) {
 
+// Вставляем значения системных полей объекта
+func (c *App) Obj(data []Data, arg []string) (result string) {
+
+	d := data[0]
 	var valueDefault string
 	if len(arg) > 0 {
 
@@ -436,20 +525,36 @@ func (c *App) Obj(d Data, arg []string) (result string) {
 			valueDefault = strings.ToUpper(arg[1])
 		}
 
-		switch param {
-		case "UID":
-			result = d.Uid
-		case "ID":
-			result = d.Id
-		case "SOURCE":
-			result = d.Source
-		case "TITLE":
-			result = d.Title
-		case "TYPE":
-			result = d.Type
-		default:
-			result = d.Uid
-		}
+			switch param {
+			case "UID":	// получаем все uid-ы из переданного массива объектов
+				slRes := []string{}
+				for _, v := range data {
+					slRes = append(slRes, v.Uid)
+				}
+				result = strings.Join(slRes, ",")
+			case "ID":
+				slRes := []string{}
+				for _, v := range data {
+					slRes = append(slRes, v.Id)
+				}
+				result = strings.Join(slRes, ",")
+			case "SOURCE":
+				result = d.Source
+			case "TITLE":
+				slRes := []string{}
+				for _, v := range data {
+					slRes = append(slRes, v.Title)
+				}
+				result = strings.Join(slRes, ",")
+			case "TYPE":
+				result = d.Type
+			default:
+				slRes := []string{}
+				for _, v := range data {
+					slRes = append(slRes, v.Uid)
+				}
+				result = strings.Join(slRes, ",")
+			}
 	}
 	if result == "" {
 		result = valueDefault
@@ -460,7 +565,9 @@ func (c *App) Obj(d Data, arg []string) (result string) {
 
 // Вставляем значения (Value) элементов из формы
 // Если поля нет, то выводит переданное значение (может быть любой символ)
-func (c *App) FieldValue(d Data, arg []string) (result string) {
+func (c *App) FieldValue(data []Data, arg []string) (result string) {
+	d := data[0]
+
 	for _, v := range arg {
 		val, found := d.Attr(v, "value")
 		in := strings.Trim(val, " ")
@@ -474,7 +581,9 @@ func (c *App) FieldValue(d Data, arg []string) (result string) {
 
 // Вставляем ID-объекта (SRC) элементов из формы
 // Если поля нет, то выводит переданное значение (может быть любой символ)
-func (c *App) FieldSrc(d Data, arg []string) (result string) {
+func (c *App) FieldSrc(data []Data, arg []string) (result string) {
+	d := data[0]
+
 	for _, v := range arg {
 		val, _ := d.Attr(v, "src")
 		result = strings.Trim(val, " ")
@@ -486,7 +595,8 @@ func (c *App) FieldSrc(d Data, arg []string) (result string) {
 // значение по указанному номеру (начала от 0)
 // Синтаксис: FieldValueSplit(поле, элемент, разделитель, номер_элемента)
 // для разделителя есть кодовые слова slash - / (нельзя вставить в фукнцию)
-func (c *App) FieldSplit(d Data, arg []string) (result string) {
+func (c *App) FieldSplit(data []Data, arg []string) (result string) {
+	d := data[0]
 
 	if len(arg) < 4 {
 		return "Error! Count params must have 4 (field, element, separator, number)"
@@ -528,20 +638,33 @@ func (c *App) FieldSplit(d Data, arg []string) (result string) {
 	return result
 }
 
+
 ///////////////////////////////////////////////////////////////
 // Собачья-обработка (поиск в строке @функций и их обработка)
 ///////////////////////////////////////////////////////////////
-func (c *App) DogParse(p string, r *http.Request, queryData *Data, values map[string]interface{}) (result string) {
+func (c *App) DogParse(p string, r *http.Request, queryData *[]Data, values map[string]interface{}) (result string) {
 	s1 := Formula{}
 
-	s1.Value = p
-	s1.Request = r
-	s1.Values = values
-	s1.Document = *queryData
-	result = s1.Replace()
+	//fmt.Println("DogParse")
+	//fmt.Println(p)
+	//fmt.Println(values)
+
+	// прогоняем полученную строку такое кол-во раз, сколько вложенных уровней + 1 (для сравнения)
+	for {
+		s1.Value = p
+		s1.Request = r
+		s1.Values = values
+		s1.Document = *queryData
+		res_parse := s1.Replace()
+
+		if p == res_parse {
+			result = res_parse
+			break
+		}
+		p = res_parse
+	}
 
 	return
 }
-
 ///////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////

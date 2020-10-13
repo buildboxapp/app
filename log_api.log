@@ -1,5 +1,5 @@
-{"level":"info","msg":" Connecting DB. Source:/Users/ivan/go/src/github.com/bbapp/buildbox/upload/buildbox/dbs/data.db","name":"","srv":"api","time":"2020-06-10T13:07:16+03:00","uid":""}
-{"level":"info","msg":"Сonnection to the database successfully! Source:/Users/ivan/go/src/github.com/bbapp/buildbox/upload/buildbox/dbs/data.db","name":"","srv":"api","time":"2020-06-10T13:07:16+03:00","uid":""}
+{"level":"info","msg":" Connecting DB. Source:/Users/ivan/go/src/github.com/buildboxapp/buildbox/upload/buildbox/dbs/data.db","name":"","srv":"api","time":"2020-06-10T13:07:16+03:00","uid":""}
+{"level":"info","msg":"Сonnection to the database successfully! Source:/Users/ivan/go/src/github.com/buildboxapp/buildbox/upload/buildbox/dbs/data.db","name":"","srv":"api","time":"2020-06-10T13:07:16+03:00","uid":""}
 {"level":"info","msg":"Starting API-service: 8000","name":"","srv":"api","time":"2020-06-10T13:07:16+03:00","uid":""}
 {"error":"invalid character '(' looking for beginning of value","level":"error","msg":"{Ошибка формата заданной схемы формирования запроса 410 ErrorShema } shema: ","name":"","srv":"api","time":"2020-06-10T13:07:30+03:00","uid":""}
 {"error":"invalid character '(' looking for beginning of value","level":"error","msg":"{Ошибка формата заданной схемы формирования запроса 410 ErrorShema } shema: ","name":"","srv":"api","time":"2020-06-10T13:07:30+03:00","uid":""}

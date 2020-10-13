@@ -39,7 +39,7 @@ func NewRouter() *mux.Router {
 
 var routes = Routes{
 	Route{"PIndex", "GET", "/", app.PIndex},
-	Route{"ProxyPing", "GET", "/ping", app.ProxyPing},
+	Route{"ProxyPing", "GET", "/ping",  app.ProxyPing},
 
 	Route{"PIndex", "GET", "/{page}", app.PIndex},
 	Route{"PIndex", "POST", "/{page}", app.PIndex},
@@ -57,4 +57,5 @@ var routes = Routes{
 	Route{"Index", "GET", "/debug/pprof/profile", pprof.Profile},
 	Route{"Index", "GET", "/debug/pprof/symbol", pprof.Symbol},
 	Route{"Index", "GET", "/debug/pprof/trace", pprof.Trace},
+
 }

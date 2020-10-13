@@ -1,24 +1,24 @@
 package app_lib
 
 import (
-	"bytes"
-	"crypto/sha1"
-	"encoding/hex"
-	"encoding/json"
-	"errors"
-	"fmt"
-	"github.com/labstack/gommon/log"
-	"html/template"
-	"io/ioutil"
-	"net/http"
-	"net/url"
-	"os"
-	"path"
 	"sort"
 	"strconv"
 	"strings"
-	"sync"
+	"net/http"
+	"encoding/json"
+	"crypto/sha1"
+	"encoding/hex"
+	"os"
+	"net/url"
+	"io/ioutil"
+	"fmt"
+	"bytes"
 	"time"
+	"html/template"
+	"path"
+	"sync"
+	"github.com/labstack/gommon/log"
+	"errors"
 )
 
 // инициируем встроенные функции для объекта приложения
@@ -100,6 +100,8 @@ func (c *App) WriteFile(path string, data []byte) {
 	//log.Warning("==> done writing to file")
 }
 
+
+
 // всегде возвращает результат в интерфейс + ошибка (полезно для внешних запросов с неизвестной структурой)
 // сериализуем в объект, при передаче ссылки на переменную типа
 func (c *App) Curl(method, urlc, bodyJSON string, response interface{}) (result interface{}, err error) {
@@ -153,12 +155,12 @@ func (c *App) Curl(method, urlc, bodyJSON string, response interface{}) (result 
 	if method == "JSONTOGET" && bodyJSON != "" && clearUrl {
 		actionType = "JSONTOGET"
 	}
-	if method == "JSONTOPOST" && bodyJSON != "" {
+	if (method == "JSONTOPOST" && bodyJSON != "") {
 		actionType = "JSONTOPOST"
 	}
 
 	switch actionType {
-	case "JSONTOGET": // преобразуем параметры в json в строку запроса
+	case "JSONTOGET":		// преобразуем параметры в json в строку запроса
 		if err == nil {
 			for k, v := range mapValues {
 				values.Set(k, v)
@@ -170,7 +172,7 @@ func (c *App) Curl(method, urlc, bodyJSON string, response interface{}) (result 
 		} else {
 			c.Logger.Warning("Error! Fail parsed bodyJSON from GET Curl: ", err)
 		}
-	case "JSONTOPOST": // преобразуем параметры в json в тело запроса
+	case "JSONTOPOST":		// преобразуем параметры в json в тело запроса
 
 		if err == nil {
 			for k, v := range mapValues {
@@ -190,6 +192,7 @@ func (c *App) Curl(method, urlc, bodyJSON string, response interface{}) (result 
 	if err != nil {
 		return "", err
 	}
+
 
 	resp, err := client.Do(req)
 	//fmt.Println(resp.Body, " = ", err)
@@ -222,17 +225,20 @@ func (c *App) Curl(method, urlc, bodyJSON string, response interface{}) (result 
 	return result, err
 }
 
-func ListenForShutdown(ch <-chan os.Signal) {
-	<-ch
+
+func ListenForShutdown(ch <- chan os.Signal)  {
+	<- ch
 	os.Exit(0)
 }
+
+
 
 // ДЛЯ ПОСЛЕДОВАТЕЛЬНОЙ сборки блока
 // получаем объект модуля (отображения)
 // p 	- объект переданных в модуль данных блока (запрос/конфигураци)
 // r 	- значения реквеста
 // page - объект страницы, которую парсим
-func (l *App) ModuleBuild(block Data, r *http.Request, page Data, values map[string]interface{}, enableCache bool) (result ModuleResult) {
+func (l *App) ModuleBuild(block Data, r *http.Request, page Data, values map[string]interface{}, enableCache bool) (result ModuleResult) 	{
 	var c bytes.Buffer
 	var err error
 
@@ -267,6 +273,7 @@ func (l *App) ModuleBuild(block Data, r *http.Request, page Data, values map[str
 	stat["title"] = block.Title
 	stat["id"] = block.Id
 
+
 	// Включаем режим кеширования
 	key := ""
 	keyParam := ""
@@ -275,7 +282,7 @@ func (l *App) ModuleBuild(block Data, r *http.Request, page Data, values map[str
 	//fmt.Println("BaseCache")
 
 	ll := l.State["BaseCache"]
-	if ll != "" && cacheOn != "" && enableCache {
+	if  ll != "" && cacheOn != "" && enableCache {
 
 		key, keyParam = l.SetCahceKey(r, block)
 
@@ -308,17 +315,19 @@ func (l *App) ModuleBuild(block Data, r *http.Request, page Data, values map[str
 	//	}
 	//}()
 
-	dataSet := make(map[string]interface{})
-	dataname := "default" // значение по-умолчанию (будет заменено в потоках)
+	dataSet		:= make(map[string]interface{})
+	dataname 	:= "default" // значение по-умолчанию (будет заменено в потоках)
 
-	tplName, _ := block.Attr("module", "src")
-	tquery, _ := block.Attr("tquery", "src")
+	tplName, _ 	:= block.Attr("module", "src")
+	tquery, _ 	:= block.Attr("tquery", "src")
+
 
 	// //////////////////////////////////////////////////////////////////////////////
 	// в блоке есть настройки поля расширенного фильтра, который можно добавить в самом блоке
 	// дополняем параметры request-a, доп. параметрами, которые переданы через блок
-	extfilter, _ := block.Attr("extfilter", "value") // дополнительный фильтр для блока
-	extfilter = l.DogParse(extfilter, r, &block, b.Value)
+	extfilter, _ 	:= block.Attr("extfilter", "value") // дополнительный фильтр для блока
+	dv := []Data{block}
+	extfilter = l.DogParse(extfilter, r, &dv, b.Value)
 	extfilter = strings.Replace(extfilter, "?", "", -1)
 
 	// парсим переденную строку фильтра
@@ -330,7 +339,7 @@ func (l *App) ModuleBuild(block Data, r *http.Request, page Data, values map[str
 	// добавляем в URL переданное значение из настроек модуля
 	var q url.Values
 	for k, v := range m {
-		q = r.URL.Query()      // Get a copy of the query values.
+		q = r.URL.Query() // Get a copy of the query values.
 		q.Add(k, join(v, ",")) // Add a new value to the set. Переводим обратно в строку из массива
 	}
 	if len(m) != 0 {
@@ -339,8 +348,10 @@ func (l *App) ModuleBuild(block Data, r *http.Request, page Data, values map[str
 	// //////////////////////////////////////////////////////////////////////////////
 	// //////////////////////////////////////////////////////////////////////////////
 
-	tconfiguration, _ := block.Attr("configuration", "value")
+
+	tconfiguration , _ := block.Attr("configuration", "value")
 	tconfiguration = strings.Replace(tconfiguration, "  ", "", -1)
+
 
 	uuid := UUID()
 
@@ -352,9 +363,9 @@ func (l *App) ModuleBuild(block Data, r *http.Request, page Data, values map[str
 		}
 	}
 
-	b.Value["Rand"] = uuid[1:6] // переопределяем отдельно для каждого модуля
+	b.Value["Rand"] =  uuid[1:6]  // переопределяем отдельно для каждого модуля
 	b.Value["URL"] = r.URL.Query().Encode()
-	b.Value["Prefix"] = "/" + Domain + "/" + l.Get("path_templates")
+	b.Value["Prefix"] = "/" + Domain + "/" +l.Get("path_templates")
 	b.Value["Domain"] = Domain
 	b.Value["CDN"] = l.Get("url_fs")
 	b.Value["Path"] = ClientPath
@@ -364,8 +375,12 @@ func (l *App) ModuleBuild(block Data, r *http.Request, page Data, values map[str
 	b.Value["Referer"] = r.Referer()
 	b.Value["Profile"] = profile
 
+
+
 	// обработк @-функции в конфигурации
-	dogParseConfiguration := l.DogParse(tconfiguration, r, &block, b.Value)
+	dv = []Data{block}
+	dogParseConfiguration := l.DogParse(tconfiguration, r, &dv, b.Value)
+
 
 	// конфигурация без обработки @-функции
 	var confRaw map[string]Element
@@ -393,16 +408,17 @@ func (l *App) ModuleBuild(block Data, r *http.Request, page Data, values map[str
 			stat["status"] = "error"
 			stat["description"] = fmt.Sprint(err)
 
-			result.result = l.ModuleError(err, r)
+			result.result = l.ModuleError(err,r)
 			result.err = err
 			result.stat = stat
 			return result
 		}
 	}
 
+
 	// ПЕРЕДЕЛАТЬ НА ПАРАЛЛЕЛЬНЫЕ ПОТОКИ
 	if tquery != "" {
-		slquery := strings.Split(tquery, ",")
+		slquery := strings.Split(tquery,",")
 
 		var name, uid string
 		for _, queryUID := range slquery {
@@ -424,12 +440,15 @@ func (l *App) ModuleBuild(block Data, r *http.Request, page Data, values map[str
 
 			ress := l.QueryWorker(queryUID, dataname, source, r)
 
+
 			//fmt.Println("ress: ", ress)
 
 			dataSet[dataname] = ress
 		}
 
 	}
+
+
 
 	b.Data = dataSet
 	b.Page = page
@@ -490,12 +509,13 @@ func (l *App) ModuleBuild(block Data, r *http.Request, page Data, values map[str
 	stat["time"] = time.Since(t1)
 	result.stat = stat
 
+
 	return result
 }
 
 // ДЛЯ ПАРАЛЛЕЛЬНОЙ сборки модуля
 // получаем объект модуля (отображения)
-func (l *App) ModuleBuildParallel(p Data, r *http.Request, page Data, values map[string]interface{}, enableCache bool, buildChan chan ModuleResult, wg *sync.WaitGroup) {
+func (l *App) ModuleBuildParallel(p Data, r *http.Request, page Data, values map[string]interface{}, enableCache bool, buildChan chan ModuleResult, wg *sync.WaitGroup) 	{
 	defer wg.Done()
 	t1 := time.Now()
 
@@ -528,6 +548,7 @@ func (l *App) ModuleBuildParallel(p Data, r *http.Request, page Data, values map
 	var profile ProfileData
 	profileRaw := ctx.Value("UserRaw")
 	json.Unmarshal([]byte(fmt.Sprint(profileRaw)), &profile)
+
 
 	var c bytes.Buffer
 	var b Block
@@ -566,6 +587,9 @@ func (l *App) ModuleBuildParallel(p Data, r *http.Request, page Data, values map
 	//////////////////////////////
 	//////////////////////////////
 
+
+
+
 	// обработка всех странных ошибок
 	//defer func() {
 	//	if er := recover(); er != nil {
@@ -574,38 +598,41 @@ func (l *App) ModuleBuildParallel(p Data, r *http.Request, page Data, values map
 	//	}
 	//}()
 
-	dataSet := make(map[string]interface{})
-	dataname := "default" // значение по-умолчанию (будет заменено в потоках)
+	dataSet		:= make(map[string]interface{})
+	dataname 	:= "default" // значение по-умолчанию (будет заменено в потоках)
 
 	tplName, _ := p.Attr("module", "src")
 	tquery, _ := p.Attr("tquery", "src")
 
+
 	// //////////////////////////////////////////////////////////////////////////////
 	// в блоке есть настройки поля расширенного фильтра, который можно добавить в самом блоке
 	// дополняем параметры request-a, доп. параметрами, которые переданы через блок
-	extfilter, _ := p.Attr("extfilter", "value") // дополнительный фильтр для блока
-	extfilter = l.DogParse(extfilter, r, &p, b.Value)
+	extfilter, _ 	:= p.Attr("extfilter", "value") // дополнительный фильтр для блока
+	dp := []Data{p}
+	extfilter = l.DogParse(extfilter, r, &dp, b.Value)
 	extfilter = strings.Replace(extfilter, "?", "", -1)
 
-	// парсим переденную строку фильтра
-	m, err := url.ParseQuery(extfilter)
-	if err != nil {
-		l.Logger.Error(err, "Error parsing extfilter from block.")
-	}
+			// парсим переденную строку фильтра
+			m, err := url.ParseQuery(extfilter)
+			if err != nil {
+				l.Logger.Error(err, "Error parsing extfilter from block.")
+			}
 
-	// добавляем в URL переданное значение из настроек модуля
-	var q url.Values
-	for k, v := range m {
-		q = r.URL.Query()      // Get a copy of the query values.
-		q.Add(k, join(v, ",")) // Add a new value to the set. Переводим обратно в строку из массива
-	}
-	if len(m) != 0 {
-		r.URL.RawQuery = q.Encode() // Encode and assign back to the original query.
-	}
+			// добавляем в URL переданное значение из настроек модуля
+			var q url.Values
+			for k, v := range m {
+				q = r.URL.Query() // Get a copy of the query values.
+				q.Add(k, join(v, ",")) // Add a new value to the set. Переводим обратно в строку из массива
+			}
+			if len(m) != 0 {
+				r.URL.RawQuery = q.Encode() // Encode and assign back to the original query.
+			}
 	// //////////////////////////////////////////////////////////////////////////////
 	// //////////////////////////////////////////////////////////////////////////////
 
-	tconfiguration, _ := p.Attr("configuration", "value")
+
+	tconfiguration , _ := p.Attr("configuration", "value")
 	tconfiguration = strings.Replace(tconfiguration, "  ", "", -1)
 
 	uuid := UUID()
@@ -618,9 +645,9 @@ func (l *App) ModuleBuildParallel(p Data, r *http.Request, page Data, values map
 		}
 	}
 
-	b.Value["Rand"] = uuid[1:6] // переопределяем отдельно для каждого модуля
+	b.Value["Rand"] =  uuid[1:6]  // переопределяем отдельно для каждого модуля
 	b.Value["URL"] = r.URL.Query().Encode()
-	b.Value["Prefix"] = "/" + Domain + "/" + l.Get("path_templates")
+	b.Value["Prefix"] = "/" + Domain + "/" +l.Get("path_templates")
 	b.Value["Domain"] = Domain
 	b.Value["CDN"] = l.Get("url_fs")
 	b.Value["Path"] = ClientPath
@@ -630,8 +657,10 @@ func (l *App) ModuleBuildParallel(p Data, r *http.Request, page Data, values map
 	b.Value["Referer"] = r.Referer()
 	b.Value["Profile"] = profile
 
+
 	// обработк @-функции в конфигурации
-	dogParseConfiguration := l.DogParse(tconfiguration, r, &p, b.Value)
+	dp = []Data{p}
+	dogParseConfiguration := l.DogParse(tconfiguration, r, &dp, b.Value)
 
 	// конфигурация без обработки @-функции
 	var confRaw map[string]Element
@@ -644,6 +673,7 @@ func (l *App) ModuleBuildParallel(p Data, r *http.Request, page Data, values map
 	if dogParseConfiguration != "" {
 		err = json.Unmarshal([]byte(dogParseConfiguration), &conf)
 	}
+
 
 	if err != nil {
 		result.result = l.ModuleError("Error json-format configurations: "+marshal(tconfiguration), r)
@@ -667,7 +697,7 @@ func (l *App) ModuleBuildParallel(p Data, r *http.Request, page Data, values map
 
 	// ПЕРЕДЕЛАТЬ НА ПАРАЛЛЕЛЬНЫЕ ПОТОКИ
 	if tquery != "" {
-		slquery := strings.Split(tquery, ",")
+		slquery := strings.Split(tquery,",")
 
 		var name, uid string
 
@@ -698,6 +728,8 @@ func (l *App) ModuleBuildParallel(p Data, r *http.Request, page Data, values map
 
 	}
 
+
+
 	b.Data = dataSet
 	b.Page = page
 	b.Metric = Metric
@@ -724,7 +756,8 @@ func (l *App) ModuleBuildParallel(p Data, r *http.Request, page Data, values map
 		return
 	}
 	tplName = strings.Join(sliceMake[3:], "/")
-	tplName = l.Get("workdir") + "/" + tplName
+	tplName = l.Get("workdir") + "/"+ tplName
+
 
 	// в режиме отладки пересборка шаблонов происходит при каждом запросе
 	if debugMode {
@@ -739,6 +772,7 @@ func (l *App) ModuleBuildParallel(p Data, r *http.Request, page Data, values map
 			}
 
 		}
+
 
 		if &b != nil && &c != nil {
 			if tmpl == nil {
@@ -767,6 +801,8 @@ func (l *App) ModuleBuildParallel(p Data, r *http.Request, page Data, values map
 	result.result = template.HTML(c.String())
 	result.stat = stat
 
+
+
 	// Включаем режим кеширования
 	if l.Get("BaseCache") != "" && cacheOn != "" && enableCache {
 		key, keyParam = l.SetCahceKey(r, p)
@@ -779,6 +815,7 @@ func (l *App) ModuleBuildParallel(p Data, r *http.Request, page Data, values map
 	stat["time"] = time.Since(t1)
 	result.stat = stat
 
+
 	buildChan <- result
 
 	//log.Warning("Stop ", p.Title, "-", time.Since(t1))
@@ -787,7 +824,7 @@ func (l *App) ModuleBuildParallel(p Data, r *http.Request, page Data, values map
 }
 
 // вываливаем ошибку при генерации модуля
-func (c *App) ErrorModuleBuild(stat map[string]interface{}, buildChan chan ModuleResult, timerRun interface{}, errT error) {
+func (c *App) ErrorModuleBuild(stat map[string]interface{}, buildChan chan ModuleResult, timerRun interface{}, errT error){
 	var result ModuleResult
 
 	stat["cache"] = "false"
@@ -802,10 +839,10 @@ func (c *App) ErrorModuleBuild(stat map[string]interface{}, buildChan chan Modul
 }
 
 // queryUID - ид-запроса
-func (c *App) QueryWorker(queryUID, dataname string, source []map[string]string, r *http.Request) interface{} {
+func (c *App) QueryWorker(queryUID, dataname string, source[]map[string]string, r *http.Request) interface{}  {
 	//var resp Response
 
-	resp := c.GUIQuery(queryUID, r)
+	resp :=  c.GUIQuery(queryUID, r)
 
 	//switch x := resp1.(type) {
 	//case Response:
@@ -814,6 +851,7 @@ func (c *App) QueryWorker(queryUID, dataname string, source []map[string]string,
 	//default:
 	//	resp.Data = resp1
 	//}
+
 
 	///////////////////////////////////////////
 	// Расчет пагенации
@@ -832,16 +870,16 @@ func (c *App) QueryWorker(queryUID, dataname string, source []map[string]string,
 	if size != 0 && resultLimit != 0 {
 		j := 0
 		for i := 0; i <= size; i = i + resultLimit {
-			j++
+			j ++
 			list = append(list, j)
-			if i >= resultOffset && i < resultOffset+resultLimit {
+			if i >= resultOffset && i < resultOffset + resultLimit {
 				current = j
 			}
 		}
 		last = j
 	}
 
-	from = current*resultLimit - resultLimit
+	from = current * resultLimit - resultLimit
 	to = from + resultLimit
 
 	// подрезаем список страниц
@@ -882,7 +920,7 @@ func (c *App) QueryWorker(queryUID, dataname string, source []map[string]string,
 func (c *App) ErrorPage(err interface{}, w http.ResponseWriter, r *http.Request) {
 	p := ErrorForm{
 		Err: err,
-		R:   *r,
+		R:	 *r,
 	}
 	log.Error(err)
 
@@ -891,15 +929,15 @@ func (c *App) ErrorPage(err interface{}, w http.ResponseWriter, r *http.Request)
 }
 
 // вывод ошибки выполнения блока
-func (l *App) ModuleError(err interface{}, r *http.Request) template.HTML {
+func (l *App) ModuleError(err interface{}, r *http.Request) template.HTML  {
 	var c bytes.Buffer
 
 	p := ErrorForm{
 		Err: err,
-		R:   *r,
+		R:	 *r,
 	}
 
-	l.Logger.Error(nil, err)
+	l.Logger.Error(nil,err)
 	fmt.Println("ModuleError: ", err)
 
 	wd := l.Get("workdir")
@@ -913,7 +951,7 @@ func (l *App) ModuleError(err interface{}, r *http.Request) template.HTML {
 
 // отправка запроса на получения данных из интерфейса GUI
 // параметры переданные в строке (r.URL) отправляем в теле запроса
-func (c *App) GUIQuery(tquery string, r *http.Request) Response {
+func (c *App) GUIQuery(tquery string, r *http.Request) Response  {
 
 	var resultInterface interface{}
 	var dataResp, returnResp Response
@@ -926,6 +964,7 @@ func (c *App) GUIQuery(tquery string, r *http.Request) Response {
 	if filters != "" {
 		filters = "?" + filters
 	}
+
 
 	// ФИКС!
 	// добавляем еще токен (cookie) текущего пользователя
@@ -949,7 +988,7 @@ func (c *App) GUIQuery(tquery string, r *http.Request) Response {
 
 	//fmt.Println("filters: ",filters)
 
-	resultInterface, _ = c.Curl(r.Method, "/query/"+tquery+filters, string(bodyJSON), &dataResp)
+	resultInterface, _ = c.Curl(r.Method, "/query/" + tquery + filters, string(bodyJSON), &dataResp)
 
 	//fmt.Println(dataResp)
 	//fmt.Println("tquery: ", "/query/" + tquery + filters, "; resultInterface: ", resultInterface)
@@ -969,10 +1008,11 @@ func (c *App) GUIQuery(tquery string, r *http.Request) Response {
 	return returnResp
 }
 
+
 // удаляем элемент из слайса
 func (p *ResponseData) RemoveData(i int) bool {
 
-	if i < len(p.Data) {
+	if (i < len(p.Data)){
 		p.Data = append(p.Data[:i], p.Data[i+1:]...)
 	} else {
 		//log.Warning("Error! Position invalid (", i, ")")
@@ -981,6 +1021,7 @@ func (p *ResponseData) RemoveData(i int) bool {
 
 	return true
 }
+
 
 ////////////////////////////////////////////////////////////////////////////////////////
 /////////////// ФУНКЦИИ ДЛЯ ВЛОЖЕНИЯ ОБЪЕКТОВ Data В ФОРМАТ ДЕРЕВА /////////////////////
@@ -1036,6 +1077,7 @@ func DataToIncl(objData []Data) []*DataTree {
 	// сортируем по order как число
 	SortItems(sliceNavigator, "order", "int")
 
+
 	return sliceNavigator
 }
 
@@ -1070,6 +1112,7 @@ func SortItems(p []*DataTree, fieldsort string, typesort string) {
 			value2 = "0"
 		}
 
+
 		if oi, found := p[i].Attributes[fieldsort]; found {
 			if oi.Value != "" {
 				value1 = oi.Value
@@ -1095,6 +1138,7 @@ func SortItems(p []*DataTree, fieldsort string, typesort string) {
 			// если стринг, то всегда проверяем как-будто это сравнение строк
 			return vi1 < vi2
 		}
+
 
 	})
 
@@ -1132,3 +1176,4 @@ func TreeShowIncl(in []*DataTree, obj string) (out []*DataTree) {
 ////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////
+

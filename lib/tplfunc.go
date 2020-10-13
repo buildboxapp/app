@@ -1,37 +1,37 @@
 package app_lib
 
 import (
-	"encoding/json"
-	"errors"
-	"fmt"
-	"github.com/Masterminds/sprig"
-	"github.com/satori/go.uuid"
-	"html/template"
-	"net/http"
 	"path/filepath"
-	"reflect"
-	"regexp"
-	"strconv"
 	"strings"
+	"reflect"
+	"html/template"
+	"errors"
+	"net/http"
+	"encoding/json"
+	"strconv"
+	"fmt"
 	"time"
+	"regexp"
+	"github.com/satori/go.uuid"
+	"github.com/Masterminds/sprig"
 )
 
 var FuncMapS = sprig.FuncMap()
 
 var FuncMap = template.FuncMap{
-	"separator":     separator,
-	"attr":          attr,
-	"datetotext":    datetotext,
-	"output":        output,
-	"cut":           cut,
+	"separator": 	 separator,
+	"attr":	 		 attr,
+	"datetotext":	 datetotext,
+	"output": 	 	 output,
+	"cut":			 cut,
 	"concatination": concatination,
-	"join":          join,
-	"rand":          rand,
-	"uuid":          UUID,
-	"refind":        refind,
-	"rereplace":     rereplace,
-	"replace":       Replace,
-	"contains":      contains,
+	"join": 		 join,
+	"rand":			 rand,
+	"uuid":			 UUID,
+	"refind":		 refind,
+	"rereplace":	 rereplace,
+	"replace":		 Replace,
+	"contains": 	 contains,
 	"dict":          dict,
 	"sum":           sum,
 	"split":         split,
@@ -39,30 +39,30 @@ var FuncMap = template.FuncMap{
 	"get":           get,
 	"delete":        deletekey,
 	"marshal":       marshal,
-	"value":         value,
-	"hash":          hash,
+	"value":       	 value,
+	"hash":       	 hash,
 	"unmarshal":     unmarshal,
-	"compare":       compare,
-	"totree":        totree,
-	"tostring":      tostring,
-	"toint":         toint,
-	"tointerface":   tointerface,
-	"tohtml":        tohtml,
-	"timefresh":     Timefresh,
-	"timenow":       timenow,
-	"timeformat":    timeformat,
-	"timeyear":      timeyear,
-	"timemount":     timemount,
-	"timeday":       timeday,
-	"timeparse":     timeparse,
-	"tomoney":       tomoney,
-	"invert":        invert,
-	"substring":     substring,
-	"dogparse":      dogparse,
-	"confparse":     confparse,
-	"varparse":      parseparam,
-	"parseparam":    parseparam,
-	"divfloat":      divfloat,
+	"compare":    	 compare,
+	"totree": 	 	 totree,
+	"tostring":		 tostring,
+	"toint":		 toint,
+	"tointerface":	 tointerface,
+	"tohtml":		 tohtml,
+	"timefresh":	 Timefresh,
+	"timenow":		 timenow,
+	"timeformat":	 timeformat,
+	"timeyear":	 	 timeyear,
+	"timemount":	 timemount,
+	"timeday":	 	 timeday,
+	"timeparse":	 timeparse,
+	"tomoney":		 tomoney,
+	"invert":		 invert,
+	"substring":	 substring,
+	"dogparse":		 dogparse,
+	"confparse":	 confparse,
+	"varparse":	 	 parseparam,
+	"parseparam":	 parseparam,
+	"divfloat":		 divfloat,
 }
 
 // формируем сепаратор для текущей ОС
@@ -85,7 +85,7 @@ func divfloat(a, b interface{}) interface{} {
 }
 
 // обработка @-функций внутри конфигурации (в шаблонизаторе)
-func confparse(configuration string, r *http.Request, queryData interface{}) (result interface{}) {
+func confparse(configuration string, r *http.Request, queryData interface{}) (result interface{})  {
 
 	var d Data
 	b, err := json.Marshal(queryData)
@@ -94,8 +94,8 @@ func confparse(configuration string, r *http.Request, queryData interface{}) (re
 	if err != nil {
 		return "Error! Failed marshal queryData: " + fmt.Sprint(err)
 	}
-
-	confParse := DogParse(configuration, r, &d, nil)
+	dv := []Data{d}
+	confParse := DogParse(configuration, r, &dv, nil)
 
 	// конфигурация с обработкой @-функции
 	var conf map[string]Element
@@ -111,16 +111,18 @@ func confparse(configuration string, r *http.Request, queryData interface{}) (re
 }
 
 // обработка @-функций внутри шаблонизатора
-func dogparse(p string, r *http.Request, queryData interface{}, values map[string]interface{}) (result string) {
+func dogparse(p string, r *http.Request, queryData interface{}, values map[string]interface{}) (result string)  {
 
 	var d Data
 	b, _ := json.Marshal(queryData)
 	json.Unmarshal(b, &d)
 
-	result = DogParse(p, r, &d, values)
+	dv := []Data{d}
+	result = DogParse(p, r, &dv, values)
 
 	return result
 }
+
 
 // получаем значение из переданного объекта
 func attr(name, element string, data interface{}) (result interface{}) {
@@ -176,6 +178,7 @@ func timeday(t time.Time) string {
 }
 
 func timeparse(str, mask string) (res time.Time, err error) {
+	mask = strings.ToUpper(mask)
 
 	time.Now().UTC()
 	switch mask {
@@ -183,9 +186,9 @@ func timeparse(str, mask string) (res time.Time, err error) {
 		res, err = time.Parse("2006-02-01 15:04:05 -0700 UTC", str)
 	case "ANSIC":
 		res, err = time.Parse(time.ANSIC, str)
-	case "UnixDate":
+	case "UNIXDATE":
 		res, err = time.Parse(time.UnixDate, str)
-	case "RubyDate":
+	case "RUBYDATE":
 		res, err = time.Parse(time.RubyDate, str)
 	case "RFC822":
 		res, err = time.Parse(time.RFC822, str)
@@ -199,15 +202,15 @@ func timeparse(str, mask string) (res time.Time, err error) {
 		res, err = time.Parse(time.RFC1123Z, str)
 	case "RFC3339":
 		res, err = time.Parse(time.RFC3339, str)
-	case "RFC3339Nano":
+	case "RFC3339NANO":
 		res, err = time.Parse(time.RFC3339Nano, str)
-	case "Stamp":
+	case "STAMP":
 		res, err = time.Parse(time.Stamp, str)
-	case "StampMilli":
+	case "STAMPMILLI":
 		res, err = time.Parse(time.StampMilli, str)
-	case "StampMicro":
+	case "STAMPMICRO":
 		res, err = time.Parse(time.StampMicro, str)
-	case "StampNano":
+	case "STAMPNANO":
 		res, err = time.Parse(time.StampNano, str)
 	default:
 		res, err = time.Parse(mask, str)
@@ -216,17 +219,17 @@ func timeparse(str, mask string) (res time.Time, err error) {
 	return res, err
 }
 
-func refind(mask, str string, n int) (res [][]string) {
-	if n == 0 {
-		n = -1
-	}
-	re := regexp.MustCompile(mask)
-	res = re.FindAllStringSubmatch(str, n)
+func refind(mask, str string, n int) (res [][]string)  {
+		if n == 0 {
+			n = -1
+		}
+		re := regexp.MustCompile(mask)
+		res = re.FindAllStringSubmatch(str, n)
 
-	return
+		return
 }
 
-func rereplace(str, mask, new string) (res string) {
+func rereplace(str, mask, new string) (res string)  {
 	re := regexp.MustCompile(mask)
 	res = re.ReplaceAllString(str, new)
 
@@ -283,6 +286,7 @@ func invert(str string) string {
 	return result
 }
 
+
 // переводим массив в строку
 func join(slice []string, sep string) (result string) {
 	result = strings.Join(slice, sep)
@@ -298,7 +302,7 @@ func split(str, sep string) (result interface{}) {
 }
 
 // переводим в денежное отображение строки - 12.344.342
-func tomoney(str, dec string) (res string) {
+func tomoney(str,dec string) (res string) {
 
 	for i, v1 := range invert(str) {
 		if (i == 3) || (i == 6) || (i == 9) {
@@ -313,7 +317,7 @@ func tomoney(str, dec string) (res string) {
 
 func contains1(message, str, substr string) string {
 	sl1 := strings.Split(substr, "|")
-	for _, v := range sl1 {
+	for _,v := range sl1 {
 		if strings.Contains(str, v) {
 			return message
 		}
@@ -323,7 +327,7 @@ func contains1(message, str, substr string) string {
 
 func contains(str, substr, message, messageelse string) string {
 	sl1 := strings.Split(substr, "|")
-	for _, v := range sl1 {
+	for _,v := range sl1 {
 		if strings.Contains(str, v) {
 			return message
 		}
@@ -331,9 +335,10 @@ func contains(str, substr, message, messageelse string) string {
 	return messageelse
 }
 
+
 // преобразую дату из 2013-12-24 в 24 января 2013
 func datetotext(str string) (result string) {
-	mapMount := map[string]string{"01": "января", "02": "февраля", "03": "марта", "04": "апреля", "05": "мая", "06": "июня", "07": "июля", "08": "августа", "09": "сентября", "10": "октября", "11": "ноября", "12": "декабря"}
+	mapMount := map[string]string{"01":"января","02":"февраля","03":"марта","04":"апреля","05":"мая","06":"июня","07":"июля","08":"августа","09":"сентября","10":"октября","11":"ноября","12":"декабря"}
 	spd := strings.Split(str, "-")
 	if len(spd) == 3 {
 		result = spd[2] + " " + mapMount[spd[1]] + " " + spd[0]
@@ -407,9 +412,8 @@ func deletekey(d map[string]interface{}, key string) (value string) {
 	delete(d, key)
 	return "true"
 }
-
 // суммируем
-func sum(res, i int) int {
+func sum(res,i int) int {
 	res = res + i
 	return res
 }
@@ -448,15 +452,15 @@ func substring(str string, args ...int) string {
 	}
 
 	// длина строки меньше чем ДО куда надо образать
-	if from < 0 {
-		return string([]rune(str)[lenstr+from:]) // с конца
-	}
+		if from < 0 {
+			return string([]rune(str)[lenstr+from:])	// с конца
+		}
 
-	if count == 0 {
-		return string([]rune(str)[from:]) // вырежем все символы до конца строки
-	}
+		if count == 0 {
+			return string([]rune(str)[from:])	// вырежем все символы до конца строки
+		}
 
-	return string([]rune(str)[from:to]) // вырежем диапазон
+		return string([]rune(str)[from:to])	// вырежем диапазон
 }
 
 func tostring(i interface{}) (res string) {
@@ -496,7 +500,7 @@ func totree(i interface{}, objstart string) (res interface{}) {
 	return objTree
 }
 
-func tohtml(i interface{}) template.HTML {
+func tohtml(i interface{}) (template.HTML) {
 
 	return template.HTML(i.(string))
 }
@@ -605,6 +609,7 @@ func output(element string, configuration, data interface{}, resulttype string) 
 	var dt Data
 	json.Unmarshal([]byte(marshal(data)), &dt)
 
+
 	if element == "" {
 		return ""
 	}
@@ -655,3 +660,7 @@ func output(element string, configuration, data interface{}, resulttype string) 
 
 	return result
 }
+
+
+
+

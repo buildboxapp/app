@@ -2,20 +2,20 @@ package main
 
 import (
 	"fmt"
-	"github.com/labstack/gommon/color"
-	"github.com/restream/reindexer"
 	"net/http"
 	"os"
+	"github.com/labstack/gommon/color"
+	"github.com/restream/reindexer"
 
 	"os/signal"
 
-	. "github.com/buildboxapp/app/lib"
 	bblib "github.com/buildboxapp/lib"
-	"github.com/buildboxapp/logger"
 	"github.com/urfave/cli"
+	. "github.com/buildboxapp/app/lib"
+	"github.com/buildboxapp/logger"
 
-	bbapp "github.com/buildboxapp/app/lib"
 	stdlog "github.com/labstack/gommon/log"
+	buildboxapp"github.com/buildboxapp/app/lib"
 
 	"io"
 )
@@ -25,7 +25,8 @@ var outpurLog io.Writer
 
 var log = logger.Log{}
 var lib = bblib.Lib{}
-var app = bbapp.App{}
+var app = buildboxapp.App{}
+
 
 func init() {
 
@@ -43,9 +44,9 @@ func init() {
 	lib.Logger = &log
 	app.Logger = &log
 
-}
+	}
 
-func main() {
+func main()  {
 
 	// закрываем файл с логами
 	defer fileLog.Close()
@@ -55,55 +56,56 @@ func main() {
 		log.Warning("Warning! The default configuration directory was not found.")
 	}
 
+
 	appCLI := cli.NewApp()
 	appCLI.Usage = "Demon Buildbox Proxy started"
-	appCLI.Commands = []cli.Command{
+	appCLI.Commands = []*cli.Command{
 		{
-			Name: "run", ShortName: "r",
+			Name:"run",
 			Usage: "Run demon Buildbox APP process",
 			Flags: []cli.Flag{
-				cli.StringFlag{
-					Name:  "config, c",
-					Usage: "Название файла конфигурации, с которым будет запущен сервис",
-					Value: defaultConfig,
+				&cli.StringFlag{
+					Name:	"config, c",
+					Usage:	"Название файла конфигурации, с которым будет запущен сервис",
+					Value:	defaultConfig,
 				},
-				cli.StringFlag{
-					Name:  "dir, d",
-					Usage: "Путь к шаблонам",
-					Value: lib.RootDir(),
+				&cli.StringFlag{
+					Name:	"dir, d",
+					Usage:	"Путь к шаблонам",
+					Value:	lib.RootDir(),
 				},
-				cli.StringFlag{
-					Name:  "port, p",
-					Usage: "Порт, на котором запустить процесс",
-					Value: "",
+				&cli.StringFlag{
+					Name:	"port, p",
+					Usage:	"Порт, на котором запустить процесс",
+					Value:	"",
 				},
 			},
 			Action: func(c *cli.Context) error {
 				configfile := c.String("config")
 				dir := c.String("dir")
-				lib.RunProcess(configfile, dir, "app", "start", "services")
+				lib.RunProcess(configfile, dir, "app", "start","services")
 
 				return nil
 			},
 		},
 		{
-			Name: "start", ShortName: "",
+			Name:"start", ShortName: "",
 			Usage: "Start single Buildbox APP process",
 			Flags: []cli.Flag{
 				cli.StringFlag{
-					Name:  "config, c",
-					Usage: "Название файла конфигурации, с которым будет запущен сервис",
-					Value: defaultConfig,
+					Name:	"config, c",
+					Usage:	"Название файла конфигурации, с которым будет запущен сервис",
+					Value:	defaultConfig,
 				},
 				cli.StringFlag{
-					Name:  "dir, d",
-					Usage: "Путь к шаблонам",
-					Value: lib.RootDir(),
+					Name:	"dir, d",
+					Usage:	"Путь к шаблонам",
+					Value:	lib.RootDir(),
 				},
 				cli.StringFlag{
-					Name:  "port, p",
-					Usage: "Порт, на котором запустить процесс",
-					Value: "",
+					Name:	"port, p",
+					Usage:	"Порт, на котором запустить процесс",
+					Value:	"",
 				},
 			},
 			Action: func(c *cli.Context) error {
@@ -159,6 +161,7 @@ func Start(configfile, dir, port string) {
 	log.Name = app.Get("domain")
 	log.Service = "app"
 
+
 	// если автоматическая настройка портов
 	if app.Get("address_proxy_pointsrc") != "" && app.Get("port_auto_interval") != "" {
 		var portDataAPI bblib.Response
@@ -183,8 +186,8 @@ func Start(configfile, dir, port string) {
 	log.Warning("From "+proxy_url+" get PortAPP:", app.Get("PortAPP"), " Domain:", app.Get("domain"))
 
 	// инициализируем кеширование
-	app.State["namespace"] = Replace(app.Get("domain"), "/", "_", -1)
-	app.State["url_proxy"] = app.Get("address_proxy_pointsrc")
+	app.State["namespace"] 	= Replace(app.Get("domain"), "/", "_", -1)
+	app.State["url_proxy"]	= app.Get("address_proxy_pointsrc")
 
 	// включено кеширование
 	if app.Get("cache_pointsrc") != "" {
@@ -213,8 +216,8 @@ func Start(configfile, dir, port string) {
 	log.Info("Load template directory: ", dirTemplate)
 
 	router := NewRouter() //.StrictSlash(true)
-	router.PathPrefix("/upload/").Handler(http.StripPrefix("/upload/", http.FileServer(http.Dir(app.State["workdir"]+"/upload"))))
-	router.PathPrefix("/templates/").Handler(http.StripPrefix("/templates/", http.FileServer(http.Dir(app.State["workdir"]+"/templates"))))
+	router.PathPrefix("/upload/").Handler(http.StripPrefix("/upload/", http.FileServer(http.Dir(app.State["workdir"] + "/upload"))))
+	router.PathPrefix("/templates/").Handler(http.StripPrefix("/templates/", http.FileServer(http.Dir(app.State["workdir"] + "/templates"))))
 
 	fmt.Printf("%s Starting APP-service: %s\n", done, app.Get("PortAPP"))
 	log.Info("Starting APP-service: ", app.Get("PortAPP"))

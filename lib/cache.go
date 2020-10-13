@@ -3,21 +3,22 @@ package app_lib
 import (
 	"fmt"
 
-	"encoding/json"
 	"github.com/restream/reindexer"
 	"net/http"
-	"strconv"
 	"time"
+	"strconv"
+	"encoding/json"
 )
 
+
 // формируем ключ кеша
-func (l *App) SetCahceKey(r *http.Request, p Data) (key, keyParam string) {
+func (l *App) SetCahceKey(r *http.Request, p Data) (key, keyParam string)  {
 	key2 := ""
 	key3 := ""
 
 	// формируем сложный ключ-хеш
 	key1, _ := json.Marshal(p.Uid)
-	key2 = r.URL.Path                       // переводим в текст параметры пути запроса (/nedra/user)
+	key2 = r.URL.Path // переводим в текст параметры пути запроса (/nedra/user)
 	key3 = fmt.Sprintf("%v", r.URL.Query()) // переводим в текст параметры строки запроса (?sdf=df&df=df)
 
 	cache_nokey2, _ := p.Attr("cache_nokey2", "value")
@@ -43,12 +44,12 @@ func (l *App) SetCahceKey(r *http.Request, p Data) (key, keyParam string) {
 		key = hash(string(key1)) + "_" + "_"
 	}
 
-	return key, "url:" + key2 + "; params:" + key3
+	return key, "url:"+key2+"; params:"+key3
 }
 
 // key - ключ, который будет указан в кеше
 // option - объект блока (запроса и тд) то, где хранится время кеширования
-func (l *App) СacheGet(key string, block Data, r *http.Request, page Data, values map[string]interface{}, url string) (string, bool) {
+func (l *App) СacheGet(key string, block Data, r *http.Request, page Data, values map[string]interface{}, url string) (string, bool)  {
 	var res string
 	var rows *reindexer.Iterator
 
@@ -57,19 +58,20 @@ func (l *App) СacheGet(key string, block Data, r *http.Request, page Data, valu
 		ReqTotal().
 		Exec()
 
+
 	// если есть значение, то обязательно отдаем его, но поменяем
 	for rows.Next() {
 		elem := rows.Object().(*ValueCache)
 		res = elem.Value
 
-		flagFresh := Timefresh(elem.Deadtime)
+		flagFresh := Timefresh(elem.Deadtime);
 
 		if flagFresh == "true" {
 
 			// блокируем запись, чтобы другие процессы не стали ее обновлять также
 			if elem.Status != "updating" {
 
-				if f := refreshTime(block); f == 0 {
+				if 	f := refreshTime(block); f == 0 {
 					return "", false
 				}
 
@@ -91,6 +93,7 @@ func (l *App) СacheGet(key string, block Data, r *http.Request, page Data, valu
 
 	return "", false
 }
+
 
 // key - ключ, который будет указан в кеше
 // option - объект блока (запроса и тд) то, где хранится время кеширования
@@ -131,6 +134,7 @@ func (l *App) CacheSet(key string, block Data, page Data, value, url string) boo
 	}
 
 	//fmt.Println("Пишем в кеш")
+
 
 	return true
 }
