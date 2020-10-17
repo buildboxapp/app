@@ -28,7 +28,7 @@ var FlagParallel = true		// флаг генерации блоков в пара
 var Metric template.HTML
 var State = map[string]string{}
 
-var Domain, Title, UidAPP, ClientPath, UidPrecess string
+var Domain, Title, UidAPP, ClientPath, UidPrecess, LogsDir, LogsLevel string
 var UrlAPI, UrlGUI string
 
 

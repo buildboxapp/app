@@ -136,7 +136,7 @@ func attr(name, element string, data interface{}) (result interface{}) {
 }
 
 func UUID() string {
-	stUUID, _ := uuid.NewV4()
+	stUUID := uuid.NewV4()
 	return stUUID.String()
 }
 

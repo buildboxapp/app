@@ -32,19 +32,10 @@ func init() {
 
 	app.Init()
 
-	// создаем/открываем файл логирования и назначаем его логеру
-	fileLog, err := os.OpenFile("log_app.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-	if err != nil {
-		fmt.Printf("error opening file: %v", err)
-		return
-	}
-	log.Init(fileLog, "All", "", "", "app/lib")
-
 	// задаем настройки логирования выполнения функций библиотеки
 	lib.Logger = &log
 	app.Logger = &log
-
-	}
+}
 
 func main()  {
 
@@ -59,7 +50,7 @@ func main()  {
 
 	appCLI := cli.NewApp()
 	appCLI.Usage = "Demon Buildbox Proxy started"
-	appCLI.Commands = []*cli.Command{
+	appCLI.Commands = []cli.Command{
 		{
 			Name:"run",
 			Usage: "Run demon Buildbox APP process",
@@ -128,9 +119,32 @@ func main()  {
 // стартуем сервис приложения
 func Start(configfile, dir, port string) {
 
-	for k, v := range FuncMap {
-		log.Info(k, " = ", v, " conf: ", configfile)
+	//for k, v := range FuncMap {
+	//	log.Info(k, " = ", v, " conf: ", configfile)
+	//}
+
+	Config, _, err := lib.ReadConf(configfile)
+	if err != nil {
+		log.Error(err)
 	}
+
+	///////////////// ЛОГИРОВАНИЕ //////////////////
+	// кладем в глабольные переменные
+	Domain 		= Config["domain"]
+	LogsDir 	= Config["gui_logs"]
+	LogsLevel 	= Config["gui_level_logs_pointsrc"]
+	// формирование пути к лог-файлам и метрикам
+	if LogsDir == "" {
+		LogsDir = "logs"
+	}
+	// если путь указан относительно / значит задан абсолютный путь, иначе в директории
+	if LogsDir[:1] != "/" {
+		LogsDir = lib.RootDir() + "/upload/" + Domain + "/" + LogsDir
+	}
+	log.Init(LogsDir, LogsLevel, UUID(), Domain, "app")
+	log.Info("Запускаем app-сервис: ",Domain)
+	//////////////////////////////////////////////////
+
 
 	done := color.Green("OK")
 	fail := color.Red("FAIL")
