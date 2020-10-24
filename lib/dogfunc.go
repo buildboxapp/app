@@ -128,8 +128,6 @@ func (p *Formula) Calculate()  {
 	for k, v := range p.Inserts {
 		param := strings.ToUpper(v.Functions.Name)
 
-		fmt.Println("param: ", param)
-
 		switch param {
 		case "RAND":
 			uuid := UUID()
@@ -644,10 +642,6 @@ func (c *App) FieldSplit(data []Data, arg []string) (result string) {
 ///////////////////////////////////////////////////////////////
 func (c *App) DogParse(p string, r *http.Request, queryData *[]Data, values map[string]interface{}) (result string) {
 	s1 := Formula{}
-
-	//fmt.Println("DogParse")
-	//fmt.Println(p)
-	//fmt.Println(values)
 
 	// прогоняем полученную строку такое кол-во раз, сколько вложенных уровней + 1 (для сравнения)
 	for {
