@@ -17,6 +17,10 @@ func Time(arg []string) (result string) {
 	return lb.Time(arg)
 }
 
+func DateModify(arg []string) (result string) {
+	return lb.DateModify(arg)
+}
+
 func FuncURL(r *http.Request, arg []string) (result string) {
 	return lb.FuncURL(r, arg)
 }
