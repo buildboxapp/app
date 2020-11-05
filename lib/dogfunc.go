@@ -133,11 +133,13 @@ func (p *Formula) Calculate()  {
 			uuid := UUID()
 			p.Inserts[k].Result = uuid[1:6]
 		case "PATH":
+
 			p.Inserts[k].Result = Path(p.Document, v.Functions.Arguments)
 		case "TIME":
 			p.Inserts[k].Result = Time(v.Functions.Arguments)
 		case "DATEMODIFY":
 			p.Inserts[k].Result = DateModify(v.Functions.Arguments)
+
 		case "USER":
 			p.Inserts[k].Result = UserObj(p.Request, v.Functions.Arguments)
 		case "ROLE":
