@@ -636,6 +636,44 @@ func (c *App) FieldSplit(data []Data, arg []string) (result string) {
 	return result
 }
 
+///////////////////////////////////////////////////
+// Фукнции @ обработки наследованные от математического пакета
+///////////////////////////////////////////////////
+
+// Добавление даты к переданной
+// date - дата, которую модифицируют (значение должно быть в формате времени)
+// modificator - модификатор (например "+24h")
+// format - формат переданного времени (по-умолчанию - 2006-01-02T15:04:05Z07:00 (формат: time.RFC3339)
+func (c *App) DateModify(arg []string) (result string) {
+
+	if len(arg) < 2 {
+		return "Error! Count params must have min 2 (date, modificator; option: format)"
+	}
+	dateArg := arg[0]
+	modificator := arg[1]
+
+	format := "2006-01-02T15:04:05Z07:00"
+	if len(arg) == 3 {
+		format = arg[2]
+	}
+
+	// преобразуем полученную дату из строки в дату
+	date, err := time.Parse(format, dateArg)
+	if err != nil {
+		return dateArg
+	}
+
+	// преобразуем модификатор во время
+	d, err := time.ParseDuration(modificator)
+	if err != nil {
+		return dateArg
+	}
+
+	return fmt.Sprint(date.Add(d))
+}
+
+
+
 
 ///////////////////////////////////////////////////////////////
 // Собачья-обработка (поиск в строке @функций и их обработка)
