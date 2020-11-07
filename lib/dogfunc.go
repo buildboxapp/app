@@ -282,27 +282,18 @@ func (c *App) SplitIndex(arg []string) (result string) {
 	return result
 }
 
-// Получение идентификатор User-а
+// Получение текущей даты
 func (c *App) Time(arg []string) (result string) {
-	var valueDefault string
 
 	if len(arg) > 0 {
-
 		param := strings.ToUpper(arg[0])
-		if len(arg) == 2 {
-			valueDefault = strings.ToUpper(arg[1])
-		}
 
 		switch param {
 		case "NOW","THIS":
-			result = time.Now().Format(time.RFC3339)
+			result = time.Now().Format("2006-01-02 15:04:05")
 		default:
 			result = time.Now().String()
 		}
-
-	}
-	if result == "" {
-		result = valueDefault
 	}
 
 	return result
@@ -325,7 +316,7 @@ func (c *App) TimeFormat(arg []string) (result string) {
 		switch thisdate {
 		case "NOW":
 			ss = time.Now().UTC().String()
-			mask = "UTC"
+			mask = "2006-01-02 15:04:05"
 		}
 
 		result = timeformat(ss, mask, format)
@@ -656,18 +647,19 @@ func (c *App) DateModify(arg []string) (result string) {
 	dateArg := arg[0]
 	modificator := arg[1]
 
-	fmt.Println(arg)
+	fmt.Println("аргументы: ", arg)
 
-	format := "2006-01-02T15:04:05Z07:00"
+	format := "2006-01-02 15:04:05"
 	if len(arg) == 3 {
 		format = arg[2]
 	}
 
-	fmt.Println(format)
+	fmt.Println("формат: ", format)
 
 	// преобразуем полученную дату из строки в дату
 	date, err := time.Parse(format, dateArg)
 	if err != nil {
+		fmt.Println("err: ", err)
 		return dateArg
 	}
 

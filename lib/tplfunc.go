@@ -184,6 +184,8 @@ func timeparse(str, mask string) (res time.Time, err error) {
 	switch mask {
 	case "UTC":
 		res, err = time.Parse("2006-02-01 15:04:05 -0700 UTC", str)
+	case "NOW","THIS":
+		res, err = time.Parse("2006-02-01 15:04:05", str)
 	case "ANSIC":
 		res, err = time.Parse(time.ANSIC, str)
 	case "UNIXDATE":
