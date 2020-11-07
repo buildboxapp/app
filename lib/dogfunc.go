@@ -86,8 +86,17 @@ func (p *Formula) Parse() bool  {
 
 		i.Text = strFunc
 		i.Functions.Name = f1[0] // название функции
+
+		// готовим параметры для передачи в функцию обработки
 		if len(f1[1]) > 0 {
-			i.Functions.Arguments = strings.Split(f1[1], ",")
+			// разбиваем по запятой
+			args := strings.Split(f1[1], ",")
+			// очищаем каждый параметр от ' если есть
+			argsClear := []string{}
+			for _, v := range args{
+				argsClear = append(argsClear, strings.Trim(v, "'"))
+			}
+			i.Functions.Arguments = argsClear
 		}
 
 		//for j, loc1 := range loc {
