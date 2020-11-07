@@ -679,7 +679,7 @@ func (c *App) DateModify(arg []string) (result string) {
 		return dateArg
 	}
 
-	fmt.Println(d)
+	fmt.Println("modificator", d)
 	fmt.Println(date.Add(d))
 
 
