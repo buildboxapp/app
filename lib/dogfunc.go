@@ -89,13 +89,15 @@ func (p *Formula) Parse() bool  {
 
 		// готовим параметры для передачи в функцию обработки
 		if len(f1[1]) > 0 {
+			arg := f1[1]
 			// разбиваем по запятой
-			args := strings.Split(f1[1], ",")
+			args := strings.Split(arg, ",")
 			// очищаем каждый параметр от ' если есть
 			argsClear := []string{}
 			for _, v := range args{
-				argsClear = append(argsClear, strings.Trim(v, " "))
-				argsClear = append(argsClear, strings.Trim(v, "'"))
+				v = strings.Trim(v, " ")
+				v = strings.Trim(v, "'")
+				argsClear = append(argsClear, v)
 			}
 			i.Functions.Arguments = argsClear
 		}
