@@ -90,8 +90,10 @@ func (p *Formula) Parse() bool  {
 		// готовим параметры для передачи в функцию обработки
 		if len(f1[1]) > 0 {
 			arg := f1[1]
+
 			// разбиваем по запятой
 			args := strings.Split(arg, ",")
+
 			// очищаем каждый параметр от ' если есть
 			argsClear := []string{}
 			for _, v := range args{
@@ -279,17 +281,17 @@ func (c *App) SplitIndex(arg []string) (result string) {
 		slice_str := strings.Split(str, sep)
 		result = slice_str[in]
 
-		fmt.Println(str)
-		fmt.Println(sep)
-		fmt.Println(in)
-		fmt.Println(slice_str)
+		//fmt.Println(str)
+		//fmt.Println(sep)
+		//fmt.Println(in)
+		//fmt.Println(slice_str)
 	}
 	if result == "" {
 		result = valueDefault
 	}
 
 
-	fmt.Println(result)
+	//fmt.Println(result)
 
 	return result
 }
