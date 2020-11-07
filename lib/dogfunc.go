@@ -94,6 +94,7 @@ func (p *Formula) Parse() bool  {
 			// очищаем каждый параметр от ' если есть
 			argsClear := []string{}
 			for _, v := range args{
+				argsClear = append(argsClear, strings.Trim(v, " "))
 				argsClear = append(argsClear, strings.Trim(v, "'"))
 			}
 			i.Functions.Arguments = argsClear
