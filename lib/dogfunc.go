@@ -647,14 +647,10 @@ func (c *App) DateModify(arg []string) (result string) {
 	dateArg := arg[0]
 	modificator := arg[1]
 
-	fmt.Println("аргументы: ", arg)
-
 	format := "2006-01-02 15:04:05"
 	if len(arg) == 3 {
 		format = arg[2]
 	}
-
-	fmt.Println("формат: ", format)
 
 	// преобразуем полученную дату из строки в дату
 	date, err := time.Parse(format, dateArg)
@@ -663,17 +659,11 @@ func (c *App) DateModify(arg []string) (result string) {
 		return dateArg
 	}
 
-	fmt.Println(dateArg)
-
 	// преобразуем модификатор во время
 	d, err := time.ParseDuration(modificator)
 	if err != nil {
 		return dateArg
 	}
-
-	fmt.Println("modificator", d)
-	fmt.Println(date.Add(d))
-
 
 	return fmt.Sprint(date.Add(d))
 }
