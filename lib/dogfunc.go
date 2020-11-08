@@ -147,8 +147,9 @@ func (p *Formula) Calculate()  {
 			uuid := UUID()
 			p.Inserts[k].Result = uuid[1:6]
 		case "PATH":
-
 			p.Inserts[k].Result = Path(p.Document, v.Functions.Arguments)
+		case "REPLACE":
+			p.Inserts[k].Result = DReplace(v.Functions.Arguments)
 		case "TIME":
 			p.Inserts[k].Result = Time(v.Functions.Arguments)
 		case "DATEMODIFY":
@@ -221,7 +222,6 @@ func (c *App) TplValue(v map[string]interface{}, arg []string) (result string) {
 
 	return fmt.Sprint(result)
 }
-
 
 // Получение значений из конфигурации проекта (хранится State в объекте приложение App)
 func (c *App) ConfigValue(arg []string) (result string) {
@@ -399,11 +399,35 @@ func (c *App) Path(d []Data, arg []string) (result string) {
 	return result
 }
 
+// Заменяем значение
+func (c *App) DReplace(arg []string) (result string) {
+	var count int
+	var str, oldS, newS string
+	var err error
+
+	if len(arg) > 0 {
+		str = arg[0]
+		oldS = arg[1]
+		newS = arg[2]
+
+		if len(arg) >= 4 {
+			countString := arg[3]
+			count, err = strconv.Atoi(countString)
+			if err != nil {
+				count = -1
+			}
+		}
+		result = strings.Replace(str, oldS, newS, count)
+	}
+
+	return result
+}
+
 // Получение идентификатор User-а (для Cockpit-a)
 func (c *App) UserObj(r *http.Request, arg []string) (result string) {
 
-	fmt.Println("User")
-	fmt.Println(arg)
+	//fmt.Println("User")
+	//fmt.Println(arg)
 
 	var valueDefault string
 
@@ -519,7 +543,6 @@ func (c *App) UserRole(r *http.Request, arg []string) (result string) {
 	return result
 }
 
-
 // Вставляем значения системных полей объекта
 func (c *App) Obj(data []Data, arg []string) (result string) {
 
@@ -573,16 +596,23 @@ func (c *App) Obj(data []Data, arg []string) (result string) {
 // Вставляем значения (Value) элементов из формы
 // Если поля нет, то выводит переданное значение (может быть любой символ)
 func (c *App) FieldValue(data []Data, arg []string) (result string) {
+	var valueDefault string
 	d := data[0]
 
-	for _, v := range arg {
-		val, found := d.Attr(v, "value")
-		in := strings.Trim(val, " ")
-		if !found {
-			in = v
+	if len(arg) > 0 {
+		param := strings.ToUpper(arg[0])
+		if len(arg) == 2 {
+			valueDefault = strings.ToUpper(arg[1])
 		}
-		result = result + in
+
+		val, found := d.Attr(param, "value")
+		if found {
+			result = strings.Trim(val, " ")
+		} else {
+			result = valueDefault
+		}
 	}
+
 	return result
 }
 

@@ -37,6 +37,10 @@ func Path(d []Data, arg []string) (result string) {
 	return lb.Path(d, arg)
 }
 
+func DReplace(arg []string) (result string) {
+	return lb.DReplace(arg)
+}
+
 func UserObj(r *http.Request, arg []string) (result string) {
 	return lb.UserObj(r, arg)
 }
