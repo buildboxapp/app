@@ -35,3 +35,21 @@ package main
 //
 //	fmt.Println(result)
 //}
+
+//func main() {
+//	go gor1()
+//	time.Sleep(2 * time.Second)
+//}
+//
+//func gor1()  {
+//	go gor2()
+//	return
+//}
+//
+//func gor2()  {
+//	for {
+//		fmt.Print(".")
+//		time.Sleep(10 * time.Millisecond)
+//	}
+//	return
+//}

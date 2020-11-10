@@ -1,6 +1,7 @@
 package app_lib
 
 import (
+	"context"
 	"net/http"
 	"html/template"
 	"bytes"
@@ -11,8 +12,11 @@ import (
 	"fmt"
 	"os"
 	"sync"
+	"time"
 )
 
+// таймаут срабатывания завершения обработки модулей (через отмену контектста и таймаут внешних запросов)
+var timeoutBlockGen = 10 * time.Second
 
 // ответ на запрос прокси
 func (c *App) ProxyPing(w http.ResponseWriter, r *http.Request) {
@@ -347,6 +351,8 @@ func (l *App) BPage(r *http.Request, blockSrc string, objPage ResponseData, valu
 	// шаблоны рендерятся в каждом модуле отдельно (можно далее хранить в кеше)
 
 	if FlagParallel {
+		ctx := context.WithValue(context.Background(), "timeout", timeoutBlockGen)
+		ctx, cancel := context.WithCancel(ctx)
 
 		// ПАРАЛЛЕЛЬНО
 		wg := &sync.WaitGroup{}
@@ -357,10 +363,35 @@ func (l *App) BPage(r *http.Request, blockSrc string, objPage ResponseData, valu
 
 			if strings.Contains(shemaJSON, idBlock) {		// наличие этого блока в схеме
 				wg.Add(1)
-				go l.ModuleBuildParallel(v, r, objPage.Data[0], values, true,  buildChan, wg)
+				go l.ModuleBuildParallel(ctx, v, r, objPage.Data[0], values, true,  buildChan, wg)
 			}
 		}
-		wg.Wait()
+
+		// ждем завершения интервала и вызываем завершение контекста для запущенных воркеров
+		exitTimer := make(chan struct{})
+		timerBlockGen := time.NewTimer(timeoutBlockGen)
+		flagWG := true
+		go func() {
+			select {
+			case <- timerBlockGen.C:
+				flagWG = false
+				cancel()
+				return
+			case <- exitTimer:
+				timerBlockGen.Stop()
+				return
+			}
+		}()
+
+		// отменяем ожидание wg при условии, что завершился таймаут и нам не нужны результаты недополученных ModuleBuildParallel
+		// wg завершатся сами через defer позже
+		if flagWG {
+			wg.Wait()
+		}
+		if timerBlockGen.Stop() {
+			exitTimer <- struct{}{}
+		}
+
 		close(buildChan)
 
 		for k := range buildChan {

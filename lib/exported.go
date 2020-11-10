@@ -1,6 +1,7 @@
 package app_lib
 
 import (
+	"context"
 	"net/http"
 	"sync"
 	"html/template"
@@ -100,8 +101,8 @@ func ModuleBuild(block Data, r *http.Request, page Data, values map[string]inter
 	return lb.ModuleBuild(block, r, page, values, enableCache)
 }
 
-func ModuleBuildParallel(p Data, r *http.Request, page Data, values map[string]interface{}, enableCache bool, buildChan chan ModuleResult, wg *sync.WaitGroup) {
-	lb.ModuleBuildParallel(p, r, page, values, enableCache, buildChan, wg)
+func ModuleBuildParallel(ctxM context.Context, p Data, r *http.Request, page Data, values map[string]interface{}, enableCache bool, buildChan chan ModuleResult, wg *sync.WaitGroup) {
+	lb.ModuleBuildParallel(ctxM, p, r, page, values, enableCache, buildChan, wg)
 }
 
 func ErrorModuleBuild(stat map[string]interface{}, buildChan chan ModuleResult, timerRun interface{}, errT error) {

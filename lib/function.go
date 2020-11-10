@@ -1,6 +1,7 @@
 package app_lib
 
 import (
+	"context"
 	"sort"
 	"strconv"
 	"strings"
@@ -515,11 +516,18 @@ func (l *App) ModuleBuild(block Data, r *http.Request, page Data, values map[str
 
 // ДЛЯ ПАРАЛЛЕЛЬНОЙ сборки модуля
 // получаем объект модуля (отображения)
-func (l *App) ModuleBuildParallel(p Data, r *http.Request, page Data, values map[string]interface{}, enableCache bool, buildChan chan ModuleResult, wg *sync.WaitGroup) 	{
+func (l *App) ModuleBuildParallel(ctxM context.Context, p Data, r *http.Request, page Data, values map[string]interface{}, enableCache bool, buildChan chan ModuleResult, wg *sync.WaitGroup) 	{
 	defer wg.Done()
 	t1 := time.Now()
 
 	result := ModuleResult{}
+
+	// проверка на выход по сигналу
+	select {
+		case <- ctxM.Done():
+			return
+		default:
+	}
 
 	// заменяем в State localhost на адрес домена (если это подпроцесс то все норм, но если это корневой сервис,
 	// то у него url_proxy - localhost и узнать реньше адрес мы не можем, ибо еще домен не инициировался
@@ -588,7 +596,12 @@ func (l *App) ModuleBuildParallel(p Data, r *http.Request, page Data, values map
 	//////////////////////////////
 
 
-
+	// проверка на выход по сигналу
+	select {
+	case <- ctxM.Done():
+		return
+	default:
+	}
 
 	// обработка всех странных ошибок
 	//defer func() {

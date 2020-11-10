@@ -2,20 +2,19 @@ package main
 
 import (
 	"fmt"
-	"net/http"
-	"os"
 	"github.com/labstack/gommon/color"
 	"github.com/restream/reindexer"
-
+	"net/http"
+	"os"
 	"os/signal"
 
-	bblib "github.com/buildboxapp/lib"
-	"github.com/urfave/cli"
 	. "github.com/buildboxapp/app/lib"
+	bblib "github.com/buildboxapp/lib"
 	"github.com/buildboxapp/logger"
+	"github.com/urfave/cli"
 
+	buildboxapp "github.com/buildboxapp/app/lib"
 	stdlog "github.com/labstack/gommon/log"
-	buildboxapp"github.com/buildboxapp/app/lib"
 
 	"io"
 )
@@ -26,7 +25,6 @@ var outpurLog io.Writer
 var log = logger.Log{}
 var lib = bblib.Lib{}
 var app = buildboxapp.App{}
-
 
 func init() {
 
@@ -47,6 +45,12 @@ func main()  {
 		log.Warning("Warning! The default configuration directory was not found.")
 	}
 
+	defer func() {
+		if r := recover(); r != nil {
+			log.Warning(fmt.Errorf("%s", r), "Error. Fail generate page")
+			return
+		}
+	}()
 
 	appCLI := cli.NewApp()
 	appCLI.Usage = "Demon Buildbox Proxy started"
