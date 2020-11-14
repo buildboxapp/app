@@ -545,47 +545,53 @@ func (c *App) UserRole(r *http.Request, arg []string) (result string) {
 
 // Вставляем значения системных полей объекта
 func (c *App) Obj(data []Data, arg []string) (result string) {
-
-	d := data[0]
-	var valueDefault string
-	if len(arg) > 0 {
-
-		param := strings.ToUpper(arg[0])
-		if len(arg) == 2 {
-			valueDefault = strings.ToUpper(arg[1])
-		}
-
-			switch param {
-			case "UID":	// получаем все uid-ы из переданного массива объектов
-				slRes := []string{}
-				for _, v := range data {
-					slRes = append(slRes, v.Uid)
-				}
-				result = strings.Join(slRes, ",")
-			case "ID":
-				slRes := []string{}
-				for _, v := range data {
-					slRes = append(slRes, v.Id)
-				}
-				result = strings.Join(slRes, ",")
-			case "SOURCE":
-				result = d.Source
-			case "TITLE":
-				slRes := []string{}
-				for _, v := range data {
-					slRes = append(slRes, v.Title)
-				}
-				result = strings.Join(slRes, ",")
-			case "TYPE":
-				result = d.Type
-			default:
-				slRes := []string{}
-				for _, v := range data {
-					slRes = append(slRes, v.Uid)
-				}
-				result = strings.Join(slRes, ",")
-			}
+	var valueDefault, r string
+	var res = []string{}
+	if len(arg) == 0 {
+		result = "Ошибка в переданных параметрах"
 	}
+
+	param := strings.ToUpper(arg[0])
+	if len(arg) == 2 {
+		valueDefault = strings.ToUpper(arg[1])
+	}
+
+	for _, d := range data {
+		switch param {
+		case "UID":	// получаем все uid-ы из переданного массива объектов
+			slRes := []string{}
+			for _, v := range data {
+				slRes = append(slRes, v.Uid)
+			}
+			r = strings.Join(slRes, ",")
+		case "ID":
+			slRes := []string{}
+			for _, v := range data {
+				slRes = append(slRes, v.Id)
+			}
+			r = strings.Join(slRes, ",")
+		case "SOURCE":
+			r = d.Source
+		case "TITLE":
+			slRes := []string{}
+			for _, v := range data {
+				slRes = append(slRes, v.Title)
+			}
+			r = strings.Join(slRes, ",")
+		case "TYPE":
+			r = d.Type
+		default:
+			slRes := []string{}
+			for _, v := range data {
+				slRes = append(slRes, v.Uid)
+			}
+			r = strings.Join(slRes, ",")
+		}
+		res = append(res, r)
+	}
+	result = join(res, ",")
+
+
 	if result == "" {
 		result = valueDefault
 	}
@@ -596,21 +602,33 @@ func (c *App) Obj(data []Data, arg []string) (result string) {
 // Вставляем значения (Value) элементов из формы
 // Если поля нет, то выводит переданное значение (может быть любой символ)
 func (c *App) FieldValue(data []Data, arg []string) (result string) {
-	var valueDefault string
-	d := data[0]
+	var valueDefault, separator string
+	var resSlice = []string{}
 
-	if len(arg) > 0 {
-		param := strings.ToUpper(arg[0])
-		if len(arg) == 2 {
-			valueDefault = strings.ToUpper(arg[1])
-		}
+	separator = ","	// значение разделителя по-умолчанию
 
+	if len(arg) == 0 {
+		return "Ошибка в переданных параметрах."
+	}
+
+	param := strings.ToUpper(arg[0])
+	if len(arg) == 2 {
+		valueDefault = strings.ToUpper(arg[1])
+	}
+	if len(arg) == 3 {
+		separator = strings.ToUpper(arg[2])
+	}
+
+	for _, d := range data {
 		val, found := d.Attr(param, "value")
 		if found {
-			result = strings.Trim(val, " ")
-		} else {
-			result = valueDefault
+			resSlice = append(resSlice, strings.Trim(val, " "))
 		}
+	}
+	result = join(resSlice, separator)
+
+	if result == "" {
+		result = valueDefault
 	}
 
 	return result
@@ -619,14 +637,36 @@ func (c *App) FieldValue(data []Data, arg []string) (result string) {
 // Вставляем ID-объекта (SRC) элементов из формы
 // Если поля нет, то выводит переданное значение (может быть любой символ)
 func (c *App) FieldSrc(data []Data, arg []string) (result string) {
-	d := data[0]
+	var valueDefault, separator string
+	var resSlice = []string{}
 
-	for _, v := range arg {
-		val, _ := d.Attr(v, "src")
-		result = strings.Trim(val, " ")
+	if len(arg) == 0 {
+		return "Ошибка в переданных параметрах."
 	}
+
+	param := strings.ToUpper(arg[0])
+	if len(arg) == 2 {
+		valueDefault = strings.ToUpper(arg[1])
+	}
+	if len(arg) == 3 {
+		separator = strings.ToUpper(arg[2])
+	}
+
+	for _, d := range data {
+		val, found := d.Attr(param, "src")
+		if found {
+			resSlice = append(resSlice, strings.Trim(val, " "))
+		}
+	}
+	result = join(resSlice, separator)
+
+	if result == "" {
+		result = valueDefault
+	}
+
 	return result
 }
+
 
 // Разбиваем значения по элементу (Value(по-умолчанию)/Src) элементов из формы по разделителю и возвращаем
 // значение по указанному номеру (начала от 0)
