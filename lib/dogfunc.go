@@ -673,7 +673,12 @@ func (c *App) FieldSrc(data []Data, arg []string) (result string) {
 // Синтаксис: FieldValueSplit(поле, элемент, разделитель, номер_элемента)
 // для разделителя есть кодовые слова slash - / (нельзя вставить в фукнцию)
 func (c *App) FieldSplit(data []Data, arg []string) (result string) {
-	d := data[0]
+	var resSlice = []string{}
+	var r string
+
+	if len(arg) == 0 {
+		return "Ошибка в переданных параметрах."
+	}
 
 	if len(arg) < 4 {
 		return "Error! Count params must have 4 (field, element, separator, number)"
@@ -693,24 +698,29 @@ func (c *App) FieldSplit(data []Data, arg []string) (result string) {
 		return fmt.Sprint(err)
 	}
 
-	// 2. получили значение поля
-	val, found := d.Attr(field, element)
+	for _, d := range data {
+		// 2. получили значение поля
+		val, found := d.Attr(field, element)
 
-	if !found {
-		return "Error! This field is not found."
-	}
-	in := strings.Trim(val, " ")
-	if sep == "slash" {
-		sep = "/"
+		if !found {
+			return "Error! This field is not found."
+		}
+		in := strings.Trim(val, " ")
+		if sep == "slash" {
+			sep = "/"
+		}
+
+		// 3. разделили и получили нужный элемент
+		split_v := strings.Split(in, sep)
+		if len(split_v) < num {
+			return "Error! Array size is less than the passed number"
+		}
+
+		r = split_v[num]
+		resSlice = append(resSlice, r)
 	}
 
-	// 3. разделили и получили нужный элемент
-	split_v := strings.Split(in, sep)
-	if len(split_v) < num {
-		return "Error! Array size is less than the passed number"
-	}
-
-	result = split_v[num]
+	result = join(resSlice, ",")
 
 	return result
 }
