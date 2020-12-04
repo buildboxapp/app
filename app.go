@@ -128,6 +128,9 @@ func main()  {
 
 // стартуем сервис приложения
 func Start(configfile, dir, port string) {
+	done := color.Green("[OK]")
+	fail := color.Red("[FAIL]")
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -152,19 +155,14 @@ func Start(configfile, dir, port string) {
 		LogsDir = lib.RootDir() + "/upload/" + Domain + "/" + LogsDir
 	}
 
-	fmt.Println(LogsDir)
-	fmt.Println(LogsLevel)
+	fmt.Printf("%s Enabled logs. Level:%s, Dir:%s\n", done, LogsLevel, LogsDir)
 
 	// инициализировать лог и его ротацию
-	log = bblog.New(LogsDir, LogsLevel, UUID(), Domain, "app", UidAPP, logIntervalReload, logIntervalClearFiles, logPeriodSaveFiles)
+	log = bblog.New(LogsDir, LogsLevel, bblib.UUID(), Domain, "app", UidAPP, logIntervalReload, logIntervalClearFiles, logPeriodSaveFiles)
 	log.RotateInit(ctx)
 
 	log.Info("Запускаем app-сервис: ",Domain)
 	//////////////////////////////////////////////////
-
-
-	done := color.Green("OK")
-	fail := color.Red("FAIL")
 
 	state, _, err := lib.ReadConf(configfile)
 	if err != nil {
@@ -187,11 +185,6 @@ func Start(configfile, dir, port string) {
 	//}
 
 	proxy_url := ""
-
-	log.UID = UidPrecess
-	log.Name = app.Get("domain")
-	log.Service = "app"
-
 
 	// если автоматическая настройка портов
 	if app.Get("address_proxy_pointsrc") != "" && app.Get("port_auto_interval") != "" {
@@ -243,7 +236,7 @@ func Start(configfile, dir, port string) {
 	//fmt.Println(app.State["client_path"] )
 
 	var dirTemplate = app.State["workdir"] + "/gui/templates/*.html"
-	fmt.Printf("\n%s Load template directory: %s\n", done, dirTemplate)
+	fmt.Printf("%s Load template directory: %s\n", done, dirTemplate)
 	log.Info("Load template directory: ", dirTemplate)
 
 	router := NewRouter() //.StrictSlash(true)
