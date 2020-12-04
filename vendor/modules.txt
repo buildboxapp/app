@@ -13,7 +13,8 @@ github.com/buildboxapp/lib
 github.com/buildboxapp/lib/log
 # github.com/buildboxapp/logger v0.1.0
 ## explicit
-# github.com/cpuguy83/go-md2man/v2 v2.0.0-20190314233015-f79a8a8ca69d
+# github.com/cpuguy83/go-md2man/v2 v2.0.0
+## explicit
 github.com/cpuguy83/go-md2man/v2/md2man
 # github.com/getlantern/context v0.0.0-20190109183933-c447772a6520
 ## explicit
@@ -78,17 +79,16 @@ github.com/restream/reindexer/bindings/cproto
 github.com/restream/reindexer/cjson
 github.com/restream/reindexer/dsl
 github.com/restream/reindexer/jsonschema
-# github.com/russross/blackfriday/v2 v2.0.1
+# github.com/russross/blackfriday/v2 v2.1.0
+## explicit
 github.com/russross/blackfriday/v2
 # github.com/satori/go.uuid v1.2.0
 ## explicit
 github.com/satori/go.uuid
-# github.com/shurcooL/sanitized_anchor_name v1.0.0
-github.com/shurcooL/sanitized_anchor_name
 # github.com/sirupsen/logrus v1.7.0
 ## explicit
 github.com/sirupsen/logrus
-# github.com/urfave/cli v1.22.4
+# github.com/urfave/cli v1.22.5
 ## explicit
 github.com/urfave/cli
 # github.com/valyala/bytebufferpool v1.0.0
