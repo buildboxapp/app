@@ -1,16 +1,16 @@
 package app_lib
 
 import (
-	"context"
-	"net/http"
-	"html/template"
 	"bytes"
-	"strings"
+	"context"
 	"encoding/json"
-	"github.com/gorilla/mux"
-	"strconv"
 	"fmt"
+	"github.com/gorilla/mux"
+	"html/template"
+	"net/http"
 	"os"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -57,7 +57,6 @@ func (c *App) ProxyPing(w http.ResponseWriter, r *http.Request) {
 
 // Собираем страницу (параметры из конфига) и пишем в w.Write
 func (c *App) PIndex(w http.ResponseWriter, r *http.Request) {
-
 	var objPages, objPage ResponseData
 	vars := mux.Vars(r)
 

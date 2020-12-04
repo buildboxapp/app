@@ -1,21 +1,27 @@
 package lib
 
 import (
-	"strings"
 	"encoding/json"
-	"net/url"
 	"fmt"
-	"net/http"
 	"io/ioutil"
+	"net/http"
+	"net/url"
+	"strings"
 )
-
 
 // всегде возвращает результат в интерфейс + ошибка (полезно для внешних запросов с неизвестной структурой)
 // сериализуем в объект, при передаче ссылки на переменную типа
-func (c *Lib) Curl(method, urlc, bodyJSON string, response interface{}) (result interface{}, err error) {
+func (c *Lib) Curl(method, urlc, bodyJSON string, response interface{}, headers map[string]string) (result interface{}, err error) {
 	var mapValues map[string]string
 	var req *http.Request
 	client := &http.Client{}
+
+	// дополняем переданными заголовками
+	if len(headers) > 0 {
+		for k, v := range headers {
+			req.Header.Add(k, v)
+		}
+	}
 
 	// приводим к единому формату (на конце без /)
 	urlapi := c.State["url_api"]
@@ -57,7 +63,6 @@ func (c *Lib) Curl(method, urlc, bodyJSON string, response interface{}) (result 
 	//fmt.Println("c.State", c.State)
 	//c.Logger.Info("lib/http.go; (c *Lib) Curl; urlc " , urlc, "; bodyJSON: ", bodyJSON, "; method: ", method)
 
-
 	// если в гете мы передали еще и json (его добавляем в строку запроса)
 	// только если в запросе не указаны передаваемые параметры
 	clearUrl := strings.Contains(urlc, "?")
@@ -73,7 +78,7 @@ func (c *Lib) Curl(method, urlc, bodyJSON string, response interface{}) (result 
 	}
 
 	switch actionType {
-	case "JSONTOGET":		// преобразуем параметры в json в строку запроса
+	case "JSONTOGET": // преобразуем параметры в json в строку запроса
 		if err == nil {
 			for k, v := range mapValues {
 				values.Set(k, v)
@@ -85,7 +90,7 @@ func (c *Lib) Curl(method, urlc, bodyJSON string, response interface{}) (result 
 		} else {
 			fmt.Println("Error! Fail parsed bodyJSON from GET Curl: ", err)
 		}
-	case "JSONTOPOST":		// преобразуем параметры в json в тело запроса
+	case "JSONTOPOST": // преобразуем параметры в json в тело запроса
 
 		if err == nil {
 			for k, v := range mapValues {

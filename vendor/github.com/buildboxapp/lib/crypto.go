@@ -11,7 +11,6 @@ import (
 	"strings"
 )
 
-
 // Пример использования
 //func main() {
 //	key := []byte("LKHlhb899Y09olUi")

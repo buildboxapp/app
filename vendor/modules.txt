@@ -7,12 +7,12 @@ github.com/Masterminds/semver
 # github.com/Masterminds/sprig v2.22.0+incompatible
 ## explicit
 github.com/Masterminds/sprig
-# github.com/buildboxapp/lib v0.1.1
+# github.com/buildboxapp/lib v1.0.10
 ## explicit
 github.com/buildboxapp/lib
+github.com/buildboxapp/lib/log
 # github.com/buildboxapp/logger v0.1.0
 ## explicit
-github.com/buildboxapp/logger
 # github.com/cpuguy83/go-md2man/v2 v2.0.0-20190314233015-f79a8a8ca69d
 github.com/cpuguy83/go-md2man/v2/md2man
 # github.com/getlantern/context v0.0.0-20190109183933-c447772a6520
@@ -59,9 +59,10 @@ github.com/imdario/mergo
 ## explicit
 github.com/labstack/gommon/color
 github.com/labstack/gommon/log
-# github.com/mattn/go-colorable v0.1.2
+# github.com/mattn/go-colorable v0.1.8
+## explicit
 github.com/mattn/go-colorable
-# github.com/mattn/go-isatty v0.0.9
+# github.com/mattn/go-isatty v0.0.12
 github.com/mattn/go-isatty
 # github.com/mitchellh/copystructure v1.0.0
 ## explicit
@@ -92,13 +93,16 @@ github.com/sirupsen/logrus
 github.com/urfave/cli
 # github.com/valyala/bytebufferpool v1.0.0
 github.com/valyala/bytebufferpool
-# github.com/valyala/fasttemplate v1.0.1
+# github.com/valyala/fasttemplate v1.2.1
+## explicit
 github.com/valyala/fasttemplate
 # golang.org/x/crypto v0.0.0-20201002170205-7f63de1d35b0
 ## explicit
 golang.org/x/crypto/pbkdf2
 golang.org/x/crypto/scrypt
-# golang.org/x/sys v0.0.0-20191026070338-33540a1f6037
+# golang.org/x/sys v0.0.0-20201202213521-69691e467435
+## explicit
+golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix
 golang.org/x/sys/windows
 # gopkg.in/yaml.v2 v2.3.0

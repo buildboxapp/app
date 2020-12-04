@@ -13,7 +13,6 @@ import (
 	"log"
 )
 
-
 // просмотр кофигурационных файлов
 func (c *Lib) Ls() (result []map[string]string) {
 
@@ -25,7 +24,8 @@ func (c *Lib) Ls() (result []map[string]string) {
 	pathFolder := c.RootDir() + sep + "upload" //+ sep + c.State["domain"] + sep + "ini"
 	folders, err := ioutil.ReadDir(pathFolder)
 	if err != nil {
-		log.Fatal(err)
+		c.Logger.Panic(err)
+		return
 	}
 
 	// пробегаем текущую папку и считаем совпадание признаков
@@ -79,7 +79,6 @@ func (c *Lib) Ls() (result []map[string]string) {
 		}
 	}
 
-
 	fmt.Println()
 
 	return result
@@ -104,7 +103,8 @@ func (c *Lib) Ps(format string) (pids []string, services map[string][][]string, 
 	pathFolder := c.RootDir() + sep + "upload" //+ sep + c.State["domain"] + sep + "ini"
 	folders, err := ioutil.ReadDir(pathFolder)
 	if err != nil {
-		log.Fatal(err)
+		log.Panic(err)
+		return
 	}
 
 	// пробегаем текущую папку и считаем совпадание признаков
@@ -125,7 +125,7 @@ func (c *Lib) Ps(format string) (pids []string, services map[string][][]string, 
 
 							// получаем список доступных на данном прокси запущенных приложений
 							// ПЕРЕДЕЛАТЬ!!! слишком много реализаций Curl - сделать ревью!!!! убрать дубли и вынести в lib
-							_, err = c.Curl("GET", "http://localhost:"+conf["port_proxy"]+"/pid", "", &PidRegistry)
+							_, err = c.Curl("GET", "http://localhost:"+conf["port_proxy"]+"/pid", "", &PidRegistry, map[string]string{})
 
 							// просто слайс всех PidRegistry
 							raw = append(raw, PidRegistry)
@@ -156,9 +156,6 @@ func (c *Lib) Ps(format string) (pids []string, services map[string][][]string, 
 			}
 		}
 	}
-
-
-
 
 	// выводим структуру значений запущенных процессов
 	var k3 = []string{}
@@ -234,7 +231,6 @@ func (c *Lib) StopByConfig(config string) (err error) {
 
 	return
 }
-
 
 // завершение конкретного процесса сервиса
 // config - ид-конфигурации
@@ -318,7 +314,7 @@ func (c *Lib) Reload(pid string) (err error) {
 					pidI, err := strconv.Atoi(idProcess)
 					err = Stop(pidI)
 					if err == nil {
-						RunProcess(configfile, CurrentDir(), "buildbox",  "start","services")
+						RunProcess(configfile, CurrentDir(), "buildbox", "start", "services")
 					}
 				}
 				// сохраняем обработанный пид (чтобы повторно не релоадить)
@@ -331,7 +327,7 @@ func (c *Lib) Reload(pid string) (err error) {
 						pidI, err := strconv.Atoi(idProcess)
 						err = Stop(pidI)
 						if err == nil {
-							RunProcess(configfile, CurrentDir(), "buildbox", "start","service")
+							RunProcess(configfile, CurrentDir(), "buildbox", "start", "service")
 						}
 					}
 				}
@@ -369,7 +365,6 @@ func (c *Lib) Install() (err error) {
 	//fmt.Println(rootPath)
 	//path, _ := os.LookupEnv("BBPATH")
 	//fmt.Print("BBPATH: ", path)
-
 
 	// 2. копирование файла запуска в /etc/bin
 	//src := "./buildbox"

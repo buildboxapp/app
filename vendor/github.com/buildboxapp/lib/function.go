@@ -10,14 +10,14 @@ import (
 	"strconv"
 	"syscall"
 
+	"crypto/sha1"
+	"encoding/hex"
 	"github.com/labstack/gommon/color"
 	"github.com/labstack/gommon/log"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
-	"crypto/sha1"
-	"encoding/hex"
 )
 
 //func (c *Lib) Init(output io.Writer, urlgui, urlapi string) {
@@ -45,7 +45,7 @@ func (c *Lib) ResponseJSON(w http.ResponseWriter, objResponse interface{}, statu
 	if error != nil {
 		errMessage.Error = fmt.Sprint(error)
 	}
-	
+
 	// Metrics
 	b1, _ := json.Marshal(metrics)
 	var metricsR Metrics
@@ -65,6 +65,7 @@ func (c *Lib) ResponseJSON(w http.ResponseWriter, objResponse interface{}, statu
 
 	//WriteFile("./dump.json", out)
 
+	w.WriteHeader(errMessage.Status)
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.Write(out)
 }
@@ -105,9 +106,9 @@ func (c *Lib) RunProcess(fileConfig, workdir, file, command, message string) (er
 		for _, v := range conf {
 			if strings.Contains(v, file) {
 				dd := strings.Split(v, sep)
-				
+
 				//fmt.Println("dd: ", dd)
-				
+
 				fileStart = c.RootDir() + sep + strings.Join(dd[3:], sep)
 			}
 		}
@@ -125,7 +126,7 @@ func (c *Lib) RunProcess(fileConfig, workdir, file, command, message string) (er
 	err = cmd.Start()
 	if err != nil {
 		fmt.Printf("%s Starting %s: %s\n%s", fail, message, err, string(out))
-		c.Logger.Error(err,"from starting: ",  message, "-", fileStart, "(", command, ")", string(out))
+		c.Logger.Error(err, "from starting: ", message, "-", fileStart, "(", command, ")", string(out))
 		return err
 	}
 
@@ -159,7 +160,6 @@ func (c *Lib) RunProcess(fileConfig, workdir, file, command, message string) (er
 //	fmt.Printf("%s Exist %s: %s\n", done, message, cmd.Process.Pid)
 //	return
 //}
-
 
 //////////////////////////////////////////////////////////////////
 ////////////////////////// СЕРВИСНЫЕ ФУНКЦИИ /////////////////////
@@ -211,13 +211,13 @@ func (c *Lib) ReadConfAction(currentDir, configuration string, defConfig bool) (
 	for _, obj := range objects {
 		nextPath := currentDir + string(filepath.Separator) + obj.Name()
 		if obj.IsDir() {
-			configPath, err = c.ReadConfAction(nextPath + string(filepath.Separator) + "ini", configuration, defConfig)
+			configPath, err = c.ReadConfAction(nextPath+string(filepath.Separator)+"ini", configuration, defConfig)
 			if configPath != "" {
-				return configPath, err	// поднимает результат наверх
+				return configPath, err // поднимает результат наверх
 			}
 
 		} else {
-			if defConfig {	// проверяем на получение конфигурации по-умолчанию
+			if defConfig { // проверяем на получение конфигурации по-умолчанию
 				confJson, err := c.ReadFile(nextPath)
 				err = json.Unmarshal([]byte(confJson), &conf)
 				if err == nil {
@@ -241,9 +241,8 @@ func (c *Lib) ReadConfAction(currentDir, configuration string, defConfig bool) (
 func (c *Lib) DefaultConfig() (fileConfig string, err error) {
 	startDir := c.RootDir() + string(filepath.Separator) + "upload"
 
-	return c.ReadConfAction(startDir,"", true)
+	return c.ReadConfAction(startDir, "", true)
 }
-
 
 // получаем конфигурацию по-умолчанию для сервера (перебираем конфиги и ищем первый у которого default=on)
 func (c *Lib) DefaultConfig111() (fileConfig string, err error) {
@@ -253,7 +252,7 @@ func (c *Lib) DefaultConfig111() (fileConfig string, err error) {
 		fpath = c.RootDir() + string(filepath.Separator) + "ini"
 	}
 
-	c.Logger.Info("Search DefaultConfig from : ",fpath)
+	c.Logger.Info("Search DefaultConfig from : ", fpath)
 
 	files, err := ioutil.ReadDir(fpath)
 	if err != nil {
@@ -272,7 +271,7 @@ func (c *Lib) DefaultConfig111() (fileConfig string, err error) {
 		}
 	}
 
-	c.Logger.Info("Search DefaultConfig result : ",fileConfig)
+	c.Logger.Info("Search DefaultConfig result : ", fileConfig)
 
 	return fileConfig, err
 }
@@ -300,7 +299,7 @@ func (c *Lib) RootDir() (rootDir string) {
 	rootDir, err = RootDirAction(cdir)
 	if err != nil {
 		fmt.Println("Error calculation RootDir. File: ", file, "; Error: ", err)
-		c.Logger.Fatal(err,"Error calculation RootDir. File: ", file)
+		c.Logger.Panic(err, "Error calculation RootDir. File: ", file)
 	}
 
 	return rootDir
@@ -343,7 +342,6 @@ func RootDirAction(currentDir string) (rootDir string, err error) {
 
 	return rootDir, err
 }
-
 
 func (c *Lib) Hash(str string) string {
 	h := sha1.New()

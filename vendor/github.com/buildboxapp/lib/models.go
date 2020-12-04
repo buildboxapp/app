@@ -1,15 +1,15 @@
 package lib
 
 import (
-	"github.com/buildboxapp/logger"
+	"github.com/buildboxapp/lib/log"
 	"github.com/getlantern/errors"
 )
 
 type Lib struct {
-	Logger  *logger.Log
-	State 	map[string]string
-	UrlAPI	string `json:"url_api"`
-	UrlGUI	string `json:"url_gui"`
+	Logger *log.Log
+	State  map[string]string
+	UrlAPI string `json:"url_api"`
+	UrlGUI string `json:"url_gui"`
 }
 
 var StatusCode = RStatus{
@@ -37,9 +37,9 @@ var StatusCode = RStatus{
 	"errorOpenConfigDir":       {"Ошибка открытия директории конфигураций", 403, "errorOpenConfigDir", ""},
 	"ErrorReadConfigFile":      {"Ошибка чтения файла конфигураций", 403, "ErrorReadConfigFile", ""},
 	"ErrorPortBusy":            {"Указанный порт занят", 403, "ErrorPortBusy", ""},
-	"ErrorGone":            	{"Объект был удален ранее", 410, "ErrorGone", ""},
-	"ErrorShema":            	{"Ошибка формата заданной схемы формирования запроса", 410, "ErrorShema", ""},
-	"ErrorInitBase":        	{"Ошибка инициализации новой базы данных", 410, "ErrorInitBase", ""},
+	"ErrorGone":                {"Объект был удален ранее", 410, "ErrorGone", ""},
+	"ErrorShema":               {"Ошибка формата заданной схемы формирования запроса", 410, "ErrorShema", ""},
+	"ErrorInitBase":            {"Ошибка инициализации новой базы данных", 410, "ErrorInitBase", ""},
 	"ErrorCreateCacheRecord":   {"Ошибка создания объекта в кеше", 410, "ErrorCreateCacheRecord", ""},
 	"ErrorUpdateParams":        {"Не переданы параметры для обновления серверов (сервер источник, сервер получатель)", 410, "ErrorUpdateParams", ""},
 	"ErrorIntervalProxy":       {"Ошибка переданного интервала (формат: 1000:2000)", 410, "ErrorIntervalProxy", ""},
@@ -51,31 +51,31 @@ type RestStatus struct {
 	Description string `json:"description"`
 	Status      int    `json:"status"`
 	Code        string `json:"code"`
-	Error       string  `json:"error"`
+	Error       string `json:"error"`
 }
 
 type Response struct {
-	Data   	interface{} `json:"data"`
-	Res   	interface{}  `json:"res"`
-	Status 	RestStatus  `json:"status"`
-	Metrics Metrics 	`json:"metrics"`
+	Data    interface{} `json:"data"`
+	Res     interface{} `json:"res"`
+	Status  RestStatus  `json:"status"`
+	Metrics Metrics     `json:"metrics"`
 }
 
 type ResponseData struct {
-	Data      []Data        `json:"data"`
-	Res   	  interface{} 	`json:"res"`
-	Status    RestStatus    `json:"status"`
-	Metrics   Metrics 		`json:"metrics"`
+	Data    []Data      `json:"data"`
+	Res     interface{} `json:"res"`
+	Status  RestStatus  `json:"status"`
+	Metrics Metrics     `json:"metrics"`
 }
 
 type Metrics struct {
-	ResultSize     	int `json:"result_size"`
-	ResultCount     int `json:"result_count"`
-	ResultOffset    int `json:"result_offset"`
-	ResultLimit     int `json:"result_limit"`
-	ResultPage 		int `json:"result_page"`
-	TimeExecution   string `json:"time_execution"`
-	TimeQuery   	string `json:"time_query"`
+	ResultSize    int    `json:"result_size"`
+	ResultCount   int    `json:"result_count"`
+	ResultOffset  int    `json:"result_offset"`
+	ResultLimit   int    `json:"result_limit"`
+	ResultPage    int    `json:"result_page"`
+	TimeExecution string `json:"time_execution"`
+	TimeQuery     string `json:"time_query"`
 }
 
 type Attribute struct {
@@ -96,14 +96,14 @@ type Data struct {
 	Title      string               `json:"title"`
 	Rev        string               `json:"rev"`
 	Attributes map[string]Attribute `json:"attributes"`
-	Linkinid      	string `json:"linkinid"`
-	Linkinobj      	[]Data `json:"linkinobj"`
+	Linkinid   string               `json:"linkinid"`
+	Linkinobj  []Data               `json:"linkinobj"`
 }
 
 type Hosts struct {
-	Host string `json:"host"`
-	PortFrom int `json:"portfrom"`
-	PortTo int `json:"portto"`
+	Host     string `json:"host"`
+	PortFrom int    `json:"portfrom"`
+	PortTo   int    `json:"portto"`
 	Protocol string `json:"protocol"`
 }
 

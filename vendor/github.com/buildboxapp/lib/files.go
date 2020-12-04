@@ -3,9 +3,9 @@ package lib
 import (
 	"archive/zip"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
-	"io"
 	"path/filepath"
 	"strings"
 )
@@ -83,7 +83,7 @@ func (c *Lib) ReadFile(path string) (result string, err error) {
 	if err != nil {
 		return "", err
 	}
-	
+
 	b, err := ioutil.ReadAll(file)
 	if err == nil {
 		result = string(b)
@@ -164,7 +164,6 @@ func (c *Lib) CreateDir(path string, mode os.FileMode) (err error) {
 	if mode == 0 {
 		mode = 0711
 	}
-
 	err = os.MkdirAll(path, mode)
 	if err != nil {
 		c.Logger.Error(err, "Error creating directory")

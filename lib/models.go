@@ -2,7 +2,7 @@ package app_lib
 
 import (
 	"errors"
-	"github.com/buildboxapp/logger"
+	"github.com/buildboxapp/lib/log"
 	"github.com/restream/reindexer"
 	"html/template"
 	"net/http"
@@ -11,7 +11,7 @@ import (
 
 type App struct {
 	State 	map[string]string
-	Logger  *logger.Log
+	Logger  *log.Log
 	UrlGUI string `json:"url_gui"`
 	UrlAPI string `json:"url_api"`
 	DB *reindexer.Reindexer

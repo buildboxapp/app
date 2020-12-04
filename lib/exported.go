@@ -172,9 +172,3 @@ func cacheUpdate(key string, block Data, r *http.Request, page Data, values map[
 func refreshTime(options Data) int {
 	return lb.refreshTime(options)
 }
-
-
-// LOGGER - фукнция
-func LoggerHTTP(inner http.Handler, name string) http.Handler {
-	return lb.LoggerHTTP(inner, name)
-}

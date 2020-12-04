@@ -1,16 +1,19 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"github.com/labstack/gommon/color"
 	"github.com/restream/reindexer"
 	"net/http"
 	"os"
 	"os/signal"
+	"time"
 
 	. "github.com/buildboxapp/app/lib"
 	bblib "github.com/buildboxapp/lib"
-	"github.com/buildboxapp/logger"
+	bblog "github.com/buildboxapp/lib/log"
+
 	"github.com/urfave/cli"
 
 	buildboxapp "github.com/buildboxapp/app/lib"
@@ -22,17 +25,20 @@ import (
 var fileLog *os.File
 var outpurLog io.Writer
 
-var log = logger.Log{}
+var log = &bblog.Log{}
 var lib = bblib.Lib{}
 var app = buildboxapp.App{}
+
+var logIntervalReload = 10 * time.Minute			// интервал проверки необходимости пересозданния нового файла
+var logIntervalClearFiles = 30 * time.Minute		// интервал проверка на необходимость очистки старых логов
+var logPeriodSaveFiles = "0-1-0"				// период хранения логов
 
 func init() {
 
 	app.Init()
 
 	// задаем настройки логирования выполнения функций библиотеки
-	lib.Logger = &log
-	app.Logger = &log
+	app.Logger = log
 }
 
 func main()  {
@@ -122,10 +128,8 @@ func main()  {
 
 // стартуем сервис приложения
 func Start(configfile, dir, port string) {
-
-	//for k, v := range FuncMap {
-	//	log.Info(k, " = ", v, " conf: ", configfile)
-	//}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	Config, _, err := lib.ReadConf(configfile)
 	if err != nil {
@@ -135,8 +139,10 @@ func Start(configfile, dir, port string) {
 	///////////////// ЛОГИРОВАНИЕ //////////////////
 	// кладем в глабольные переменные
 	Domain 		= Config["domain"]
-	LogsDir 	= Config["gui_logs"]
-	LogsLevel 	= Config["gui_level_logs_pointsrc"]
+	LogsDir 	= Config["app_logs"]
+	LogsLevel 	= Config["app_level_logs_pointsrc"]
+	UidAPP		= Config["data-uid"]
+
 	// формирование пути к лог-файлам и метрикам
 	if LogsDir == "" {
 		LogsDir = "logs"
@@ -145,7 +151,14 @@ func Start(configfile, dir, port string) {
 	if LogsDir[:1] != "/" {
 		LogsDir = lib.RootDir() + "/upload/" + Domain + "/" + LogsDir
 	}
-	log.Init(LogsDir, LogsLevel, UUID(), Domain, "app")
+
+	fmt.Println(LogsDir)
+	fmt.Println(LogsLevel)
+
+	// инициализировать лог и его ротацию
+	log = bblog.New(LogsDir, LogsLevel, UUID(), Domain, "app", UidAPP, logIntervalReload, logIntervalClearFiles, logPeriodSaveFiles)
+	log.RotateInit(ctx)
+
 	log.Info("Запускаем app-сервис: ",Domain)
 	//////////////////////////////////////////////////
 
@@ -155,7 +168,7 @@ func Start(configfile, dir, port string) {
 
 	state, _, err := lib.ReadConf(configfile)
 	if err != nil {
-		log.Fatal(err)
+		log.Panic(err)
 	}
 
 	// задаем глобальную переменную BuildBox (от нее строятся пути при загрузке шаблонов)
@@ -199,7 +212,7 @@ func Start(configfile, dir, port string) {
 
 	if app.State["PortAPP"] == "" {
 		fmt.Print(fail, " Port APP-service is null. Servive not running.\n")
-		app.Logger.Fatal(err, "Port APP-service is null. Servive not running.")
+		app.Logger.Panic(err, "Port APP-service is null. Servive not running.")
 	}
 	log.Warning("From "+proxy_url+" get PortAPP:", app.Get("PortAPP"), " Domain:", app.Get("domain"))
 
@@ -234,6 +247,10 @@ func Start(configfile, dir, port string) {
 	log.Info("Load template directory: ", dirTemplate)
 
 	router := NewRouter() //.StrictSlash(true)
+
+	//router.Use(AuthProcessor)
+	router.Use(Recover)
+
 	router.PathPrefix("/upload/").Handler(http.StripPrefix("/upload/", http.FileServer(http.Dir(app.State["workdir"] + "/upload"))))
 	router.PathPrefix("/templates/").Handler(http.StripPrefix("/templates/", http.FileServer(http.Dir(app.State["workdir"] + "/templates"))))
 
