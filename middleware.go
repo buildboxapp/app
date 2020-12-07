@@ -2,13 +2,11 @@ package main
 
 import (
 	"fmt"
-	stdlog "log"
+	. "github.com/buildboxapp/app/lib"
 	"net/http"
 	"runtime/debug"
 	"strings"
 	"time"
-	. "github.com/buildboxapp/app/lib"
-
 )
 
 func Logger(next http.Handler, name string) http.Handler {
@@ -23,7 +21,7 @@ func Logger(next http.Handler, name string) http.Handler {
 				r.RequestURI,
 				name,
 				time.Since(start))
-			stdlog.Printf(mes)
+			//stdlog.Printf(mes)
 			log.Info(mes)
 		}
 	})
@@ -65,7 +63,7 @@ func Recover(next http.Handler) http.Handler {
 			rec := recover()
 			if rec != nil {
 				b := string(debug.Stack())
-				fmt.Println(r.URL.String())
+				//fmt.Println(r.URL.String())
 				log.Panic(fmt.Errorf("%s", b), "Recover panic from path: ", r.URL.String(), "; form: ", r.Form)
 				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			}

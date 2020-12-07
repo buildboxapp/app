@@ -78,6 +78,7 @@ func (c *Log) Trace(args ...interface{}) {
 	if strings.Contains(c.Levels, "Trace") {
 		logrusB.SetOutput(c.Output)
 		logrusB.SetFormatter(&logrus.JSONFormatter{})
+		logrusB.SetLevel(logrus.TraceLevel)
 
 		logrusB.WithFields(logrus.Fields{
 			"name":   c.Name,
@@ -94,7 +95,7 @@ func (c *Log) Debug(args ...interface{}) {
 		logrusB.SetFormatter(&logrus.JSONFormatter{})
 
 		// Only log the warning severity or above.
-		//logrusB.SetLevel(logrus.InfoLevel)
+		logrusB.SetLevel(logrus.DebugLevel)
 
 		logrusB.WithFields(logrus.Fields{
 			"name":   c.Name,
@@ -110,6 +111,8 @@ func (c *Log) Info(args ...interface{}) {
 		logrusB.SetOutput(c.Output)
 		logrusB.SetFormatter(&logrus.JSONFormatter{})
 
+		logrusB.SetLevel(logrus.InfoLevel)
+
 		logrusB.WithFields(logrus.Fields{
 			"name":   c.Name,
 			"uid":    c.UID,
@@ -123,6 +126,7 @@ func (c *Log) Warning(args ...interface{}) {
 	if strings.Contains(c.Levels, "Warning") {
 		logrusB.SetOutput(c.Output)
 		logrusB.SetFormatter(&logrus.JSONFormatter{})
+		logrusB.SetLevel(logrus.WarnLevel)
 
 		logrusB.WithFields(logrus.Fields{
 			"name":   c.Name,
@@ -137,6 +141,7 @@ func (c *Log) Error(err error, args ...interface{}) {
 	if strings.Contains(c.Levels, "Error") {
 		logrusB.SetOutput(c.Output)
 		logrusB.SetFormatter(&logrus.JSONFormatter{})
+		logrusB.SetLevel(logrus.ErrorLevel)
 
 		logrusB.WithFields(logrus.Fields{
 			"name":   c.Name,
@@ -152,6 +157,7 @@ func (c *Log) Panic(err error, args ...interface{}) {
 	if strings.Contains(c.Levels, "Panic") {
 		logrusB.SetOutput(c.Output)
 		logrusB.SetFormatter(&logrus.JSONFormatter{})
+		logrusB.SetLevel(logrus.PanicLevel)
 
 		logrusB.WithFields(logrus.Fields{
 			"name":   c.Name,
@@ -168,6 +174,7 @@ func (c *Log) Exit(err error, args ...interface{}) {
 	if strings.Contains(c.Levels, "Fatal") {
 		logrusB.SetOutput(c.Output)
 		logrusB.SetFormatter(&logrus.JSONFormatter{})
+		logrusB.SetLevel(logrus.FatalLevel)
 
 		logrusB.WithFields(logrus.Fields{
 			"name":   c.Name,
@@ -248,7 +255,7 @@ func (c *Log) RotateInit(ctx context.Context) {
 
 				for _, obj := range objects {
 					filename := obj.Name()
-					filenameMonthAgoDate := c.Service + "_" + fileMonthAgoDate
+					filenameMonthAgoDate := fileMonthAgoDate + "_" + c.Service
 
 					if filenameMonthAgoDate > filename {
 						pathFile := c.Dir + sep + filename
@@ -271,7 +278,7 @@ func New(logsDir, level, uid, name, srv, config string, intervalReload, interval
 	var mode os.FileMode
 
 	datefile := time.Now().Format("2006.01.02")
-	logName := srv + "_" + datefile + ".log"
+	logName := datefile + "_" + srv + ".log"
 
 	// создаем/открываем файл логирования и назначаем его логеру
 	mode = 0711
@@ -295,7 +302,7 @@ func New(logsDir, level, uid, name, srv, config string, intervalReload, interval
 		Service:            srv,
 		Dir:                logsDir,
 		Config:             config,
-		IntervalReload:     intervalClearFiles,
+		IntervalReload:     intervalReload,
 		IntervalClearFiles: intervalClearFiles,
 		PeriodSaveFiles:    periodSaveFiles,
 	}
