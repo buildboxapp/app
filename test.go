@@ -1,11 +1,5 @@
 package main
 
-import (
-	"fmt"
-	"net/smtp"
-	"os"
-)
-
 //import (
 //	"fmt"
 //	buildboxapp "github.com/buildboxapp/app/lib"
@@ -62,34 +56,39 @@ import (
 
 
 func main1() {
-	// user we are authorizing as
-	from := "loveckiy@gmail.com"
-
-	// use we are sending email to
-	to := "loveckiy@gmail.com"
-
-	// server we are authorized to send email through
-	host := "smtp.gmail.com:587"
-	hostUser := "loveckiy@gmail.com"
-	hostPass := "Nhbybnb7"
-
-	// Create the authentication for the SendMail()
-	// using PlainText, but other authentication methods are encouraged
-	auth := smtp.PlainAuth("", hostUser, hostPass, host)
-
-	// NOTE: Using the backtick here ` works like a heredoc, which is why all the
-	// rest of the lines are forced to the beginning of the line, otherwise the
-	// formatting is wrong for the RFC 822 style
-	message := `To: "Some User" <someuser@example.com>
-From: "Other User" <otheruser@example.com>
-Subject: Testing Email From Go!!
-
-This is the message we are sending. That's it!
-`
-
-	if err := smtp.SendMail(host, auth, from, []string{to}, []byte(message)); err != nil {
-		fmt.Println("Error SendMail: ", err)
-		os.Exit(1)
-	}
-	fmt.Println("Email Sent!")
+	//// user we are authorizing as
+	//from := "loveckiy@gmail.com"
+	//
+	//// use we are sending email to
+	//to := "loveckiy@gmail.com"
+	//
+	//// server we are authorized to send email through
+	////host := "smtp.gmail.com"
+	////hostUser := "loveckiy@gmail.com"
+	////hostPass := "Nhbybnb7"
+	//
+	////auth := smtp.PlainAuth("", hostUser, hostPass, host)
+	//
+	//mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
+	//fromTitle := "From: \"Ловецкий Иван\" <"+from+">\n"
+	//toTitle := "To: \"Петрову Ильдору\" <"+to+">\n"
+	//subject := "Subject: Test email from Go!\n"
+	//mes := "http://labs.lovetsky.ru/buildbox/gui/view/page/welcome"
+	//
+	//var result interface{}
+	//if len(mes) > 5 {
+	//	if mes[:4] == "http" {
+	//		result, _ = bblib.Curl("GET", mes, "", result, map[string]string{})
+	//	}
+	//}
+	//
+	//fmt.Println(result)
+	//
+	//message := []byte(subject + fromTitle + toTitle + mime + mes)
+	//fmt.Println(message)
+	////if err := smtp.SendMail(host+":587", auth, from, []string{to}, []byte(message)); err != nil {
+	////	fmt.Println("Error SendMail: ", err)
+	////	os.Exit(1)
+	////}
+	//fmt.Println("Email Sent!")
 }

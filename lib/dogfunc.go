@@ -146,6 +146,8 @@ func (p *Formula) Calculate()  {
 		case "RAND":
 			uuid := UUID()
 			p.Inserts[k].Result = uuid[1:6]
+		case "SENDMAIL":
+			p.Inserts[k].Result = DogSendmail(v.Functions.Arguments)
 		case "PATH":
 			p.Inserts[k].Result = Path(p.Document, v.Functions.Arguments)
 		case "REPLACE":
@@ -763,6 +765,15 @@ func (c *App) DateModify(arg []string) (result string) {
 }
 
 
+// Отправляем почтового сообщения
+func (c *App) Sendmail(arg []string) (result string) {
+	if len(arg) < 9 {
+		return "Error! Count params must have min 9 (server, port, user, pass, from, to, subject, message, turbo: string)"
+	}
+	result = Sendmail(arg[0], arg[1], arg[2], arg[3], arg[4], arg[5], arg[6], arg[7], arg[8])
+
+	return result
+}
 
 
 ///////////////////////////////////////////////////////////////

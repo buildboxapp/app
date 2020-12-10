@@ -14,6 +14,15 @@ func SplitIndex(arg []string) (result string) {
 	return lb.SplitIndex(arg)
 }
 
+// DOGFUNC - функции
+//func Sendmail(from, to, server, user, pass, message, format string) (err error) {
+//	return lb.sendmail(from, to, server, user, pass, message, format)
+//}
+
+func DogSendmail(arg []string) (result string) {
+	return lb.Sendmail(arg)
+}
+
 func Time(arg []string) (result string) {
 	return lb.Time(arg)
 }

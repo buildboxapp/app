@@ -1,19 +1,21 @@
 package app_lib
 
 import (
-	"path/filepath"
-	"strings"
-	"reflect"
-	"html/template"
-	"errors"
-	"net/http"
 	"encoding/json"
-	"strconv"
+	"errors"
 	"fmt"
-	"time"
-	"regexp"
-	"github.com/satori/go.uuid"
 	"github.com/Masterminds/sprig"
+	"github.com/satori/go.uuid"
+	"html/template"
+	"io/ioutil"
+	"net/http"
+	"net/smtp"
+	"path/filepath"
+	"reflect"
+	"regexp"
+	"strconv"
+	"strings"
+	"time"
 )
 
 var FuncMapS = sprig.FuncMap()
@@ -63,6 +65,8 @@ var FuncMap = template.FuncMap{
 	"varparse":	 	 parseparam,
 	"parseparam":	 parseparam,
 	"divfloat":		 divfloat,
+	"sendmail":		 Sendmail,
+
 }
 
 // формируем сепаратор для текущей ОС
@@ -70,7 +74,97 @@ func separator() string {
 	return string(filepath.Separator)
 }
 
-// деление с запятой
+// отправка email-сообщения
+// from - от кого отправляется <petrov@mail.ru> или [petrov@mail.ru] или Петров [petrov@mail.ru] или Петров <petrov@mail.ru>
+// to - кому (можно несколько через запятую)
+// server - почтовый сервер
+// port - порт сервера (число в текстовом виде)
+// user - пользователь почтового сервера
+// pass - пароль пользователя
+// message - сообщение
+// turbo - режим отправки в отдельной горутине
+func Sendmail(server, port, user, pass, from, to, subject, message, turbo string) (result string) {
+	var resMessage interface{}
+	var fromFull, toFull, subjectFull string
+	result = "true"
+
+	f := func() {
+
+		auth := smtp.PlainAuth("", user, pass, server)
+
+		// приводим к одному виду чтобы можно было использвоать и <> и []
+		from = Replace(from, ">", "]", -1)
+		from = Replace(from, "<", "[", -1)
+		to = Replace(to, ">", "]", -1)
+		to = Replace(to, "<", "[", -1)
+
+		slFrom := strings.Split(from, ",")
+		slTo := strings.Split(to, ",")
+
+		addrFrom := []string{}
+		for _, v := range slFrom {
+			addr := ""
+			a1 := strings.Split(v, "[")
+			if len(a1) == 1 {	// нет имени, только адрес
+				addr = strings.TrimSpace(a1[0])
+			} else {
+				addr = strings.Trim(a1[1], "]")
+			}
+			addrFrom = append(addrFrom, addr)
+		}
+
+		addrTo := []string{}
+		for _, v := range slTo {
+			addr := ""
+			a1 := strings.Split(v, "[")
+			if len(a1) == 1 {	// нет имени, только адрес
+				addr = strings.TrimSpace(a1[0])
+			} else {
+				addr = strings.Trim(a1[1], "]")
+			}
+			addrTo = append(addrTo, addr)
+		}
+
+		from = Replace(from, "]", ">", -1)
+		from = Replace(from, "[", "<", -1)
+		to = Replace(to, "]", ">", -1)
+		to = Replace(to, "[", "<", -1)
+		mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
+		fromFull = "From: "+from+"\n"
+		toFull = "To: "+to+"\n"
+		subjectFull = "Subject: "+subject+"\n"
+
+		resMessage = message
+
+		if len(message) > 5 {
+			if message[:4] == "http" {
+				fmt.Println("запрос на message: ", message)
+				resp, err := http.Get(message)
+				responseData, err := ioutil.ReadAll(resp.Body)
+				if err == nil {
+					resMessage = string(responseData)
+				}
+			}
+		}
+
+		sendMes := subjectFull + fromFull + toFull + mime + fmt.Sprint(resMessage)
+		fmt.Println(sendMes)
+		if err := smtp.SendMail(server+":"+port, auth, join(addrFrom, ","), addrTo, []byte(sendMes)); err != nil {
+			result = fmt.Sprintln(err)
+		}
+	}
+
+	if turbo == "on" || turbo == "true" {
+		go f()
+	} else {
+		f()
+	}
+
+	fmt.Println("Email Sent! - ", result)
+
+	return result
+}
+
 func divfloat(a, b interface{}) interface{} {
 	aF := fmt.Sprint(a)
 	bF := fmt.Sprint(b)
@@ -288,7 +382,6 @@ func invert(str string) string {
 	return result
 }
 
-
 // переводим массив в строку
 func join(slice []string, sep string) (result string) {
 	result = strings.Join(slice, sep)
@@ -336,7 +429,6 @@ func contains(str, substr, message, messageelse string) string {
 	}
 	return messageelse
 }
-
 
 // преобразую дату из 2013-12-24 в 24 января 2013
 func datetotext(str string) (result string) {
