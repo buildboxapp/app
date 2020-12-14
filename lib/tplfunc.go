@@ -325,9 +325,9 @@ func timeparse(str, mask string) (res time.Time, err error) {
 }
 
 // альтернативный формат добавления даты год-месяц-день (0-1-0)
-func timeaddday(t time.Time, date string) (input time.Time, error string) {
+func timeaddday(t time.Time, dateformat string) (input time.Time, error string) {
 	var intervalYMD []int
-	intervalSl := strings.Split(date, "-")
+	intervalSl := strings.Split(dateformat, "-")
 
 	if len(intervalSl) != 3 {
 		return input, "Error! Params failed. (want: year-mount-day, e.g. 0-0-1)"
