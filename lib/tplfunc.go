@@ -59,7 +59,7 @@ var FuncMap = template.FuncMap{
 	"timeday":	 	 timeday,
 	"timeparse":	 timeparse,
 	"tomoney":		 tomoney,
-	"dateadd":       dateadd,
+	"timeaddday":    timeaddday,
 	"invert":		 invert,
 	"substring":	 substring,
 	"dogparse":		 dogparse,
@@ -325,7 +325,7 @@ func timeparse(str, mask string) (res time.Time, err error) {
 }
 
 // альтернативный формат добавления даты год-месяц-день (0-1-0)
-func dateadd(t time.Time, date string) (input time.Time, error string) {
+func timeaddday(t time.Time, date string) (input time.Time, error string) {
 	var intervalYMD []int
 	intervalSl := strings.Split(date, "-")
 
