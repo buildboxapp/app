@@ -41,7 +41,7 @@ func (c *App) ProxyPing(w http.ResponseWriter, r *http.Request) {
 	state, _ := json.Marshal(map[string]int{"cpu":0,"memory":0,"queue":0,"connection":0})
 
 	var pong = []Pong{
-		{name, version, pg, pid, string(state)},
+		{name, version, pg, pid, string(state), ReplicasService},
 	}
 
 	// заменяем переменную домена на правильный формат для использования в Value.Prefix при генерации страницы

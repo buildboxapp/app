@@ -30,7 +30,7 @@ var State = map[string]string{}
 
 var Domain, Title, UidAPP, ClientPath, UidPrecess, LogsDir, LogsLevel string
 var UrlAPI, UrlGUI string
-
+var ReplicasService int
 
 type Pong struct {
 	Name 	string
@@ -38,6 +38,7 @@ type Pong struct {
 	Port 	int
 	Pid 	string
 	State	string
+	Replicas int
 }
 
 type ModuleResult struct {

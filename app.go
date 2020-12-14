@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"runtime/debug"
+	"strconv"
 	"time"
 
 	. "github.com/buildboxapp/app/lib"
@@ -134,6 +136,14 @@ func Start(configfile, dir, port string) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	defer func() {
+		rec := recover()
+		if rec != nil {
+			b := string(debug.Stack())
+			log.Panic(fmt.Errorf("%s", b), "Recover panic from main function.")
+		}
+	}()
+
 	Config, _, err := lib.ReadConf(configfile)
 	if err != nil {
 		log.Error(err)
@@ -145,6 +155,10 @@ func Start(configfile, dir, port string) {
 	LogsDir 	= Config["app_logs"]
 	LogsLevel 	= Config["app_level_logs_pointsrc"]
 	UidAPP		= Config["data-uid"]
+	ReplicasService, err = strconv.Atoi(Config["replicas_app"])
+	if err != nil {
+		ReplicasService = 1
+	}
 
 	// формирование пути к лог-файлам и метрикам
 	if LogsDir == "" {
@@ -160,6 +174,8 @@ func Start(configfile, dir, port string) {
 	// инициализировать лог и его ротацию
 	log = bblog.New(LogsDir, LogsLevel, bblib.UUID(), Domain, "app", UidAPP, logIntervalReload, logIntervalClearFiles, logPeriodSaveFiles)
 	log.RotateInit(ctx)
+
+	lib.Logger = log	// инициируем логер в либе
 
 	log.Info("Запускаем app-сервис: ",Domain)
 	//////////////////////////////////////////////////

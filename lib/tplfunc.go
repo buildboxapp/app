@@ -53,11 +53,13 @@ var FuncMap = template.FuncMap{
 	"timefresh":	 Timefresh,
 	"timenow":		 timenow,
 	"timeformat":	 timeformat,
+	"timetostring":  timetostring,
 	"timeyear":	 	 timeyear,
 	"timemount":	 timemount,
 	"timeday":	 	 timeday,
 	"timeparse":	 timeparse,
 	"tomoney":		 tomoney,
+	"dateadd":       dateadd,
 	"invert":		 invert,
 	"substring":	 substring,
 	"dogparse":		 dogparse,
@@ -243,7 +245,7 @@ func timenow() time.Time {
 	return time.Now().UTC()
 }
 
-// преобразуем текст в дату (если ошибка - возвращаем false)
+// преобразуем текст в дату (если ошибка - возвращаем false), а потом обратно в строку нужного формата
 func timeformat(str interface{}, mask, format string) string {
 	ss := fmt.Sprintf("%v", str)
 
@@ -252,6 +254,13 @@ func timeformat(str interface{}, mask, format string) string {
 		return fmt.Sprint(err)
 	}
 	res := timeFormat.Format(format)
+
+	return res
+}
+
+// преобразуем текст в дату (если ошибка - возвращаем false), а потом обратно в строку нужного формата
+func timetostring(time time.Time, format string) string {
+	res := time.Format(format)
 
 	return res
 }
@@ -313,6 +322,38 @@ func timeparse(str, mask string) (res time.Time, err error) {
 	}
 
 	return res, err
+}
+
+// альтернативный формат добавления даты год-месяц-день (0-1-0)
+func dateadd(t time.Time, date string) (input time.Time, error string) {
+	var intervalYMD []int
+	intervalSl := strings.Split(date, "-")
+
+	if len(intervalSl) != 3 {
+		return input, "Error! Params failed. (want: year-mount-day, e.g. 0-0-1)"
+	}
+
+	i0, err := strconv.Atoi(intervalSl[0])
+	if err != nil {
+		return input, fmt.Sprintln(err)
+	}
+	intervalYMD = append(intervalYMD, i0)
+
+	i1, err := strconv.Atoi(intervalSl[1])
+	if err != nil {
+		return input, fmt.Sprintln(err)
+	}
+	intervalYMD = append(intervalYMD, i1)
+
+	i2, err := strconv.Atoi(intervalSl[2])
+	if err != nil {
+		return input, fmt.Sprintln(err)
+	}
+	intervalYMD = append(intervalYMD, i2)
+
+	input = t.AddDate(intervalYMD[0], intervalYMD[1], intervalYMD[2])
+
+	return input, ""
 }
 
 func refind(mask, str string, n int) (res [][]string)  {
