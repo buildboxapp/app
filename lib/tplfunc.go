@@ -59,7 +59,7 @@ var FuncMap = template.FuncMap{
 	"timeday":	 	 timeday,
 	"timeparse":	 timeparse,
 	"tomoney":		 tomoney,
-	"timeaddday":    timeaddday,
+	//"timeaddday":    timeaddday,
 	"invert":		 invert,
 	"substring":	 substring,
 	"dogparse":		 dogparse,
@@ -325,36 +325,36 @@ func timeparse(str, mask string) (res time.Time, err error) {
 }
 
 // альтернативный формат добавления даты год-месяц-день (0-1-0)
-func timeaddday(t time.Time, dateformat string) (input time.Time, error string) {
-	var intervalYMD []int
-	intervalSl := strings.Split(dateformat, "-")
-
-	if len(intervalSl) != 3 {
-		return input, "Error! Params failed. (want: year-mount-day, e.g. 0-0-1)"
-	}
-
-	i0, err := strconv.Atoi(intervalSl[0])
-	if err != nil {
-		return input, fmt.Sprintln(err)
-	}
-	intervalYMD = append(intervalYMD, i0)
-
-	i1, err := strconv.Atoi(intervalSl[1])
-	if err != nil {
-		return input, fmt.Sprintln(err)
-	}
-	intervalYMD = append(intervalYMD, i1)
-
-	i2, err := strconv.Atoi(intervalSl[2])
-	if err != nil {
-		return input, fmt.Sprintln(err)
-	}
-	intervalYMD = append(intervalYMD, i2)
-
-	input = t.AddDate(intervalYMD[0], intervalYMD[1], intervalYMD[2])
-
-	return input, ""
-}
+//func timeaddday(t time.Time, dateformat string) (input time.Time, error string) {
+//	var intervalYMD []int
+//	intervalSl := strings.Split(dateformat, "-")
+//
+//	if len(intervalSl) != 3 {
+//		return input, "Error! Params failed. (want: year-mount-day, e.g. 0-0-1)"
+//	}
+//
+//	i0, err := strconv.Atoi(intervalSl[0])
+//	if err != nil {
+//		return input, fmt.Sprintln(err)
+//	}
+//	intervalYMD = append(intervalYMD, i0)
+//
+//	i1, err := strconv.Atoi(intervalSl[1])
+//	if err != nil {
+//		return input, fmt.Sprintln(err)
+//	}
+//	intervalYMD = append(intervalYMD, i1)
+//
+//	i2, err := strconv.Atoi(intervalSl[2])
+//	if err != nil {
+//		return input, fmt.Sprintln(err)
+//	}
+//	intervalYMD = append(intervalYMD, i2)
+//
+//	input = t.AddDate(intervalYMD[0], intervalYMD[1], intervalYMD[2])
+//
+//	return input, ""
+//}
 
 func refind(mask, str string, n int) (res [][]string)  {
 		if n == 0 {
