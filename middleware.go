@@ -3,27 +3,30 @@ package main
 import (
 	"fmt"
 	. "github.com/buildboxapp/app/lib"
+	bbmetric "github.com/buildboxapp/lib/metric"
 	"net/http"
 	"runtime/debug"
 	"strings"
 	"time"
 )
 
-func Logger(next http.Handler, name string) http.Handler {
+func Logger(next http.Handler, name string, serviceMetrics bbmetric.ServiceMetric) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 
 		next.ServeHTTP(w, r)
-
+		timeInterval := time.Since(start)
 		if name != "ProxyPing"  { //&& false == true
 			mes := fmt.Sprintf("Query: %s %s %s %s",
 				r.Method,
 				r.RequestURI,
 				name,
-				time.Since(start))
-			//stdlog.Printf(mes)
+				timeInterval)
 			log.Info(mes)
 		}
+
+		// сохраняем статистику всех запросов, в том числе и пинга (потому что этот зарпос фиксируется в количестве)
+		serviceMetrics.SetTimeRequest(timeInterval)
 	})
 }
 

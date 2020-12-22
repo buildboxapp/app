@@ -15,6 +15,7 @@ import (
 	. "github.com/buildboxapp/app/lib"
 	bblib "github.com/buildboxapp/lib"
 	bblog "github.com/buildboxapp/lib/log"
+	bbmetric "github.com/buildboxapp/lib/metric"
 
 	"github.com/urfave/cli"
 
@@ -34,6 +35,9 @@ var app = buildboxapp.App{}
 var logIntervalReload = 10 * time.Minute			// интервал проверки необходимости пересозданния нового файла
 var logIntervalClearFiles = 30 * time.Minute		// интервал проверка на необходимость очистки старых логов
 var logPeriodSaveFiles = "0-1-0"				// период хранения логов
+var logIntervalMetric = 10 * time.Second			// период сохранения метрик в файл логирования
+
+var ServiceMetrics bbmetric.ServiceMetric
 
 func init() {
 
@@ -180,12 +184,16 @@ func Start(configfile, dir, port string) {
 	log.Info("Запускаем app-сервис: ",Domain)
 	//////////////////////////////////////////////////
 
+	// создаем метрики
+	ServiceMetrics = bbmetric.New(ctx, log, logIntervalMetric)
+
 	state, _, err := lib.ReadConf(configfile)
 	if err != nil {
 		log.Panic(err)
 	}
 
 	// задаем глобальную переменную BuildBox (от нее строятся пути при загрузке шаблонов)
+	app.ServiceMetrics = ServiceMetrics
 	app.State = state
 	app.State["workdir"] = dir
 
@@ -228,6 +236,7 @@ func Start(configfile, dir, port string) {
 	// инициализируем кеширование
 	app.State["namespace"] 	= Replace(app.Get("domain"), "/", "_", -1)
 	app.State["url_proxy"]	= app.Get("address_proxy_pointsrc")
+	app.Logger = log
 
 	// включено кеширование
 	if app.Get("cache_pointsrc") != "" {
@@ -255,7 +264,9 @@ func Start(configfile, dir, port string) {
 	fmt.Printf("%s Load template directory: %s\n", done, dirTemplate)
 	log.Info("Load template directory: ", dirTemplate)
 
-	router := NewRouter() //.StrictSlash(true)
+	router := NewRouter(ServiceMetrics) //.StrictSlash(true)
+
+	router.Use(ServiceMetrics.Middleware)
 
 	//router.Use(AuthProcessor)
 	router.Use(Recover)

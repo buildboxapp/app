@@ -3,6 +3,7 @@ package app_lib
 import (
 	"errors"
 	"github.com/buildboxapp/lib/log"
+	bbmetric "github.com/buildboxapp/lib/metric"
 	"github.com/restream/reindexer"
 	"html/template"
 	"net/http"
@@ -12,6 +13,7 @@ import (
 type App struct {
 	State 	map[string]string
 	Logger  *log.Log
+	ServiceMetrics bbmetric.ServiceMetric
 	UrlGUI string `json:"url_gui"`
 	UrlAPI string `json:"url_api"`
 	DB *reindexer.Reindexer

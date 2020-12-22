@@ -1,6 +1,7 @@
 package main
 
 import (
+	bbmetric "github.com/buildboxapp/lib/metric"
 	"github.com/gorilla/mux"
 	"net/http"
 	"net/http/pprof"
@@ -20,12 +21,12 @@ type Route struct {
 
 type Routes []Route
 
-func NewRouter() *mux.Router {
+func NewRouter(serviceMetrics bbmetric.ServiceMetric) *mux.Router {
 	router := mux.NewRouter().StrictSlash(true)
 	for _, route := range routes {
 		var handler http.Handler
 		handler = route.HandlerFunc
-		handler = Logger(handler, route.Name)
+		handler = Logger(handler, route.Name, serviceMetrics)
 
 		router.
 			Methods(route.Method).

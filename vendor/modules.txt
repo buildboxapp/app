@@ -7,10 +7,14 @@ github.com/Masterminds/semver
 # github.com/Masterminds/sprig v2.22.0+incompatible
 ## explicit
 github.com/Masterminds/sprig
-# github.com/buildboxapp/lib v1.0.12
+# github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d
+github.com/StackExchange/wmi
+# github.com/buildboxapp/lib v1.0.23
 ## explicit
 github.com/buildboxapp/lib
 github.com/buildboxapp/lib/log
+github.com/buildboxapp/lib/metric
+github.com/buildboxapp/lib/state
 # github.com/buildboxapp/logger v0.1.0
 ## explicit
 # github.com/cpuguy83/go-md2man/v2 v2.0.0
@@ -31,6 +35,9 @@ github.com/getlantern/hidden
 # github.com/getlantern/ops v0.0.0-20200403153110-8476b16edcd6
 ## explicit
 github.com/getlantern/ops
+# github.com/go-ole/go-ole v1.2.4
+github.com/go-ole/go-ole
+github.com/go-ole/go-ole/oleutil
 # github.com/go-stack/stack v1.8.0
 ## explicit
 github.com/go-stack/stack
@@ -85,6 +92,11 @@ github.com/russross/blackfriday/v2
 # github.com/satori/go.uuid v1.2.0
 ## explicit
 github.com/satori/go.uuid
+# github.com/shirou/gopsutil v3.20.11+incompatible
+github.com/shirou/gopsutil/cpu
+github.com/shirou/gopsutil/disk
+github.com/shirou/gopsutil/internal/common
+github.com/shirou/gopsutil/mem
 # github.com/sirupsen/logrus v1.7.0
 ## explicit
 github.com/sirupsen/logrus
@@ -100,7 +112,7 @@ github.com/valyala/fasttemplate
 ## explicit
 golang.org/x/crypto/pbkdf2
 golang.org/x/crypto/scrypt
-# golang.org/x/sys v0.0.0-20201207223542-d4d67f95c62d
+# golang.org/x/sys v0.0.0-20201221093633-bc327ba9c2f0
 ## explicit
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix

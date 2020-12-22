@@ -19,6 +19,17 @@ import (
 var logrusB = logrus.New()
 var sep = string(filepath.Separator)
 
+// структура строк лог-файла. нужна для анмаршалинга
+type LogLine struct {
+	Config string `json:"config"`
+	Level string `json:"level"`
+	Msg interface{} `json:"msg"`
+	Name string `json:"name"`
+	Srv string `json:"srv"`
+	Time string `json:"time"`
+	Uid string `json:"uid"`
+}
+
 type Log struct {
 
 	// куда логируем? stdout/;*os.File на файл, в который будем писать логи
@@ -278,7 +289,7 @@ func New(logsDir, level, uid, name, srv, config string, intervalReload, interval
 	var mode os.FileMode
 
 	datefile := time.Now().Format("2006.01.02")
-	logName := datefile + "_" + srv + ".log"
+	logName := datefile + "_" + srv + "_" + uid + ".log"
 
 	// создаем/открываем файл логирования и назначаем его логеру
 	mode = 0711

@@ -24,8 +24,6 @@ func (c *App) ProxyPing(w http.ResponseWriter, r *http.Request) {
 	pp := strings.Split(c.Get("domain") , "/")
 	pg, _ := strconv.Atoi(c.Get("PortAPP"))
 
-	//c.Logger.Info("pong domain: ", pp)
-
 	name := "ru"
 	version := "ru"
 	if len(pp) == 1 {
@@ -38,7 +36,7 @@ func (c *App) ProxyPing(w http.ResponseWriter, r *http.Request) {
 	}
 
 	pid := strconv.Itoa(os.Getpid())+":"+ c.State["data-uid"]
-	state, _ := json.Marshal(map[string]int{"cpu":0,"memory":0,"queue":0,"connection":0})
+	state, _ := json.Marshal(c.ServiceMetrics.Get())
 
 	var pong = []Pong{
 		{name, version, pg, pid, string(state), ReplicasService},

@@ -33,9 +33,12 @@ var StatusCode = RStatus{
 	"ErrorForbiddenElement":    {"Значение занято другим пользователем.", 403, "ErrorForbiddenElement", ""},
 	"ErrorUnprocessableEntity": {"Необрабатываемый экземпляр", 422, "ErrorUnprocessableEntity", ""},
 	"ErrorNotFound":            {"Значение не найдено", 404, "ErrorNotFound", ""},
+	"ErrorReadDir":       		{"Ошибка чтения директории", 403, "ErrorReadDir", ""},
 	"ErrorReadConfigDir":       {"Ошибка чтения директории конфигураций", 403, "ErrorReadConfigDir", ""},
 	"errorOpenConfigDir":       {"Ошибка открытия директории конфигураций", 403, "errorOpenConfigDir", ""},
 	"ErrorReadConfigFile":      {"Ошибка чтения файла конфигураций", 403, "ErrorReadConfigFile", ""},
+	"ErrorReadLogFile":      	{"Ошибка чтения файла логирования", 403, "ErrorReadLogFile", ""},
+	"ErrorScanLogFile":      	{"Ошибка построчного чтения файла логирования", 403, "ErrorScanLogFile", ""},
 	"ErrorPortBusy":            {"Указанный порт занят", 403, "ErrorPortBusy", ""},
 	"ErrorGone":                {"Объект был удален ранее", 410, "ErrorGone", ""},
 	"ErrorShema":               {"Ошибка формата заданной схемы формирования запроса", 410, "ErrorShema", ""},
@@ -58,14 +61,14 @@ type Response struct {
 	Data    interface{} `json:"data"`
 	Res     interface{} `json:"res"`
 	Status  RestStatus  `json:"status"`
-	Metrics Metrics     `json:"metrics"`
+	Metrics Metrics     `json:"metric"`
 }
 
 type ResponseData struct {
 	Data    []Data      `json:"data"`
 	Res     interface{} `json:"res"`
 	Status  RestStatus  `json:"status"`
-	Metrics Metrics     `json:"metrics"`
+	Metrics Metrics     `json:"metric"`
 }
 
 type Metrics struct {
