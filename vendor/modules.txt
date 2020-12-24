@@ -9,7 +9,9 @@ github.com/Masterminds/semver
 github.com/Masterminds/sprig
 # github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d
 github.com/StackExchange/wmi
-# github.com/buildboxapp/lib v1.0.23
+# github.com/buildboxapp/api v1.0.6
+## explicit
+# github.com/buildboxapp/lib v1.0.24
 ## explicit
 github.com/buildboxapp/lib
 github.com/buildboxapp/lib/log
@@ -57,8 +59,7 @@ github.com/hashicorp/golang-lru/simplelru
 # github.com/huandu/xstrings v1.3.2
 ## explicit
 github.com/huandu/xstrings
-# github.com/iancoleman/orderedmap v0.0.0-20190318233801-ac98e3ecb4b0
-## explicit
+# github.com/iancoleman/orderedmap v0.1.0
 github.com/iancoleman/orderedmap
 # github.com/imdario/mergo v0.3.11
 ## explicit
@@ -75,9 +76,9 @@ github.com/mattn/go-isatty
 # github.com/mitchellh/copystructure v1.0.0
 ## explicit
 github.com/mitchellh/copystructure
-# github.com/mitchellh/reflectwalk v1.0.0
+# github.com/mitchellh/reflectwalk v1.0.1
 github.com/mitchellh/reflectwalk
-# github.com/restream/reindexer v2.13.0+incompatible
+# github.com/restream/reindexer v2.14.1+incompatible
 ## explicit
 github.com/restream/reindexer
 github.com/restream/reindexer/bindings
@@ -108,8 +109,7 @@ github.com/valyala/bytebufferpool
 # github.com/valyala/fasttemplate v1.2.1
 ## explicit
 github.com/valyala/fasttemplate
-# golang.org/x/crypto v0.0.0-20201002170205-7f63de1d35b0
-## explicit
+# golang.org/x/crypto v0.0.0-20201203163018-be400aefbc4c
 golang.org/x/crypto/pbkdf2
 golang.org/x/crypto/scrypt
 # golang.org/x/sys v0.0.0-20201221093633-bc327ba9c2f0
@@ -117,5 +117,5 @@ golang.org/x/crypto/scrypt
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix
 golang.org/x/sys/windows
-# gopkg.in/yaml.v2 v2.3.0
+# gopkg.in/yaml.v2 v2.4.0
 gopkg.in/yaml.v2

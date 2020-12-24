@@ -252,7 +252,7 @@ func (s *serviceMetric) Generate() {
 	//////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////
 
-	s.RPS = s.connectionOpen / 10
+	s.RPS = lenQueue / 10
 
 	s.Queue_AVG = Queue_AVG
 	s.Queue_QTL_80 = Queue_QTL_80

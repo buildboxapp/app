@@ -48,6 +48,7 @@ var FuncMap = template.FuncMap{
 	"totree": 	 	 totree,
 	"tostring":		 tostring,
 	"toint":		 toint,
+	"tofloat":		 tofloat,
 	"tointerface":	 tointerface,
 	"tohtml":		 tohtml,
 	"timefresh":	 Timefresh,
@@ -645,7 +646,18 @@ func toint(i interface{}) (res int) {
 	i = strings.Trim(str, " ")
 	res, err := strconv.Atoi(str)
 	if err != nil {
-		res = -1
+		return -1
+	}
+
+	return res
+}
+
+func tofloat(i interface{}) (res float64) {
+	str := fmt.Sprint(i)
+	i = strings.Trim(str, " ")
+	res, e := strconv.ParseFloat(str, 10)
+	if e != nil {
+		return -1
 	}
 
 	return res
