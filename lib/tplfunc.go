@@ -654,7 +654,8 @@ func toint(i interface{}) (res int) {
 
 func tofloat(i interface{}) (res float64) {
 	str := fmt.Sprint(i)
-	i = strings.Trim(str, " ")
+	str = strings.Trim(str, " ")
+	str = strings.ReplaceAll(str, ",", ".")
 	res, e := strconv.ParseFloat(str, 10)
 	if e != nil {
 		return -1
