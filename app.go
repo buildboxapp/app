@@ -70,34 +70,6 @@ func main()  {
 	appCLI.Usage = "Demon Buildbox Proxy started"
 	appCLI.Commands = []cli.Command{
 		{
-			Name:"run",
-			Usage: "Run demon Buildbox APP process",
-			Flags: []cli.Flag{
-				&cli.StringFlag{
-					Name:	"config, c",
-					Usage:	"Название файла конфигурации, с которым будет запущен сервис",
-					Value:	defaultConfig,
-				},
-				&cli.StringFlag{
-					Name:	"dir, d",
-					Usage:	"Путь к шаблонам",
-					Value:	lib.RootDir(),
-				},
-				&cli.StringFlag{
-					Name:	"port, p",
-					Usage:	"Порт, на котором запустить процесс",
-					Value:	"",
-				},
-			},
-			Action: func(c *cli.Context) error {
-				configfile := c.String("config")
-				dir := c.String("dir")
-				lib.RunProcess(configfile, dir, "app", "start","services")
-
-				return nil
-			},
-		},
-		{
 			Name:"start", ShortName: "",
 			Usage: "Start single Buildbox APP process",
 			Flags: []cli.Flag{
