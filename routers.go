@@ -26,7 +26,7 @@ func NewRouter(serviceMetrics bbmetric.ServiceMetric) *mux.Router {
 	for _, route := range routes {
 		var handler http.Handler
 		handler = route.HandlerFunc
-		handler = Logger(handler, route.Name, serviceMetrics)
+		handler = MiddleLogger(handler, route.Name, serviceMetrics)
 
 		router.
 			Methods(route.Method).

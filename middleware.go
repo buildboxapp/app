@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-func Logger(next http.Handler, name string, serviceMetrics bbmetric.ServiceMetric) http.Handler {
+func MiddleLogger(next http.Handler, name string, serviceMetrics bbmetric.ServiceMetric) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 

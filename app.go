@@ -25,6 +25,8 @@ import (
 	"io"
 )
 
+const sep = string(os.PathSeparator)
+
 var fileLog *os.File
 var outpurLog io.Writer
 
@@ -164,6 +166,9 @@ func Start(configfile, dir, port string) {
 		ReplicasService = 1
 	}
 
+	// получаем файл запуска текущего сервиса
+	Config["runfile"] = Config["app_version_pointsrc"]
+
 	// формирование пути к лог-файлам и метрикам
 	if LogsDir == "" {
 		LogsDir = "logs"
@@ -187,14 +192,14 @@ func Start(configfile, dir, port string) {
 	// создаем метрики
 	ServiceMetrics = bbmetric.New(ctx, log, logIntervalMetric)
 
-	state, _, err := lib.ReadConf(configfile)
-	if err != nil {
-		log.Panic(err)
-	}
+	//state, _, err := lib.ReadConf(configfile)
+	//if err != nil {
+	//	log.Panic(err)
+	//}
 
 	// задаем глобальную переменную BuildBox (от нее строятся пути при загрузке шаблонов)
 	app.ServiceMetrics = ServiceMetrics
-	app.State = state
+	app.State = Config //state
 	app.State["workdir"] = dir
 
 	// для завершения сервиса ждем сигнал в процесс

@@ -34,14 +34,17 @@ var Domain, Title, UidAPP, ClientPath, UidPrecess, LogsDir, LogsLevel string
 var UrlAPI, UrlGUI string
 var ReplicasService int
 
+// тип ответа, который сервис отдает прокси при периодическом опросе (ping-е)
 type Pong struct {
-	Name 	string
-	Version string
-	Port 	int
-	Pid 	string
-	State	string
-	Replicas int
+	Name string `json:"name"`
+	Version string `json:"version"`
+	File string `json:"file"`
+	Port int `json:"port"`
+	Pid  string `json:"pid"`
+	State string `json:"state"`
+	Replicas int `json:"replicas"`
 }
+
 
 type ModuleResult struct {
 	id string

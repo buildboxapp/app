@@ -22,13 +22,17 @@ func Stop(pid int) error {
 	return lb.Stop(pid)
 }
 
-func StopByConfig(config string) error {
-	return lb.StopByConfig(config)
+func PidsByConfig(config string) (result []string, err error) {
+	return lb.PidsByConfig(config)
 }
 
-func Reload(pid string) error {
-	return lb.Reload(pid)
+func PidsByAlias(domain, alias string) (result []string, err error) {
+	return lb.PidsByAlias(domain, alias)
 }
+
+//func Reload(pid string) error {
+//	return lb.Reload(pid)
+//}
 
 func Destroy() error {
 	return lb.Destroy()
@@ -43,8 +47,8 @@ func ResponseJSON(w http.ResponseWriter, objResponse interface{}, status string,
 	lb.ResponseJSON(w, objResponse, status, error, metrics)
 }
 
-func RunProcess(fileConfig, workdir, file, command, message string) error {
-	return lb.RunProcess(fileConfig, workdir, file, command, message)
+func RunProcess(path, config, command, message string) error {
+	return lb.RunProcess(path, config, command, message)
 }
 
 func ReadConf(configfile string) (conf map[string]string, confjson string, err error) {

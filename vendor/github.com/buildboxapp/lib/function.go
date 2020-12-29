@@ -71,53 +71,24 @@ func (c *Lib) ResponseJSON(w http.ResponseWriter, objResponse interface{}, statu
 }
 
 // стартуем сервис из конфига
-func (c *Lib) RunProcess(fileConfig, workdir, file, command, message string) (err error) {
+func (c *Lib) RunProcess(path, config, command, message string) (err error) {
 	var out []byte
-	sep := string(filepath.Separator)
 
-	if fileConfig == "" {
+	if config == "" {
 		fmt.Println(color.Red("ERROR!") + " Configuration file is not found.\n")
 		return
 	}
 	if command == "" {
 		command = "start"
 	}
-	if workdir == "" {
-		workdir = c.RootDir()
-	}
 
 	done := color.Green("OK")
 	fail := color.Red("FAIL")
-	fileStart := workdir + sep + file
 
-	// ФИКС!
-	// проверяем путь к файлу
-	// если мы перезагружае сервисы у запущенных из проекта подпроектов, то файлы запуска подпроектов
-	// находятся в директории проекта (у подпроекта нет своих файлов как правило)
-	// поэтому если файл не существует - то читаем конфигурацию и ищем путь, в котором указан файл запуска
-	// который пришел в урле запроса на перезагрузку (api_1.0.1 и тд)
+	fileStart := c.RootDir() + path
 
-	_, err = os.Open(fileStart)
-	if err != nil {
-		conf, _, err := c.ReadConf(fileConfig)
-		if err != nil {
-			return err
-		}
-		for _, v := range conf {
-			if strings.Contains(v, file) {
-				dd := strings.Split(v, sep)
-
-				//fmt.Println("dd: ", dd)
-
-				fileStart = c.RootDir() + sep + strings.Join(dd[3:], sep)
-			}
-		}
-	}
-
-	cmd := exec.Command(fileStart, command, "--config", fileConfig)
+	cmd := exec.Command(fileStart, command, "--config", config)
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
-
-	//fmt.Println("cmd: ",cmd)
 
 	//stdout, err := cmd.StdoutPipe()
 	//if err != nil {
@@ -131,7 +102,7 @@ func (c *Lib) RunProcess(fileConfig, workdir, file, command, message string) (er
 	}
 
 	fmt.Printf("%s %s (pid: %s) \n", done, message, strconv.Itoa(cmd.Process.Pid))
-	c.Logger.Info("Starting: ", message, "-", file, "(", command, ")", string(out))
+	c.Logger.Info("Starting: ", message, "-", path, "(", command, ")", string(out))
 
 	return err
 }
