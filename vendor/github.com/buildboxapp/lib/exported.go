@@ -47,8 +47,8 @@ func ResponseJSON(w http.ResponseWriter, objResponse interface{}, status string,
 	lb.ResponseJSON(w, objResponse, status, error, metrics)
 }
 
-func RunProcess(path, config, command, message string) error {
-	return lb.RunProcess(path, config, command, message)
+func RunProcess(path, config, command string) (pid int, err error) {
+	return lb.RunProcess(path, config, command)
 }
 
 func ReadConf(configfile string) (conf map[string]string, confjson string, err error) {

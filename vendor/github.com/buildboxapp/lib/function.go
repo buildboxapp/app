@@ -7,12 +7,10 @@ import (
 	"net/http"
 	"os/exec"
 	"path"
-	"strconv"
 	"syscall"
 
 	"crypto/sha1"
 	"encoding/hex"
-	"github.com/labstack/gommon/color"
 	"github.com/labstack/gommon/log"
 	"io/ioutil"
 	"os"
@@ -71,23 +69,16 @@ func (c *Lib) ResponseJSON(w http.ResponseWriter, objResponse interface{}, statu
 }
 
 // стартуем сервис из конфига
-func (c *Lib) RunProcess(path, config, command, message string) (err error) {
-	var out []byte
+func (c *Lib) RunProcess(path, config, command string) (pid int, err error) {
 
 	if config == "" {
-		fmt.Println(color.Red("ERROR!") + " Configuration file is not found.\n")
-		return
+		return 0, fmt.Errorf("%s", "Configuration file is not found")
 	}
 	if command == "" {
 		command = "start"
 	}
 
-	done := color.Green("OK")
-	fail := color.Red("FAIL")
-
-	fileStart := c.RootDir() + path
-
-	cmd := exec.Command(fileStart, command, "--config", config)
+	cmd := exec.Command(path, command, "--config", config)
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
 	//stdout, err := cmd.StdoutPipe()
@@ -96,15 +87,10 @@ func (c *Lib) RunProcess(path, config, command, message string) (err error) {
 	//}
 	err = cmd.Start()
 	if err != nil {
-		fmt.Printf("%s Starting %s: %s\n%s", fail, message, err, string(out))
-		c.Logger.Error(err, "from starting: ", message, "-", fileStart, "(", command, ")", string(out))
-		return err
+		return 0, err
 	}
 
-	fmt.Printf("%s %s (pid: %s) \n", done, message, strconv.Itoa(cmd.Process.Pid))
-	c.Logger.Info("Starting: ", message, "-", path, "(", command, ")", string(out))
-
-	return err
+	return cmd.Process.Pid, err
 }
 
 // останавливаем сервис по порту

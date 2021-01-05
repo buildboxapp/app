@@ -613,12 +613,12 @@ func (c *App) FieldValue(data []Data, arg []string) (result string) {
 		return "Ошибка в переданных параметрах."
 	}
 
-	param := strings.ToUpper(arg[0])
+	param := arg[0]
 	if len(arg) == 2 {
-		valueDefault = strings.ToUpper(arg[1])
+		valueDefault = arg[1]
 	}
 	if len(arg) == 3 {
-		separator = strings.ToUpper(arg[2])
+		separator = arg[2]
 	}
 
 	for _, d := range data {
@@ -646,12 +646,12 @@ func (c *App) FieldSrc(data []Data, arg []string) (result string) {
 		return "Ошибка в переданных параметрах."
 	}
 
-	param := strings.ToUpper(arg[0])
+	param := arg[0]
 	if len(arg) == 2 {
-		valueDefault = strings.ToUpper(arg[1])
+		valueDefault = arg[1]
 	}
 	if len(arg) == 3 {
-		separator = strings.ToUpper(arg[2])
+		separator = arg[2]
 	}
 
 	for _, d := range data {

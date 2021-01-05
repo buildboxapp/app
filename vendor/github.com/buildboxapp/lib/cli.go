@@ -13,6 +13,8 @@ import (
 	"log"
 )
 
+const sep = string(os.PathSeparator)
+
 // просмотр кофигурационных файлов
 func (c *Lib) Ls() (result []map[string]string) {
 
@@ -225,6 +227,76 @@ func (c *Lib) PidsByConfig(config string) (result []string, err error) {
 	}
 
 	return
+}
+
+// возвращаем путь для запуска сервиса исходя из данных конфигруации и переданных параметров
+// читаем конфигурацию и смотрим - что это?
+// если конфигурация сервера - то обращаем внимание на алиас (gui/api/proxy) и возвращаем путь для алиаса (сервиса)
+// если алиас не соотверствует или пустой - значит возвращаем путь к запуску сервера (/buildbox)
+// если конфигурация сервиса/приложения - возвращаем путь файла запуска
+func (c *Lib) PathByConfig(config, domain, alias string) (result string, err error) {
+
+	defer func() {
+		// убираем префикс доступа к файлу через http - /buildbox/gui или если загружено через подпроект то /проект/gui
+		result = strings.ReplaceAll(result, "/buildbox/gui", "")
+		result = strings.ReplaceAll(result, domain+"/gui", "")
+	}()
+
+	cfg, _, err := ReadConf(config)
+	if err != nil {
+		mes := "Error reading confg config:" + config
+		c.Logger.Error(err, mes)
+		fmt.Println(mes)
+
+		return
+	}
+
+	// если это сервис
+	if cfg["service_exec"] != "" {
+		result = cfg["service_exec"]
+		return result, nil
+	}
+
+	// если это приложение
+	if cfg["app_version_pointsrc"] != "" {
+		result = cfg["app_version_pointsrc"]
+		return result, nil
+	}
+
+	// если передано - запустить API для сервера
+	if alias == "api" {
+		if cfg["api_version_pointsrc"] != "" {
+			result = cfg["api_version_pointsrc"]
+		} else {
+			err = fmt.Errorf("%s", "Error. Start API-service failed. Field from path is empty")
+		}
+		return result, err
+	}
+
+	// если передано - запустить GUI для сервера
+	if alias == "gui" {
+		if cfg["gui_version_pointsrc"] != "" {
+			result = cfg["gui_version_pointsrc"]
+		} else {
+			err = fmt.Errorf("%s", "Error. Start GUI-service failed. Field from path is empty")
+		}
+		return result, err
+	}
+
+	// если передано - запустить PROXY для сервера
+	if alias == "proxy" {
+		if cfg["proxy_version_pointsrc"] != "" {
+			result = cfg["proxy_version_pointsrc"]
+		} else {
+			err = fmt.Errorf("%s", "Error. Start PROXY-service failed. Field from path is empty")
+		}
+		return result, err
+	}
+
+	// если ничего до этого не выбралось - значит запускаем сервер
+	result = c.RootDir() + sep + "buildbox"
+
+	return result, err
 }
 
 // получаем строки пидов подходящих под условия, в котором:
