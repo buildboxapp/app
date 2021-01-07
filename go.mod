@@ -7,7 +7,7 @@ require (
 	github.com/Masterminds/semver v1.5.0 // indirect
 	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/buildboxapp/api v1.0.6 // indirect
-	github.com/buildboxapp/lib v1.0.30
+	github.com/buildboxapp/lib v1.0.31
 	github.com/buildboxapp/logger v0.1.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.0 // indirect
 	github.com/getlantern/context v0.0.0-20190109183933-c447772a6520 // indirect
@@ -31,5 +31,5 @@ require (
 	github.com/sirupsen/logrus v1.7.0 // indirect
 	github.com/urfave/cli v1.22.5
 	github.com/valyala/fasttemplate v1.2.1 // indirect
-	golang.org/x/sys v0.0.0-20210104204734-6f8348627aad // indirect
+	golang.org/x/sys v0.0.0-20210105210732-16f7687f5001 // indirect
 )

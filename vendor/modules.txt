@@ -11,7 +11,7 @@ github.com/Masterminds/sprig
 github.com/StackExchange/wmi
 # github.com/buildboxapp/api v1.0.6
 ## explicit
-# github.com/buildboxapp/lib v1.0.30
+# github.com/buildboxapp/lib v1.0.31
 ## explicit
 github.com/buildboxapp/lib
 github.com/buildboxapp/lib/log
@@ -112,7 +112,7 @@ github.com/valyala/fasttemplate
 # golang.org/x/crypto v0.0.0-20201203163018-be400aefbc4c
 golang.org/x/crypto/pbkdf2
 golang.org/x/crypto/scrypt
-# golang.org/x/sys v0.0.0-20210104204734-6f8348627aad
+# golang.org/x/sys v0.0.0-20210105210732-16f7687f5001
 ## explicit
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix

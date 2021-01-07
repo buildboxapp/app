@@ -247,7 +247,6 @@ func (c *Lib) PathByConfig(config, domain, alias string) (result string, err err
 		mes := "Error reading confg config:" + config
 		c.Logger.Error(err, mes)
 		fmt.Println(mes)
-
 		return
 	}
 
@@ -294,7 +293,7 @@ func (c *Lib) PathByConfig(config, domain, alias string) (result string, err err
 	}
 
 	// если ничего до этого не выбралось - значит запускаем сервер
-	result = c.RootDir() + sep + "buildbox"
+	result = "buildbox"
 
 	return result, err
 }
@@ -338,7 +337,11 @@ func (c *Lib) PidsByAlias(domain, alias string) (result []string, err error) {
 				for _, v3 := range v2 {
 					k3 := strings.Split(v3, ":")
 					idProcess := k3[0]  // pid
-					result = append(result, v3)
+					// дополняем результат значениями домена и алиаса (для возврата их при остановке если не переданы алиас явно)
+					// бывают значения, когда мы останавлитваем процесс тошько по домену и тогда мы не можем возврашить алиас остановленного процесса
+					// а алиас нужен для поиска в прокси в картах /Pid и /Мар для удаления из активных сервисов по домену и алиасу
+					// если алиаса нет (не приходит в ответе от лоадера, то не находим и прибитые процессы залипают в мапах)
+					result = append(result, v3+":"+ d + ":" + a)
 
 					if err != nil {
 						c.Logger.Error(err, "Error stopped process: pid:", idProcess)

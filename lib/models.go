@@ -38,7 +38,7 @@ var ReplicasService int
 type Pong struct {
 	Name string `json:"name"`
 	Version string `json:"version"`
-	File string `json:"file"`
+	Status string `json:"status"`
 	Port int `json:"port"`
 	Pid  string `json:"pid"`
 	State string `json:"state"`

@@ -23,7 +23,7 @@ func (c *App) ProxyPing(w http.ResponseWriter, r *http.Request) {
 
 	pp := strings.Split(c.Get("domain") , "/")
 	pg, _ := strconv.Atoi(c.Get("PortAPP"))
-	runfile := c.State["runfile"]
+	//runfile := c.State["runfile"]
 
 	name := "ru"
 	version := "ru"
@@ -40,7 +40,7 @@ func (c *App) ProxyPing(w http.ResponseWriter, r *http.Request) {
 	state, _ := json.Marshal(c.ServiceMetrics.Get())
 
 	var pong = []Pong{
-		{name, version, runfile,pg, pid, string(state), ReplicasService},
+		{name, version, "run",pg, pid, string(state), ReplicasService},
 	}
 
 	// заменяем переменную домена на правильный формат для использования в Value.Prefix при генерации страницы
