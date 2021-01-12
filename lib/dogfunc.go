@@ -554,45 +554,39 @@ func (c *App) Obj(data []Data, arg []string) (result string) {
 	}
 
 	param := strings.ToUpper(arg[0])
-	if len(arg) == 2 {
-		valueDefault = strings.ToUpper(arg[1])
+	separator := ","	// значение разделителя по-умолчанию
+
+	if len(arg) == 0 {
+		return "Ошибка в переданных параметрах."
 	}
+	if len(arg) == 2 {
+		valueDefault = arg[1]
+	}
+	if len(arg) == 3 {
+		separator = arg[2]
+	}
+
+
+
 
 	for _, d := range data {
 		switch param {
 		case "UID":	// получаем все uid-ы из переданного массива объектов
-			slRes := []string{}
-			for _, v := range data {
-				slRes = append(slRes, v.Uid)
-			}
-			r = strings.Join(slRes, ",")
+			r = d.Uid
 		case "ID":
-			slRes := []string{}
-			for _, v := range data {
-				slRes = append(slRes, v.Id)
-			}
-			r = strings.Join(slRes, ",")
+			r = d.Id
 		case "SOURCE":
 			r = d.Source
 		case "TITLE":
-			slRes := []string{}
-			for _, v := range data {
-				slRes = append(slRes, v.Title)
-			}
-			r = strings.Join(slRes, ",")
+			r = d.Title
 		case "TYPE":
 			r = d.Type
 		default:
-			slRes := []string{}
-			for _, v := range data {
-				slRes = append(slRes, v.Uid)
-			}
-			r = strings.Join(slRes, ",")
+			r = d.Uid
 		}
 		res = append(res, r)
 	}
-	result = join(res, ",")
-
+	result = join(res, separator)
 
 	if result == "" {
 		result = valueDefault
