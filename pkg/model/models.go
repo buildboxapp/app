@@ -1,4 +1,4 @@
-package app_lib
+package model
 
 import (
 	"errors"

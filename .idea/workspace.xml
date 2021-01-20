@@ -20,15 +20,39 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="695e3ced-4e40-4126-a43d-f20a9b66d621" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/cmd/app/_old_main.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/cmd/app/main.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkg/cli" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkg/config/config.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkg/config/model.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkg/config/utils.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkg/servers/httpserver/handlers/alive.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkg/servers/httpserver/handlers/handlers.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkg/servers/httpserver/handlers/ping.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkg/servers/httpserver/handlers/query.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkg/servers/httpserver/handlers/seance.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkg/servers/httpserver/handlers/tools.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkg/servers/httpserver/httpserver.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkg/servers/httpserver/middleware.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkg/servers/httpserver/routers.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkg/servers/servers.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkg/service/ping.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkg/service/service.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkg/utils/tools.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app.go" beforeDir="false" afterPath="$PROJECT_DIR$/app.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/cache.go" beforeDir="false" afterPath="$PROJECT_DIR$/lib/cache.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/dogfunc.go" beforeDir="false" afterPath="$PROJECT_DIR$/lib/dogfunc.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/function.go" beforeDir="false" afterPath="$PROJECT_DIR$/lib/function.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/handlers.go" beforeDir="false" afterPath="$PROJECT_DIR$/lib/handlers.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/vendor/github.com/buildboxapp/lib/cli.go" beforeDir="false" afterPath="$PROJECT_DIR$/vendor/github.com/buildboxapp/lib/cli.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/vendor/github.com/buildboxapp/lib/http.go" beforeDir="false" afterPath="$PROJECT_DIR$/vendor/github.com/buildboxapp/lib/http.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/vendor/github.com/buildboxapp/lib/models.go" beforeDir="false" afterPath="$PROJECT_DIR$/vendor/github.com/buildboxapp/lib/models.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/cache.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/dogfunc.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/exported.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/function.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/handlers.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/models.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/tplfunc.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/log_api.log" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/log_app.log" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/middleware.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/routers.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test.go" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
