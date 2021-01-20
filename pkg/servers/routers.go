@@ -1,4 +1,4 @@
-package main
+package servers
 
 import (
 	bbmetric "github.com/buildboxapp/lib/metric"

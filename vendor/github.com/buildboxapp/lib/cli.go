@@ -13,20 +13,25 @@ import (
 	"log"
 )
 
+
 const sep = string(os.PathSeparator)
 
 // просмотр кофигурационных файлов
-func (c *Lib) Ls() (result []map[string]string) {
+func Ls() (result []map[string]string, err error) {
 
 	fmt.Println("List configuration:")
 	fmt.Printf("%-29s%-17s%-17s%-17s%-16s%-30s%-60s\n", color.Green("DOMAIN"), color.Green("API"), color.Green("GUI"), color.Green("PROXY"), color.Green("APP"), color.Green("CACHE"), color.Green("CONFIG ID"))
 	sep := string(filepath.Separator)
 
 	// может работать много прокси, поэтому обходим конфигурационные файлы и ищем рабочие прокси
-	pathFolder := c.RootDir() + sep + "upload" //+ sep + c.State["Domain"] + sep + "ini"
+	rootDir, err := RootDir()
+	if err != nil {
+		return
+	}
+
+	pathFolder := rootDir + sep + "upload"
 	folders, err := ioutil.ReadDir(pathFolder)
 	if err != nil {
-		c.Logger.Panic(err)
 		return
 	}
 
@@ -83,7 +88,7 @@ func (c *Lib) Ls() (result []map[string]string) {
 
 	fmt.Println()
 
-	return result
+	return
 }
 
 // просмотр запущенных сервисов
@@ -92,7 +97,7 @@ func (c *Lib) Ls() (result []map[string]string) {
 // pid - список пидов,
 // full - полный слайс значений как для терминала, но в структуре
 // raw - слайс всех полученных PidRegistry ответов
-func (c *Lib) Ps(format string) (pids []string, services map[string][][]string, raw []map[string]map[string][]string, err error) {
+func Ps(format, portProxy string) (pids []string, services map[string][][]string, raw []map[string]map[string][]string, err error) {
 	var PidRegistry = map[string]map[string][]string{}
 	var finish = map[string][]string{}
 	sep := string(filepath.Separator)
@@ -102,7 +107,12 @@ func (c *Lib) Ps(format string) (pids []string, services map[string][][]string, 
 	}
 
 	// может работать много прокси, поэтому обходим конфигурационные файлы и ищем рабочие прокси
-	pathFolder := c.RootDir() + sep + "upload" //+ sep + c.State["Domain"] + sep + "ini"
+	rootDir, err := RootDir()
+	if err != nil {
+		return
+	}
+
+	pathFolder := rootDir + sep + "upload" //+ sep + State["domain"] + sep + "ini"
 	folders, err := ioutil.ReadDir(pathFolder)
 	if err != nil {
 		log.Panic(err)
@@ -123,36 +133,38 @@ func (c *Lib) Ps(format string) (pids []string, services map[string][][]string, 
 
 					if err == nil {
 						// смотрим настройки на наличик возможно досутпного прокси
-						if conf["hosts"] != "" && conf["port_proxy"] != "" {
+						if portProxy != "" {
+							portProxy = "80"
+						}
 
-							// получаем список доступных на данном прокси запущенных приложений
-							// ПЕРЕДЕЛАТЬ!!! слишком много реализаций Curl - сделать ревью!!!! убрать дубли и вынести в lib
-							_, err = c.Curl("GET", "http://localhost:"+conf["port_proxy"]+"/pid", "", &PidRegistry, map[string]string{})
+						// получаем список доступных на данном прокси запущенных приложений
+						// ПЕРЕДЕЛАТЬ!!! слишком много реализаций Curl - сделать ревью!!!! убрать дубли и вынести в lib
+						_, err = Curl("GET", "http://localhost:"+portProxy+"/pid", "", &PidRegistry, map[string]string{}, "", "")
 
-							// просто слайс всех PidRegistry
-							raw = append(raw, PidRegistry)
+						// просто слайс всех PidRegistry
+						raw = append(raw, PidRegistry)
 
-							if err == nil && len(PidRegistry) != 0 {
+						if err == nil && len(PidRegistry) != 0 {
 
-								if format == "terminal" {
-									fmt.Printf("%-80s\n", color.Yellow("Running proxy: ")+color.Yellow(conf["port_proxy"])+" - "+file.Name())
-								}
+							if format == "terminal" {
+								fmt.Printf("%-80s\n", color.Yellow("Running proxy: ")+color.Yellow(conf["port_proxy"])+" - "+file.Name())
+							}
 
-								domain := ""
-								for k, v := range PidRegistry {
-									domain = k
-									for k1, v1 := range v {
-										domain = k + "/" + k1
+							domain := ""
+							for k, v := range PidRegistry {
+								domain = k
+								for k1, v1 := range v {
+									domain = k + "/" + k1
 
-										// добавляем в структуру полученне значения
-										// бывает указаны в несколькхи конфигах порты прокси, чтобы не дублировались пишем сначала в структуру
-										if _, found := finish[domain]; !found {
-											finish[domain] = v1
-										}
+									// добавляем в структуру полученне значения
+									// бывает указаны в несколькхи конфигах порты прокси, чтобы не дублировались пишем сначала в структуру
+									if _, found := finish[domain]; !found {
+										finish[domain] = v1
 									}
 								}
 							}
 						}
+
 					}
 				}
 			}
@@ -192,7 +204,7 @@ func (c *Lib) Ps(format string) (pids []string, services map[string][][]string, 
 }
 
 // завершение процесса
-func (c *Lib) Stop(pid int) error {
+func Stop(pid int) (err error) {
 	var sig os.Signal
 	sig = os.Kill
 	p, err := os.FindProcess(pid)
@@ -205,9 +217,9 @@ func (c *Lib) Stop(pid int) error {
 
 // завершение всех процессов для текущей конфигурации
 // config - ид-конфигурации
-func (c *Lib) PidsByConfig(config string) (result []string, err error) {
+func PidsByConfig(config, portProxy string) (result []string, err error) {
 
-	_, fullresult, _, _ := c.Ps("full")
+	_, fullresult, _, _ := Ps("full", portProxy)
 
 	// получаем pid для переданной конфигурации
 	for _, v1 := range fullresult {
@@ -220,7 +232,6 @@ func (c *Lib) PidsByConfig(config string) (result []string, err error) {
 			}
 
 			if err != nil {
-				c.Logger.Error(err, "Error stopped process config:", config)
 				fmt.Println("Error stopped process config:", config, ", err:", err)
 			}
 		}
@@ -234,7 +245,7 @@ func (c *Lib) PidsByConfig(config string) (result []string, err error) {
 // если конфигурация сервера - то обращаем внимание на алиас (gui/api/proxy) и возвращаем путь для алиаса (сервиса)
 // если алиас не соотверствует или пустой - значит возвращаем путь к запуску сервера (/buildbox)
 // если конфигурация сервиса/приложения - возвращаем путь файла запуска
-func (c *Lib) PathByConfig(config, domain, alias string) (result string, err error) {
+func PathByConfig(config, domain, alias string) (result string, err error) {
 
 	defer func() {
 		// убираем префикс доступа к файлу через http - /buildbox/gui или если загружено через подпроект то /проект/gui
@@ -245,7 +256,6 @@ func (c *Lib) PathByConfig(config, domain, alias string) (result string, err err
 	cfg, _, err := ReadConf(config)
 	if err != nil {
 		mes := "Error reading confg config:" + config
-		c.Logger.Error(err, mes)
 		fmt.Println(mes)
 		return
 	}
@@ -302,7 +312,7 @@ func (c *Lib) PathByConfig(config, domain, alias string) (result string, err err
 // domain - название проекта (домен)
 // alias - название алиас-сервиса (gui/api/proxy и тд - то, что в мап-прокси идет второй частью адреса)
 // если алиас явно не задан, то он может быть получен из домена
-func (c *Lib) PidsByAlias(domain, alias string) (result []string, err error) {
+func PidsByAlias(domain, alias, portProxy string) (result []string, err error) {
 
 	if domain == "" {
 		domain = "all"
@@ -318,7 +328,7 @@ func (c *Lib) PidsByAlias(domain, alias string) (result []string, err error) {
 		domain = splitDomain[0]
 		alias = splitDomain[1]
 	}
-	_, _, raw, _ := c.Ps("full")
+	_, _, raw, _ := Ps("full", portProxy)
 
 	// получаем pid для переданной конфигурации
 	for _, pidRegistry := range raw {
@@ -344,7 +354,6 @@ func (c *Lib) PidsByAlias(domain, alias string) (result []string, err error) {
 					result = append(result, v3+":"+ d + ":" + a)
 
 					if err != nil {
-						c.Logger.Error(err, "Error stopped process: pid:", idProcess)
 						fmt.Println("Error stopped process: pid:", idProcess, ", err:", err)
 					}
 				}
@@ -355,57 +364,9 @@ func (c *Lib) PidsByAlias(domain, alias string) (result []string, err error) {
 	return
 }
 
-// перезагрузка процесса по Pid/домену
-//func (c *Lib) Reload(pid string) (err error) {
-//	sep := string(filepath.Separator)
-//	pidDone := ""
-//
-//	_, fullresult, _, _ := Ps("full")
-//
-//	for domain, v1 := range fullresult {
-//		for _, v := range v1 {
-//			configfile := v[1] // файл
-//			idProcess := v[0]  // pid
-//
-//			// pid не передан, перезагружаем все процессы
-//			if pid == "all" {
-//
-//				// если данный пид ранее не обрабатывался, то рестартуем процесс
-//				if !strings.Contains(pidDone, idProcess) {
-//					pidI, err := strconv.Atoi(idProcess)
-//					err = Stop(pidI)
-//					if err == nil {
-//						RunProcess(CurrentDir()+sep+"buildbox", configfile, "start", "service")
-//					}
-//				}
-//				// сохраняем обработанный пид (чтобы повторно не релоадить)
-//				pidDone = pidDone + "," + idProcess
-//
-//			} else {
-//				// перезагружаем только переданный pid
-//				if !strings.Contains(pidDone, idProcess) {
-//					if pid == idProcess || pid == domain {
-//						pidI, err := strconv.Atoi(idProcess)
-//						err = Stop(pidI)
-//						if err == nil {
-//							RunProcess(CurrentDir()+sep+"buildbox", configfile, "start", "service")
-//						}
-//					}
-//				}
-//				// сохраняем обработанный пид (чтобы повторно не релоадить)
-//				pidDone = pidDone + "," + pid
-//
-//			}
-//		}
-//
-//	}
-//
-//	return err
-//}
-
 // уничтожить все процессы
-func (c *Lib) Destroy() (err error) {
-	pids, _, _, _ := c.Ps("pid")
+func Destroy(portProxy string) (err error) {
+	pids, _, _, _ := Ps("pid", portProxy)
 	for _, v := range pids {
 		pi, err := strconv.Atoi(v)
 		if err == nil {
@@ -416,10 +377,14 @@ func (c *Lib) Destroy() (err error) {
 }
 
 // инициализация приложения
-func (c *Lib) Install() (err error) {
+func Install() (err error) {
 
 	// 1. задание переменных окружения
-	os.Setenv("BBPATH", CurrentDir())
+	currentDir, err := CurrentDir()
+	if err != nil {
+		return
+	}
+	os.Setenv("BBPATH", currentDir)
 
 	//var rootPath = os.Getenv("BBPATH")
 

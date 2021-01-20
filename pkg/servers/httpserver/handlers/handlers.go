@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	"github.com/buildboxapp/gui/pkg/config"
-	"github.com/buildboxapp/gui/pkg/service"
+	"github.com/buildboxapp/app/pkg/config"
+	"github.com/buildboxapp/app/pkg/service"
 	bblog "github.com/buildboxapp/lib/log"
 	"net/http"
 )

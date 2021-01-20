@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	bblog "github.com/buildboxapp/lib/log"
-	bbstate "github.com/buildboxapp/lib/state"
 	"net/http"
 	"sort"
 	"sync"
@@ -12,13 +11,13 @@ import (
 )
 
 type Metrics struct {
-	StateHost bbstate.StateHost
-	Connections int						// количество соединений за весь период учета
-	Queue_AVG float32 					// среднее количество запросов в очереди
-	Queue_QTL_80 float32  				// квантиль 80% - какое среднее кол-во запросов до границы 80% в отсорованном ряду
-	Queue_QTL_90 float32  				// квантиль 90%
-	Queue_QTL_99 float32 				// квантиль 99%
-	TPR_AVG_MS float32 					// (ms) Time per request - среднее время обработки запроса
+	StateHost     StateHost
+	Connections   int						// количество соединений за весь период учета
+	Queue_AVG     float32 					// среднее количество запросов в очереди
+	Queue_QTL_80  float32  				// квантиль 80% - какое среднее кол-во запросов до границы 80% в отсорованном ряду
+	Queue_QTL_90  float32  				// квантиль 90%
+	Queue_QTL_99  float32 				// квантиль 99%
+	TPR_AVG_MS    float32 					// (ms) Time per request - среднее время обработки запроса
 	TPR_QTL_MS_80 float32  				// (ms) квантиль 80% - какое среднее время обработки запросов до границы 80% в отсорованном ряду
 	TPR_QTL_MS_90 float32  				// (ms) квантиль 90%
 	TPR_QTL_MS_99 float32 				// (ms) квантиль 99%
@@ -281,7 +280,7 @@ func (s *serviceMetric) Middleware(next http.Handler) http.Handler {
 // interval - интервалы времени, через которые статистика будет сбрасыватсья в лог
 func New(ctx context.Context, logger *bblog.Log, interval time.Duration) (metrics ServiceMetric) {
 	m := sync.Mutex{}
-	t := bbstate.StateHost{}
+	t := StateHost{}
 	s := Metrics{
 		StateHost: t,
 		Queue_AVG: 0,

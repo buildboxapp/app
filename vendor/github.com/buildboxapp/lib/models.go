@@ -1,17 +1,5 @@
 package lib
 
-import (
-	"github.com/buildboxapp/lib/log"
-	//"github.com/getlantern/errors"
-)
-
-type Lib struct {
-	Logger *log.Log
-	State  map[string]string
-	UrlAPI string `json:"url_api"`
-	UrlGUI string `json:"url_gui"`
-}
-
 var StatusCode = RStatus{
 	"OK":                       {"Запрос выполнен", 200, "", ""},
 	"OKLicenseActivation":      {"Лицензия была активирована", 200, "", ""},

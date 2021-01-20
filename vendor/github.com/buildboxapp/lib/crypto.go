@@ -38,7 +38,7 @@ func Pad(src []byte) []byte {
 	return append(src, padtext...)
 }
 
-func Unpad(src []byte) ([]byte, error) {
+func unpad(src []byte) ([]byte, error) {
 	length := len(src)
 	unpadding := int(src[length-1])
 
@@ -49,7 +49,7 @@ func Unpad(src []byte) ([]byte, error) {
 	return src[:(length - unpadding)], nil
 }
 
-func (c *Lib) Encrypt(key []byte, text string) (string, error) {
+func Encrypt(key []byte, text string) (string, error) {
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return "", err
@@ -68,7 +68,7 @@ func (c *Lib) Encrypt(key []byte, text string) (string, error) {
 	return finalMsg, nil
 }
 
-func (c *Lib) Decrypt(key []byte, text string) (string, error) {
+func Decrypt(key []byte, text string) (string, error) {
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return "", err
@@ -89,7 +89,7 @@ func (c *Lib) Decrypt(key []byte, text string) (string, error) {
 	cfb := cipher.NewCFBDecrypter(block, iv)
 	cfb.XORKeyStream(msg, msg)
 
-	unpadMsg, err := Unpad(msg)
+	unpadMsg, err := unpad(msg)
 	if err != nil {
 		return "", err
 	}

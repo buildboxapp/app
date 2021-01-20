@@ -3,7 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
-	"github.com/buildboxapp/gui/pkg/model"
+	"github.com/buildboxapp/app/pkg/model"
 	"net/http"
 )
 

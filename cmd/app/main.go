@@ -16,7 +16,7 @@ import (
 	"github.com/buildboxapp/lib/log"
 	"github.com/buildboxapp/lib/metric"
 
-	"github.com/buildboxapp/app/pkg/cli"
+	"github.com/urfave/cli"
 
 	stdlog "github.com/labstack/gommon/log"
 
@@ -28,8 +28,63 @@ var outpurLog io.Writer
 
 
 func main()  {
-	clid := cli.New(srvhttp, logger)
-	clid.Run()
+	warning := color.Red("[Fail]")
+
+	// закрываем файл с логами
+	defer fileLog.Close()
+
+	defaultConfig, err := lib.DefaultConfig()
+	if err != nil {
+		return
+	}
+	rootDir, err := lib.RootDir()
+	if err != nil {
+		return
+	}
+
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Printf("\n%s Warning! Error. Fail start page. %s", warning, err)
+			return
+		}
+	}()
+
+	appCLI := cli.NewApp()
+	appCLI.Usage = "Demon Buildbox Proxy started"
+	appCLI.Commands = []cli.Command{
+		{
+			Name:"start", ShortName: "",
+			Usage: "Start single Buildbox APP process",
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:	"config, c",
+					Usage:	"Название файла конфигурации, с которым будет запущен сервис",
+					Value:	defaultConfig,
+				},
+				cli.StringFlag{
+					Name:	"dir, d",
+					Usage:	"Путь к шаблонам",
+					Value:	rootDir,
+				},
+				cli.StringFlag{
+					Name:	"port, p",
+					Usage:	"Порт, на котором запустить процесс",
+					Value:	"",
+				},
+			},
+			Action: func(c *cli.Context) error {
+				configfile := c.String("config")
+				port := c.String("port")
+				dir := c.String("dir")
+
+				Start(configfile, dir, port)
+
+				return nil
+			},
+		},
+	}
+
+	appCLI.Run(os.Args)
 
 	return
 }
@@ -41,7 +96,8 @@ func Start(configfile, dir, port string) {
 	defer cancel()
 
 	// инициируем пакеты
-	var cfg = config.New(configfile)
+	var cfg = config.New()
+	cfg.Load(configfile)
 
 	///////////////// ЛОГИРОВАНИЕ //////////////////
 	// формирование пути к лог-файлам и метрикам
@@ -55,7 +111,17 @@ func Start(configfile, dir, port string) {
 	}
 
 	// инициализировать лог и его ротацию
-	var logger = log.New(cfg.LogsDir, cfg.LogsLevel, lib.UUID(), cfg.Domain, "gui", cfg.UidGui, cfg.LogIntervalReload.Value, cfg.LogIntervalClearFiles.Value, cfg.LogPeriodSaveFiles)
+	var logger = log.New(
+		cfg.LogsDir,
+		cfg.LogsLevel,
+		lib.UUID(),
+		cfg.Domain,
+		"gui",
+		cfg.UidGui,
+		cfg.LogIntervalReload.Value,
+		cfg.LogIntervalClearFiles.Value,
+		cfg.LogPeriodSaveFiles
+	)
 	logger.RotateInit(ctx)
 
 	fmt.Printf("\n%s Enabled logs. Level:%s, Dir:%s\n", done, cfg.LogsLevel, cfg.LogsDir)

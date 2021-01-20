@@ -1,7 +1,7 @@
 package httpserver
 
 import (
-	"github.com/buildboxapp/gui/pkg/servers/httpserver/handlers"
+	"github.com/buildboxapp/app/pkg/servers/httpserver/handlers"
 	"github.com/gorilla/mux"
 	httpSwagger "github.com/swaggo/http-swagger"
 	"net/http"

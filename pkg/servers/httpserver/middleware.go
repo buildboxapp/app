@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/buildboxapp/gui/pkg/seance"
 	"github.com/buildboxapp/lib"
 	bbmetric "github.com/buildboxapp/lib/metric"
 	"net/http"

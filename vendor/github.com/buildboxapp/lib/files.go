@@ -11,7 +11,7 @@ import (
 )
 
 // Создаем файл по указанному пути если его нет
-func (c *Lib) CreateFile(path string) (err error) {
+func CreateFile(path string) (err error) {
 
 	// detect if file exists
 	_, err = os.Stat(path)
@@ -24,8 +24,7 @@ func (c *Lib) CreateFile(path string) (err error) {
 
 	// create file
 	file, err = os.Create(path)
-	if isError(err) {
-		c.Logger.Error(err, "Error creating directory")
+	if err != nil {
 		return err
 	}
 	defer file.Close()
@@ -33,45 +32,39 @@ func (c *Lib) CreateFile(path string) (err error) {
 	return err
 }
 
-// функция печати в лог ошибок (вспомогательная)
-func (c *Lib) isError(err error) bool {
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-	return (err != nil)
-}
-
 // пишем в файл по указанному пути
-func (c *Lib) WriteFile(path string, data []byte) error {
+func WriteFile(path string, data []byte) (err error) {
 
 	// detect if file exists and create
-	c.CreateFile(path)
+	err = CreateFile(path)
+	if err != nil {
+		return
+	}
 
 	// open file using READ & WRITE permission
-	var file, err = os.OpenFile(path, os.O_RDWR, 0644)
-
-	if isError(err) {
-		return err
+	file, err := os.OpenFile(path, os.O_RDWR, 0644)
+	if err != nil {
+		return
 	}
 	defer file.Close()
 
 	// write into file
 	_, err = file.Write(data)
-	if isError(err) {
-		return err
+	if err != nil {
+		return
 	}
 
 	// save changes
 	err = file.Sync()
-	if isError(err) {
-		return err
+	if err != nil {
+		return
 	}
 
-	return nil
+	return
 }
 
 // читаем файл. (отключил: всегда в рамках рабочей диретории)
-func (c *Lib) ReadFile(path string) (result string, err error) {
+func ReadFile(path string) (result string, err error) {
 	// если не от корня, то подставляем текущую директорию
 	//if path[:1] != "/" {
 	//	path = CurrentDir() + "/" + path
@@ -94,7 +87,7 @@ func (c *Lib) ReadFile(path string) (result string, err error) {
 }
 
 // копирование папки
-func (c *Lib) CopyFolder(source string, dest string) (err error) {
+func CopyFolder(source string, dest string) (err error) {
 
 	sourceinfo, err := os.Stat(source)
 	if err != nil {
@@ -107,22 +100,19 @@ func (c *Lib) CopyFolder(source string, dest string) (err error) {
 	}
 
 	directory, _ := os.Open(source)
-
 	objects, err := directory.Readdir(-1)
 
 	for _, obj := range objects {
-
 		sourcefilepointer := source + "/" + obj.Name()
-
 		destinationfilepointer := dest + "/" + obj.Name()
 
 		if obj.IsDir() {
-			err = c.CopyFolder(sourcefilepointer, destinationfilepointer)
+			err = CopyFolder(sourcefilepointer, destinationfilepointer)
 			if err != nil {
 				fmt.Println(err)
 			}
 		} else {
-			err = c.CopyFile(sourcefilepointer, destinationfilepointer)
+			err = CopyFile(sourcefilepointer, destinationfilepointer)
 			if err != nil {
 				fmt.Println(err)
 			}
@@ -133,19 +123,17 @@ func (c *Lib) CopyFolder(source string, dest string) (err error) {
 }
 
 // копирование файла
-func (c *Lib) CopyFile(source string, dest string) (err error) {
+func CopyFile(source string, dest string) (err error) {
 	sourcefile, err := os.Open(source)
 	if err != nil {
 		return err
 	}
-
 	defer sourcefile.Close()
 
 	destfile, err := os.Create(dest)
 	if err != nil {
 		return err
 	}
-
 	defer destfile.Close()
 
 	_, err = io.Copy(destfile, sourcefile)
@@ -160,38 +148,34 @@ func (c *Lib) CopyFile(source string, dest string) (err error) {
 }
 
 // создание папки
-func (c *Lib) CreateDir(path string, mode os.FileMode) (err error) {
+func CreateDir(path string, mode os.FileMode) (err error) {
 	if mode == 0 {
 		mode = 0711
 	}
 	err = os.MkdirAll(path, mode)
 	if err != nil {
-		c.Logger.Error(err, "Error creating directory")
 		return err
 	}
 
 	return nil
 }
 
-func (c *Lib) DeleteFile(path string) (err error) {
+func DeleteFile(path string) (err error) {
 	err = os.Remove(path)
 	if err != nil {
-		c.Logger.Error(err, "Error deleted file: ", path)
 		return
 	}
 
 	return nil
 }
 
-func (c *Lib) MoveFile(source string, dest string) (err error) {
-	err = c.CopyFile(source, dest)
+func MoveFile(source string, dest string) (err error) {
+	err = CopyFile(source, dest)
 	if err != nil {
-		c.Logger.Error(err, "Error file transfer (error copies)")
 		return
 	}
-	err = c.DeleteFile(source)
+	err = DeleteFile(source)
 	if err != nil {
-		c.Logger.Error(err, "Error file transfer (error deleted)")
 		return
 	}
 
@@ -199,7 +183,7 @@ func (c *Lib) MoveFile(source string, dest string) (err error) {
 }
 
 // zip("/tmp/documents", "/tmp/backup.zip")
-func (c *Lib) Zip(source, target string) error {
+func Zip(source, target string) (err error) {
 	zipfile, err := os.Create(target)
 	if err != nil {
 		return err
@@ -261,7 +245,7 @@ func (c *Lib) Zip(source, target string) error {
 }
 
 // unzip("/tmp/report-2015.zip", "/tmp/reports/")
-func (c *Lib) Unzip(archive, target string) error {
+func Unzip(archive, target string) (err error) {
 	reader, err := zip.OpenReader(archive)
 	if err != nil {
 		return err
@@ -270,7 +254,6 @@ func (c *Lib) Unzip(archive, target string) error {
 	if err := os.MkdirAll(target, 0755); err != nil {
 		return err
 	}
-
 	for _, file := range reader.File {
 		path := filepath.Join(target, file.Name)
 		if file.FileInfo().IsDir() {
@@ -295,5 +278,5 @@ func (c *Lib) Unzip(archive, target string) error {
 		}
 	}
 
-	return nil
+	return
 }

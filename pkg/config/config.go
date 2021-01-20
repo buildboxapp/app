@@ -14,16 +14,12 @@ import (
 var warning = color.Red("[Fail]")
 
 // читаем конфигурации
-func (c *Config) load(configfile string) (err error) {
+func (c *Config) Load(configfile string) (err error) {
 	fileName := ""
 	cfgfile := ""
 
 	rootDir, err := lib.RootDir()
 	startDir := rootDir + sep + "upload"
-	if err := envconfig.Process("", c); err != nil {
-		fmt.Printf("%s Error load enviroment: %s (configfile: %s)\n", warning, err, cfgfile)
-		os.Exit(1)
-	}
 
 	// временно, пока не перешли полностью на cfg (позже удалить)
 	if len(configfile) > 5 {
@@ -69,7 +65,32 @@ func (c *Config) SetClientPath()  {
 	return
 }
 
-func New(configfile string) Config {
+// получаем название конфигурации по-умолчанию (стоит галочка=ON)
+func (c *Config) SetConfigName()  {
+	fileconfig, err := lib.DefaultConfig()
+	if err != nil {
+		return
+	}
+	c.ConfigName = fileconfig
+}
+
+// задаем директорию по-умолчанию
+func (c *Config) SetRootDir()  {
+	rootdir, err := lib.RootDir()
+	if err != nil {
+		return
+	}
+	c.RootDir = rootdir
+}
+
+// инициируем переменную значениями по-умолчанию (из структуры с дефалтовыми значениями)
+func New() Config {
 	var cfg = Config{}
+
+	if err := envconfig.Process("", cfg); err != nil {
+		fmt.Printf("%s Error load default enviroment: %s\n", warning, err)
+		os.Exit(1)
+	}
+
 	return cfg
 }

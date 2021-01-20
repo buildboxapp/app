@@ -11,7 +11,7 @@ import (
 
 // всегде возвращает результат в интерфейс + ошибка (полезно для внешних запросов с неизвестной структурой)
 // сериализуем в объект, при передаче ссылки на переменную типа
-func (c *Lib) Curl(method, urlc, bodyJSON string, response interface{}, headers map[string]string) (result interface{}, err error) {
+func Curl(method, urlc, bodyJSON string, response interface{}, headers map[string]string, urlapi, urlgui string) (result interface{}, err error) {
 	var mapValues map[string]string
 	var req *http.Request
 	client := &http.Client{}
@@ -22,10 +22,6 @@ func (c *Lib) Curl(method, urlc, bodyJSON string, response interface{}, headers 
 			req.Header.Add(k, v)
 		}
 	}
-
-	// приводим к единому формату (на конце без /)
-	urlapi := c.State["UrlApi"]
-	urlgui := c.State["UrlGui"]
 
 	if len(urlapi) > 0 {
 		if urlapi[len(urlapi)-1:] != "/" {
@@ -59,9 +55,9 @@ func (c *Lib) Curl(method, urlc, bodyJSON string, response interface{}, headers 
 	values := url.Values{}
 	actionType := ""
 
-	//fmt.Println("lib/http.go; (c *Lib) Curl; urlc " , urlc, "")
+	//fmt.Println("lib/http.go; Curl; urlc " , urlc, "")
 	//fmt.Println("c.State", c.State)
-	//c.Logger.Info("lib/http.go; (c *Lib) Curl; urlc " , urlc, "; bodyJSON: ", bodyJSON, "; method: ", method)
+	//c.Logger.Info("lib/http.go; Curl; urlc " , urlc, "; bodyJSON: ", bodyJSON, "; method: ", method)
 
 	// если в гете мы передали еще и json (его добавляем в строку запроса)
 	// только если в запросе не указаны передаваемые параметры
@@ -112,7 +108,6 @@ func (c *Lib) Curl(method, urlc, bodyJSON string, response interface{}, headers 
 
 	resp, err := client.Do(req)
 	if err != nil {
-		c.Logger.Error(err, "Error request: method:", method, ", url:", urlc, ", bodyJSON:", bodyJSON)
 		fmt.Println("Error request: method:", method, ", url:", urlc, ", bodyJSON:", bodyJSON)
 		return "", err
 	} else {

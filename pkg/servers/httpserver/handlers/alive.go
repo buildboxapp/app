@@ -8,7 +8,7 @@ import (
 
 	"github.com/gomarkdown/markdown"
 
-	"github.com/buildboxapp/gui/pkg/config"
+	"github.com/buildboxapp/app/pkg/config"
 )
 
 // Alive godoc

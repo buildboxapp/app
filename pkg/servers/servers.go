@@ -2,9 +2,9 @@
 package servers
 
 import (
-	"github.com/buildboxapp/gui/pkg/config"
-	"github.com/buildboxapp/gui/pkg/servers/httpserver"
-	"github.com/buildboxapp/gui/pkg/service"
+	"github.com/buildboxapp/app/pkg/config"
+	"github.com/buildboxapp/app/pkg/servers/httpserver"
+	"github.com/buildboxapp/app/pkg/service"
 	bbmetric "github.com/buildboxapp/lib/metric"
 	"strings"
 )

@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"fmt"
-	"github.com/buildboxapp/gui/pkg/service"
+	"github.com/buildboxapp/app/pkg/service"
 	"net/http"
 )
 

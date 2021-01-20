@@ -4,6 +4,10 @@ type Config struct {
 
 	ProjectKey         				string         	`envconfig:"PROJECT_KEY" default:"LKHlhb899Y09olUi"`
 
+	// Config
+	ConfigName         				string         	`envconfig:"CONFIG_NAME" default:""`
+	RootDir         				string         	`envconfig:"ROOT_DIR" default:""`
+
 	// Pay
 	PayShopid         				string         	`envconfig:"PAY_SHOPID" default:""`
 	PaySecretKey         			string         	`envconfig:"PAY_SECRET_KEY" default:""`
@@ -19,7 +23,7 @@ type Config struct {
 	UidGui         					string         	`envconfig:"UID_GUI" default:""`
 
 	// Logger
-	LogsDir         				string         	`envconfig:"LOGS_DIR" default:""`
+	LogsDir         				string         	`envconfig:"LOGS_DIR" default:"logs"`
 	LogsLevel         				string         	`envconfig:"LOGS_LEVEL" default:""`
 	LogIntervalReload         		Duration  		`envconfig:"LOG_INTERVAL_RELOAD" default:"10m" description:"интервал проверки необходимости пересозданния нового файла"`
 	LogIntervalClearFiles         	Duration  		`envconfig:"LOG_INTERVAL_CLEAR_FILES" default:"30m" description:"интервал проверка на необходимость очистки старых логов"`

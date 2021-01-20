@@ -2,7 +2,7 @@ package httpserver
 
 import (
 	"context"
-	"github.com/buildboxapp/gui/pkg/service"
+	"github.com/buildboxapp/app/pkg/service"
 	"github.com/buildboxapp/lib/log"
 	bbmetric "github.com/buildboxapp/lib/metric"
 	"net/http"
@@ -11,9 +11,9 @@ import (
 	"go.uber.org/zap"
 
 	// should be so!
-	_ "github.com/buildboxapp/gui/pkg/servers/docs"
+	_ "github.com/buildboxapp/app/pkg/servers/docs"
 
-	"github.com/buildboxapp/gui/pkg/config"
+	"github.com/buildboxapp/app/pkg/config"
 )
 
 type httpserver struct {

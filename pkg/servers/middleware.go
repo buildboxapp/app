@@ -1,8 +1,7 @@
-package main
+package servers
 
 import (
 	"fmt"
-	. "github.com/buildboxapp/app/lib"
 	bbmetric "github.com/buildboxapp/lib/metric"
 	"net/http"
 	"runtime/debug"

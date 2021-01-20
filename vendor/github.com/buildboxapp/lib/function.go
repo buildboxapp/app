@@ -12,20 +12,13 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 	"github.com/labstack/gommon/log"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 )
 
-//func (c *Lib) Init(output io.Writer, urlgui, urlapi string) {
-//	c.Logger.Output = output
-//	c.UrlGUI = urlgui
-//	c.UrlAPI = urlapi
-//}
-
 // если status не из списка, то вставляем статус - 501 и Descraption из статуса
-func (c *Lib) ResponseJSON(w http.ResponseWriter, objResponse interface{}, status string, error error, metrics interface{}) {
+func ResponseJSON(w http.ResponseWriter, objResponse interface{}, status string, error error, metrics interface{}) (err error) {
 
 	if w == nil {
 		return
@@ -66,10 +59,12 @@ func (c *Lib) ResponseJSON(w http.ResponseWriter, objResponse interface{}, statu
 	w.WriteHeader(errMessage.Status)
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.Write(out)
+
+	return
 }
 
 // стартуем сервис из конфига
-func (c *Lib) RunProcess(path, config, command string) (pid int, err error) {
+func RunProcess(path, config, command string) (pid int, err error) {
 
 	if config == "" {
 		return 0, fmt.Errorf("%s", "Configuration file is not found")
@@ -89,12 +84,13 @@ func (c *Lib) RunProcess(path, config, command string) (pid int, err error) {
 	if err != nil {
 		return 0, err
 	}
+	pid = cmd.Process.Pid
 
-	return cmd.Process.Pid, err
+	return
 }
 
 // останавливаем сервис по порту
-//func (c *Lib) StopProcess(workdir, fileConfig, message string) {
+//func StopProcess(workdir, fileConfig, message string) {
 //
 //	if fileConfig == "" {
 //		fmt.Println(color.Red("ERROR!") + " Configuration file is not found.\n")
@@ -124,24 +120,28 @@ func (c *Lib) RunProcess(path, config, command string) (pid int, err error) {
 
 // читаем файл конфигурации и возвращаем
 // объект конфига, джейсон-конфига и ошибку
-func (c *Lib) ReadConf(configfile string) (conf map[string]string, confjson string, err error) {
+func ReadConf(configfile string) (conf map[string]string, confjson string, err error) {
 
 	if configfile == "" {
 		return nil, "", err
 	}
 
-	// дополняем название файла разширением
+	// дополняем название файла раcширением
 	if !strings.Contains(configfile, ".json") {
 		configfile += ".json"
 	}
 
-	startDir := c.RootDir() + string(filepath.Separator) + "upload"
-	fileName, err := c.ReadConfAction(startDir, configfile, false)
+	rootDir, err := RootDir()
+	if err != nil {
+		return
+	}
+	startDir := rootDir + string(filepath.Separator) + "upload"
+	fileName, err := ReadConfAction(startDir, configfile, false)
 	if err != nil {
 		return nil, "", err
 	}
 
-	confJson, err := c.ReadFile(fileName)
+	confJson, err := ReadFile(fileName)
 	if err != nil {
 		return nil, "", err
 	}
@@ -156,7 +156,7 @@ func (c *Lib) ReadConf(configfile string) (conf map[string]string, confjson stri
 
 // получаем путь от переданной директории
 // если defConfig = true - значит ищем конфигурацию по-умолчанию
-func (c *Lib) ReadConfAction(currentDir, configuration string, defConfig bool) (configPath string, err error) {
+func ReadConfAction(currentDir, configuration string, defConfig bool) (configPath string, err error) {
 	var conf map[string]string
 	directory, _ := os.Open(currentDir)
 	objects, err := directory.Readdir(-1)
@@ -168,19 +168,21 @@ func (c *Lib) ReadConfAction(currentDir, configuration string, defConfig bool) (
 	for _, obj := range objects {
 		nextPath := currentDir + string(filepath.Separator) + obj.Name()
 		if obj.IsDir() {
-			configPath, err = c.ReadConfAction(nextPath+string(filepath.Separator)+"ini", configuration, defConfig)
+			configPath, err = ReadConfAction(nextPath+string(filepath.Separator)+"ini", configuration, defConfig)
 			if configPath != "" {
 				return configPath, err // поднимает результат наверх
 			}
 
 		} else {
 			if defConfig { // проверяем на получение конфигурации по-умолчанию
-				confJson, err := c.ReadFile(nextPath)
+				confJson, err := ReadFile(nextPath)
 				err = json.Unmarshal([]byte(confJson), &conf)
 				if err == nil {
 					d := conf["default"]
 					if d == "checked" {
-						return obj.Name(), err
+						// удаляем разрешение
+						file := strings.Split(obj.Name(), ".")
+						return file[0], err
 					}
 				}
 			} else {
@@ -195,71 +197,44 @@ func (c *Lib) ReadConfAction(currentDir, configuration string, defConfig bool) (
 }
 
 // получаем конфигурацию по-умолчанию для сервера (перебираем конфиги и ищем первый у которого default=on)
-func (c *Lib) DefaultConfig() (fileConfig string, err error) {
-	startDir := c.RootDir() + string(filepath.Separator) + "upload"
-
-	return c.ReadConfAction(startDir, "", true)
-}
-
-// получаем конфигурацию по-умолчанию для сервера (перебираем конфиги и ищем первый у которого default=on)
-func (c *Lib) DefaultConfig111() (fileConfig string, err error) {
-	fpath := ""
-
-	if !strings.Contains(fileConfig, "/") {
-		fpath = c.RootDir() + string(filepath.Separator) + "ini"
-	}
-
-	c.Logger.Info("Search DefaultConfig from : ", fpath)
-
-	files, err := ioutil.ReadDir(fpath)
+func DefaultConfig() (fileConfig string, err error) {
+	rootDir, err := RootDir()
 	if err != nil {
-		return "", err
+		return
 	}
+	startDir := rootDir + string(filepath.Separator) + "upload"
 
-	for _, file := range files {
-		conf, _, err := c.ReadConf(file.Name())
-		if err == nil {
-			d := conf["default"]
-			if d != "" {
-				fileConfig = file.Name()
-				continue
-			}
-
-		}
-	}
-
-	c.Logger.Info("Search DefaultConfig result : ", fileConfig)
-
-	return fileConfig, err
+	return ReadConfAction(startDir, "", true)
 }
 
 // определяем текущий каталог для первого запуска, чтобы прочитать файл с конфигурацией
-func (c *Lib) CurrentDir() string {
+func CurrentDir() (result string, err error) {
 	// путь к шаблонам при запуске через командную строку
-	var runDir, _ = os.Getwd()
+	runDir, err := os.Getwd()
 	var currentDir = filepath.Dir(os.Args[0]) // если запускать с goland отдает темповую папку (заменяем)
 	if currentDir != runDir {
 		currentDir = runDir
 	}
-	return currentDir
+	return
 }
 
 // корневую директорию (проверяем признаки в текущей директории + шагом вверх)
 // входные: currentDir - текущая папка, level - глубина (насколько уровеней вверх проверяем)
 // вниз не проверяем, потому что вряд ли кто будет запускать выше корневой папки
 // но если надо, то можно и доделать
-func (c *Lib) RootDir() (rootDir string) {
-	var err error
-	file, _ := filepath.Abs(os.Args[0])
-	cdir := path.Dir(file)
+func RootDir() (rootDir string, err error) {
+	file, err := filepath.Abs(os.Args[0])
+	if err != nil {
+		return
+	}
 
+	cdir := path.Dir(file)
 	rootDir, err = RootDirAction(cdir)
 	if err != nil {
 		fmt.Println("Error calculation RootDir. File: ", file, "; Error: ", err)
-		c.Logger.Panic(err, "Error calculation RootDir. File: ", file)
 	}
 
-	return rootDir
+	return
 }
 
 // получаем путь от переданной директории
@@ -300,22 +275,22 @@ func RootDirAction(currentDir string) (rootDir string, err error) {
 	return rootDir, err
 }
 
-func (c *Lib) Hash(str string) string {
+func Hash(str string) (result string, err error) {
 	h := sha1.New()
 	h.Write([]byte(str))
-	sha1_hash := hex.EncodeToString(h.Sum(nil))
+	result = hex.EncodeToString(h.Sum(nil))
 
-	return sha1_hash
+	return
 }
 
-func (c *Lib) PanicOnErr(err error) {
+func PanicOnErr(err error) {
 	if err != nil {
 		fmt.Println("Error: ", err)
 		panic(err)
 	}
 }
 
-func (c *Lib) UUID() string {
+func UUID() (result string) {
 	stUUID := uuid.NewV4()
 	return stUUID.String()
 }

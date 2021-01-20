@@ -16,8 +16,8 @@ import (
 	"path/filepath"
 )
 
+const sep = string(filepath.Separator)
 var logrusB = logrus.New()
-var sep = string(filepath.Separator)
 
 // структура строк лог-файла. нужна для анмаршалинга
 type LogLine struct {
