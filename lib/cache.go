@@ -53,7 +53,7 @@ func (l *App) СacheGet(key string, block Data, r *http.Request, page Data, valu
 	var res string
 	var rows *reindexer.Iterator
 
-	rows = l.DB.Query(l.State["namespace"]).
+	rows = l.DB.Query(l.State["Namespace"]).
 		Where("Uid", reindexer.EQ, key).
 		ReqTotal().
 		Exec()
@@ -77,7 +77,7 @@ func (l *App) СacheGet(key string, block Data, r *http.Request, page Data, valu
 
 				// меняем статус
 				elem.Status = "updating"
-				l.DB.Upsert(l.State["namespace"], elem)
+				l.DB.Upsert(l.State["Namespace"], elem)
 
 				// запускаем обновение кеша фоном
 				go l.cacheUpdate(key, block, r, page, values, url)
@@ -127,7 +127,7 @@ func (l *App) CacheSet(key string, block Data, page Data, value, url string) boo
 	valueCache.Deadtime = dt.String()
 	valueCache.Status = ""
 
-	err := l.DB.Upsert(l.State["namespace"], valueCache)
+	err := l.DB.Upsert(l.State["Namespace"], valueCache)
 	if err != nil {
 		l.Logger.Error(err, "Error! Created cache from is failed! ")
 		return false

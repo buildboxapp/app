@@ -114,8 +114,8 @@ func (c *App) Curl(method, urlc, bodyJSON string, response interface{}) (result 
 	client := &http.Client{}
 
 	// приводим к единому формату (на конце без /)
-	urlapi := c.Get("url_api")
-	urlgui := c.Get("url_gui")
+	urlapi := c.State["UrlApi"]
+	urlgui := c.State["UrlGui"]
 
 	if urlapi[len(urlapi)-1:] != "/" {
 		urlapi = urlapi + "/"
@@ -252,13 +252,8 @@ func (l *App) ModuleBuild(block Data, r *http.Request, page Data, values map[str
 	// заменяем в State localhost на адрес домена (если это подпроцесс то все норм, но если это корневой сервис,
 	// то у него url_proxy - localhost и узнать реньше адрес мы не можем, ибо еще домен не инициировался
 	// а значит подменяем localhost при каждом обращении к модулю
-	if strings.Contains(l.State["url_proxy"], "localhost") {
-		//url_shema := "http"
-		//if r.TLS != nil {
-		//	url_shema = "https"
-		//}
-		//l.State["url_proxy"] = url_shema + "://" + r.Host
-		l.State["url_proxy"] = "//" + r.Host
+	if strings.Contains(l.State["UrlProxy"], "localhost") {
+		l.State["UrlProxy"] = "//" + r.Host
 	}
 
 	State = l.State // задаем глобальную переменную состояния приложения, через (l *App) не работает для ф-ция шаблонизатора
@@ -280,7 +275,7 @@ func (l *App) ModuleBuild(block Data, r *http.Request, page Data, values map[str
 	keyParam := ""
 	cacheOn, _ := block.Attr("cache", "value")
 
-	//fmt.Println("BaseCache")
+	//fmt.Println("Basecache")
 
 	ll := l.State["BaseCache"]
 	if  ll != "" && cacheOn != "" && enableCache {
@@ -366,9 +361,9 @@ func (l *App) ModuleBuild(block Data, r *http.Request, page Data, values map[str
 
 	b.Value["Rand"] =  uuid[1:6]  // переопределяем отдельно для каждого модуля
 	b.Value["URL"] = r.URL.Query().Encode()
-	b.Value["Prefix"] = "/" + Domain + "/" +l.Get("path_templates")
+	b.Value["Prefix"] = "/" + Domain + "/" +l.State["PathTemplates"]
 	b.Value["Domain"] = Domain
-	b.Value["CDN"] = l.Get("url_fs")
+	b.Value["CDN"] = l.State["UrlFs"]
 	b.Value["Path"] = ClientPath
 	b.Value["Title"] = Title
 	b.Value["Form"] = r.Form
@@ -471,7 +466,7 @@ func (l *App) ModuleBuild(block Data, r *http.Request, page Data, values map[str
 	sliceMake := strings.Split(tplName, "/")
 	tplName = strings.Join(sliceMake[3:], "/")
 
-	tplName = l.State["workdir"] + "/" + tplName
+	tplName = l.State["Workingdir"] + "/" + tplName
 
 	// в режиме отладки пересборка шаблонов происходит при каждом запросе
 	var tmpl *template.Template
@@ -495,7 +490,7 @@ func (l *App) ModuleBuild(block Data, r *http.Request, page Data, values map[str
 	}
 
 	// Включаем режим кеширования
-	jj := l.Get("BaseCache")
+	jj := l.State["BaseCache"]
 	if jj != "" && cacheOn != "" && enableCache {
 		fmt.Println("кэш включен")
 		key, keyParam = l.SetCahceKey(r, block)
@@ -540,13 +535,8 @@ func (l *App) ModuleBuildParallel(ctxM context.Context, p Data, r *http.Request,
 	//	l.State["url_proxy"] = url_shema + "://" + r.Host
 	//}
 
-	if strings.Contains(l.State["url_proxy"], "localhost") {
-		//url_shema := "http"
-		//if r.TLS != nil {
-		//	url_shema = "https"
-		//}
-		//l.State["url_proxy"] = url_shema + "://" + r.Host
-		l.State["url_proxy"] = "//" + r.Host
+	if strings.Contains(l.State["UrlProxy"], "localhost") {
+		l.State["UrlProxy"] = "//" + r.Host
 	}
 
 	State = l.State // задаем глобальную переменную состояния приложения, через (l *App) не работает для ф-ция шаблонизатора
@@ -576,7 +566,7 @@ func (l *App) ModuleBuildParallel(ctxM context.Context, p Data, r *http.Request,
 	//////////////////////////////
 	cacheOn, _ := p.Attr("cache", "value")
 
-	if l.Get("BaseCache") != "" && cacheOn != "" && enableCache {
+	if l.State["BaseCache"] != "" && cacheOn != "" && enableCache {
 
 		key, keyParam := l.SetCahceKey(r, p)
 
@@ -660,9 +650,9 @@ func (l *App) ModuleBuildParallel(ctxM context.Context, p Data, r *http.Request,
 
 	b.Value["Rand"] =  uuid[1:6]  // переопределяем отдельно для каждого модуля
 	b.Value["URL"] = r.URL.Query().Encode()
-	b.Value["Prefix"] = "/" + Domain + "/" +l.Get("path_templates")
+	b.Value["Prefix"] = "/" + Domain + "/" +l.State["PathTemplates"]
 	b.Value["Domain"] = Domain
-	b.Value["CDN"] = l.Get("url_fs")
+	b.Value["CDN"] = l.State["UrlFs"]
 	b.Value["Path"] = ClientPath
 	b.Value["Title"] = Title
 	b.Value["Form"] = r.Form
@@ -769,7 +759,7 @@ func (l *App) ModuleBuildParallel(ctxM context.Context, p Data, r *http.Request,
 		return
 	}
 	tplName = strings.Join(sliceMake[3:], "/")
-	tplName = l.Get("workdir") + "/"+ tplName
+	tplName = l.State["Workingdir"] + "/"+ tplName
 
 
 	// в режиме отладки пересборка шаблонов происходит при каждом запросе
@@ -817,7 +807,7 @@ func (l *App) ModuleBuildParallel(ctxM context.Context, p Data, r *http.Request,
 
 
 	// Включаем режим кеширования
-	if l.Get("BaseCache") != "" && cacheOn != "" && enableCache {
+	if l.State["BaseCache"] != "" && cacheOn != "" && enableCache {
 		key, keyParam = l.SetCahceKey(r, p)
 
 		// КЕШИРОВАНИЕ данных
@@ -953,7 +943,7 @@ func (l *App) ModuleError(err interface{}, r *http.Request) template.HTML  {
 	l.Logger.Error(nil,err)
 	fmt.Println("ModuleError: ", err)
 
-	wd := l.Get("workdir")
+	wd := l.State["Workingdir"]
 	t = template.Must(template.ParseFiles(wd + "/upload/control/templates/errors/503.html"))
 
 	t.Execute(&c, p)

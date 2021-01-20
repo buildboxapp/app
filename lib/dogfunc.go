@@ -379,17 +379,17 @@ func (c *App) Path(d []Data, arg []string) (result string) {
 		if len(State) != 0 {
 			switch param {
 			case "API":
-				result = State["url_api"]
+				result = State["UrlApi"]
 			case "GUI":
-				result = State["url_gui"]
+				result = State["UrlGui"]
 			case "PROXY":
-				result = State["url_proxy"]
+				result = State["UrlProxy"]
 			case "CLIENT":
-				result = State["client_path"]
+				result = State["ClientPath"]
 			case "DOMAIN":
-				result = State["domain"]
+				result = State["Domain"]
 			default:
-				result = State["client_path"]
+				result = State["ClientPath"]
 			}
 		}
 	}

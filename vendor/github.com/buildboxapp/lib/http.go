@@ -24,8 +24,8 @@ func (c *Lib) Curl(method, urlc, bodyJSON string, response interface{}, headers 
 	}
 
 	// приводим к единому формату (на конце без /)
-	urlapi := c.State["url_api"]
-	urlgui := c.State["url_gui"]
+	urlapi := c.State["UrlApi"]
+	urlgui := c.State["UrlGui"]
 
 	if len(urlapi) > 0 {
 		if urlapi[len(urlapi)-1:] != "/" {

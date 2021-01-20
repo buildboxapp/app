@@ -2,7 +2,7 @@ package lib
 
 import (
 	"github.com/buildboxapp/lib/log"
-	"github.com/getlantern/errors"
+	//"github.com/getlantern/errors"
 )
 
 type Lib struct {
@@ -108,14 +108,4 @@ type Hosts struct {
 	PortFrom int    `json:"portfrom"`
 	PortTo   int    `json:"portto"`
 	Protocol string `json:"protocol"`
-}
-
-// метод, которые проверяем наличие ключа в стейте приложения и если нет, то пишет в лог
-func (s *Lib) Get(key string) (value string) {
-	value, found := s.State[key]
-	if !found {
-		err := errors.New("Key '" + key + "' from application state not found")
-		s.Logger.Error(err)
-	}
-	return value
 }

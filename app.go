@@ -172,7 +172,7 @@ func Start(configfile, dir, port string) {
 	// задаем глобальную переменную BuildBox (от нее строятся пути при загрузке шаблонов)
 	app.ServiceMetrics = ServiceMetrics
 	app.State = Config //state
-	app.State["workdir"] = dir
+	app.State["Workingdir"] = dir
 
 	// для завершения сервиса ждем сигнал в процесс
 	ch := make(chan os.Signal)
@@ -188,37 +188,37 @@ func Start(configfile, dir, port string) {
 	proxy_url := ""
 
 	// если автоматическая настройка портов
-	if app.Get("address_proxy_pointsrc") != "" && app.Get("port_auto_interval") != "" {
+	if app.State["AddressProxyPointsrc"] != "" && app.State["PortAutoInterval"] != "" {
 		var portDataAPI bblib.Response
 		// запрашиваем порт у указанного прокси-сервера
-		proxy_url = app.Get("address_proxy_pointsrc") + "port?interval=" + app.Get("port_auto_interval")
+		proxy_url = app.State["AddressProxyPointsrc"] + "port?interval=" + app.State["PortAutoInterval"]
 
 		app.Curl("GET", proxy_url, "", &portDataAPI)
-		app.State["PortAPP"] = fmt.Sprint(portDataAPI.Data)
+		app.State["Portapp"] = fmt.Sprint(portDataAPI.Data)
 
-		app.Logger.Info("Get: ", proxy_url, "; Get PortAPP: ", app.State["PortAPP"])
+		app.Logger.Info("Get: ", proxy_url, "; Get PortAPP: ", app.State["Portapp"])
 	}
 
 	// если порт передан явно через консоль, то запускаем на этом порту
 	if port != "" {
-		app.State["PortAPP"] = port
+		app.State["Portapp"] = port
 	}
 
-	if app.State["PortAPP"] == "" {
+	if app.State["Portapp"] == "" {
 		fmt.Print(fail, " Port APP-service is null. Servive not running.\n")
 		app.Logger.Panic(err, "Port APP-service is null. Servive not running.")
 	}
-	log.Warning("From "+proxy_url+" get PortAPP:", app.Get("PortAPP"), " Domain:", app.Get("domain"))
+	log.Warning("From "+proxy_url+" get PortAPP:", app.State["Portapp"], " Domain:", app.State["Domain"])
 
 	// инициализируем кеширование
-	app.State["namespace"] 	= Replace(app.Get("domain"), "/", "_", -1)
-	app.State["url_proxy"]	= app.Get("address_proxy_pointsrc")
+	app.State["Namespace"] 	= Replace(app.State["Domain"], "/", "_", -1)
+	app.State["UrlProxy"]	= app.State["AddressProxyPointsrc"]
 	app.Logger = log
 
 	// включено кеширование
-	if app.Get("cache_pointsrc") != "" {
-		app.DB = reindexer.NewReindex(app.Get("cache_pointsrc"))
-		err := app.DB.OpenNamespace(app.Get("namespace"), reindexer.DefaultNamespaceOptions(), ValueCache{})
+	if app.State["CachePointsrc"] != "" {
+		app.DB = reindexer.NewReindex(app.State["CachePointsrc"])
+		err := app.DB.OpenNamespace(app.State["Namespace"], reindexer.DefaultNamespaceOptions(), ValueCache{})
 		if err != nil {
 			fmt.Printf("%s Error connecting to database. Plaese check this parameter in the configuration. %s\n", fail, app.Get("cache_pointsrc"))
 			fmt.Printf("%s\n", err)
@@ -231,13 +231,13 @@ func Start(configfile, dir, port string) {
 		}
 	}
 
-	if app.Get("domain") != "" {
-		app.State["client_path"] = "/" + app.Get("domain") + "/ru"
+	if app.Get("Domain") != "" {
+		app.State["ClientPath"] = "/" + app.Get("Domain") + "/ru"
 	}
 
 	//fmt.Println(app.State["client_path"] )
 
-	var dirTemplate = app.State["workdir"] + "/gui/templates/*.html"
+	var dirTemplate = app.State["Workingdir"] + "/gui/templates/*.html"
 	fmt.Printf("%s Load template directory: %s\n", done, dirTemplate)
 	log.Info("Load template directory: ", dirTemplate)
 
@@ -248,8 +248,8 @@ func Start(configfile, dir, port string) {
 	//router.Use(AuthProcessor)
 	router.Use(Recover)
 
-	router.PathPrefix("/upload/").Handler(http.StripPrefix("/upload/", http.FileServer(http.Dir(app.State["workdir"] + "/upload"))))
-	router.PathPrefix("/templates/").Handler(http.StripPrefix("/templates/", http.FileServer(http.Dir(app.State["workdir"] + "/templates"))))
+	router.PathPrefix("/upload/").Handler(http.StripPrefix("/upload/", http.FileServer(http.Dir(app.State["Workingdir"] + "/upload"))))
+	router.PathPrefix("/templates/").Handler(http.StripPrefix("/templates/", http.FileServer(http.Dir(app.State["Workingdir"] + "/templates"))))
 
 	fmt.Printf("%s Starting APP-service: %s\n", done, app.Get("PortAPP"))
 	log.Info("Starting APP-service: ", app.Get("PortAPP"))

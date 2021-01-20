@@ -23,7 +23,7 @@ func (c *Lib) Ls() (result []map[string]string) {
 	sep := string(filepath.Separator)
 
 	// может работать много прокси, поэтому обходим конфигурационные файлы и ищем рабочие прокси
-	pathFolder := c.RootDir() + sep + "upload" //+ sep + c.State["domain"] + sep + "ini"
+	pathFolder := c.RootDir() + sep + "upload" //+ sep + c.State["Domain"] + sep + "ini"
 	folders, err := ioutil.ReadDir(pathFolder)
 	if err != nil {
 		c.Logger.Panic(err)
@@ -102,7 +102,7 @@ func (c *Lib) Ps(format string) (pids []string, services map[string][][]string, 
 	}
 
 	// может работать много прокси, поэтому обходим конфигурационные файлы и ищем рабочие прокси
-	pathFolder := c.RootDir() + sep + "upload" //+ sep + c.State["domain"] + sep + "ini"
+	pathFolder := c.RootDir() + sep + "upload" //+ sep + c.State["Domain"] + sep + "ini"
 	folders, err := ioutil.ReadDir(pathFolder)
 	if err != nil {
 		log.Panic(err)

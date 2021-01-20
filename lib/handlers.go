@@ -21,9 +21,8 @@ var timeoutBlockGen = 10 * time.Second
 // ответ на запрос прокси
 func (c *App) ProxyPing(w http.ResponseWriter, r *http.Request) {
 
-	pp := strings.Split(c.Get("domain") , "/")
-	pg, _ := strconv.Atoi(c.Get("PortAPP"))
-	//runfile := c.State["runfile"]
+	pp := strings.Split(c.State["Domain"] , "/")
+	pg, _ := strconv.Atoi(c.State["Portapp"])
 
 	name := "ru"
 	version := "ru"
@@ -36,7 +35,7 @@ func (c *App) ProxyPing(w http.ResponseWriter, r *http.Request) {
 		version = pp[1]
 	}
 
-	pid := strconv.Itoa(os.Getpid())+":"+ c.State["data-uid"]
+	pid := strconv.Itoa(os.Getpid())+":"+ c.State["DataUid"]
 	state, _ := json.Marshal(c.ServiceMetrics.Get())
 
 	var pong = []Pong{
@@ -44,8 +43,8 @@ func (c *App) ProxyPing(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// заменяем переменную домена на правильный формат для использования в Value.Prefix при генерации страницы
-	c.State["domain"] 		= name + "/" + version
-	c.State["client_path"] 	= "/" + c.State["domain"]
+	c.State["Domain"] 		= name + "/" + version
+	c.State["ClientPath"] 	= "/" + c.State["Domain"]
 
 	res, _ := json.Marshal(pong)
 
@@ -68,13 +67,13 @@ func (c *App) PIndex(w http.ResponseWriter, r *http.Request) {
 
 	// получаем параметры из файла конфигурации (лежат в переменной Application)
 	page := vars["page"]
-	path_template 			:= c.Get("path_templates")
-	tpl_app_blocks_pointsrc := c.Get("tpl_app_blocks_pointsrc")
-	tpl_app_pages_pointsrc 	:= c.Get("tpl_app_pages_pointsrc")
-	data_source 			:= c.Get("data-source")
-	title 					:= c.Get("title")
-	Domain 					= c.State["domain"]
-	ClientPath 				= c.State["client_path"]
+	path_template 			:= c.State["PathTemplates"]
+	tpl_app_blocks_pointsrc := c.State["TplAppBlocksPointsrc"]
+	tpl_app_pages_pointsrc 	:= c.State["TplAppPagesPointsrc"]
+	data_source 			:= c.State["DataSource"]
+	title 					:= c.State["Title"]
+	Domain 					= c.State["Domain"]
+	ClientPath 				= c.State["ClientPath"]
 
 	// ПЕРЕДЕЛАТЬ или на кеширование страниц и на доп.проверку
 	if page == "" {
@@ -106,7 +105,7 @@ func (c *App) PIndex(w http.ResponseWriter, r *http.Request) {
 	if len(objPage.Data) > 1 {
 		for k, v := range objPage.Data {
 			app, _ := v.Attr("app", "src")
-			if app != c.Get("data-uid") {
+			if app != c.State["DataUid"] {
 				objPage.RemoveData(k)
 			}
 		}
@@ -124,7 +123,7 @@ func (c *App) PIndex(w http.ResponseWriter, r *http.Request) {
 	//jsonRequest, _ := json.Marshal(r)
 	// values["Request"] = string(jsonRequest)
 
-	values["Prefix"] = ClientPath + "/" +path_template
+	values["Prefix"] = ClientPath + path_template
 	values["Domain"] = Domain
 	values["Path"] = ClientPath
 	values["CDN"] = ""
@@ -181,15 +180,11 @@ func (c *App) TIndex(w http.ResponseWriter, r *http.Request, Config map[string]s
 	// заменяем значения при вызове ф-ции из GUI ибо они пустые, ведь приложение полностью не инициализировано через конфиг
 
 	//JRequest 	:= Config["request"] // ? что это? разобраться!
-	Domain 		= c.State["domain"]
-	ClientPath 	= c.State["client_path"]
+	Domain 		= c.State["Domain"]
+	ClientPath 	= c.State["ClientPath"]
 
-	Title 		= c.State["title"]
-	Metric 		= template.HTML(c.State["metric"])
-
-	//c.State["url_api"] = UrlAPI + "/"
-	//c.State["url_gui"] = UrlGUI + "/"
-
+	Title 		= c.State["Title"]
+	Metric 		= template.HTML(c.State["Metric"])
 
 	if page == "" {
 		return template.HTML("Error: Not id page")
@@ -436,7 +431,7 @@ func (l *App) BPage(r *http.Request, blockSrc string, objPage ResponseData, valu
 	sliceMake := strings.Split(maketFile, "/")
 	maketFile = strings.Join(sliceMake[3:], "/")
 
-	maketFile = l.Get("workdir") + "/"+ maketFile
+	maketFile = l.State["Workingdir"] + "/"+ maketFile
 
 	// в режиме отладки пересборка шаблонов происходит при каждом запросе
 	if debugMode {
