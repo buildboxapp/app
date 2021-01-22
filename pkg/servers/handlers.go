@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/buildboxapp/app/pkg/model"
 	"github.com/gorilla/mux"
 	"html/template"
 	"net/http"
@@ -18,49 +19,15 @@ import (
 // таймаут срабатывания завершения обработки модулей (через отмену контектста и таймаут внешних запросов)
 var timeoutBlockGen = 10 * time.Second
 
-// ответ на запрос прокси
-func (c *App) ProxyPing(w http.ResponseWriter, r *http.Request) {
-
-	pp := strings.Split(c.State["Domain"] , "/")
-	pg, _ := strconv.Atoi(c.State["Portapp"])
-
-	name := "ru"
-	version := "ru"
-	if len(pp) == 1 {
-		name = pp[0]
-	}
-
-	if len(pp) == 2 {
-		name = pp[0]
-		version = pp[1]
-	}
-
-	pid := strconv.Itoa(os.Getpid())+":"+ c.State["DataUid"]
-	state, _ := json.Marshal(c.ServiceMetrics.Get())
-
-	var pong = []Pong{
-		{name, version, "run",pg, pid, string(state), ReplicasService},
-	}
-
-	// заменяем переменную домена на правильный формат для использования в Value.Prefix при генерации страницы
-	c.State["Domain"] 		= name + "/" + version
-	c.State["ClientPath"] 	= "/" + c.State["Domain"]
-
-	res, _ := json.Marshal(pong)
-
-	w.WriteHeader(200)
-	w.Write([]byte(res))
-}
-
 
 // Собираем страницу (параметры из конфига) и пишем в w.Write
-func (c *App) PIndex(w http.ResponseWriter, r *http.Request) {
-	var objPages, objPage ResponseData
+func (c *servers) Page(w http.ResponseWriter, r *http.Request) {
+	var objPages, objPage model.ResponseData
 	vars := mux.Vars(r)
 
 	// указатель на профиль текущего пользователя
 	ctx := r.Context()
-	var profile ProfileData
+	var profile model.ProfileData
 	profileRaw := ctx.Value("UserRaw")
 	json.Unmarshal([]byte(fmt.Sprint(profileRaw)), &profile)
 
@@ -144,15 +111,15 @@ func (c *App) PIndex(w http.ResponseWriter, r *http.Request) {
 
 
 // возвращаем сформированную страницу в template.HTML (для cockpit-a и dashboard)
-func (c *App) TIndex(w http.ResponseWriter, r *http.Request, Config map[string]string) template.HTML {
+func (s *servers) TIndex(w http.ResponseWriter, r *http.Request, Config map[string]string) template.HTML {
 
-	var objPage, objApp ResponseData
+	var objPage, objApp model.ResponseData
 	vars := mux.Vars(r)
 	page := vars["obj"] // ид-страницы передается через переменную obj
 
 	// указатель на профиль текущего пользователя
 	ctx := r.Context()
-	var profile ProfileData
+	var profile model.ProfileData
 	profileRaw := ctx.Value("UserRaw")
 	json.Unmarshal([]byte(fmt.Sprint(profileRaw)), &profile)
 
@@ -178,13 +145,6 @@ func (c *App) TIndex(w http.ResponseWriter, r *http.Request, Config map[string]s
 	}
 
 	// заменяем значения при вызове ф-ции из GUI ибо они пустые, ведь приложение полностью не инициализировано через конфиг
-
-	//JRequest 	:= Config["request"] // ? что это? разобраться!
-	Domain 		= c.State["Domain"]
-	ClientPath 	= c.State["ClientPath"]
-
-	Title 		= c.State["Title"]
-	Metric 		= template.HTML(c.State["Metric"])
 
 	if page == "" {
 		return template.HTML("Error: Not id page")
@@ -242,18 +202,18 @@ func (c *App) TIndex(w http.ResponseWriter, r *http.Request, Config map[string]s
 
 	// формируем значение переменных, переданных в страницу
 	values := map[string]interface{}{}
-	values["Prefix"] = ClientPath + path_template
-	values["Domain"] = Domain
-	values["Path"] = ClientPath
+	values["Prefix"] = s.cfg.ClientPath + path_template
+	values["Domain"] = s.cfg.Domain
+	values["Path"] = s.cfg.ClientPath
 	values["CDN"] = ""
-	values["Title"] = Title
+	values["Title"] = s.cfg.Title
 	values["URL"] = r.URL.Query().Encode()
 	values["Referer"] = r.Referer()
 	values["RequestURI"] = r.RequestURI
 	values["Profile"] = profile
 
 
-	result := c.BPage(r, tpl_app_blocks_pointsrc, objPage, values)
+	result := s.BPage(r, tpl_app_blocks_pointsrc, objPage, values)
 
 	//fmt.Println("result: ", result)
 
@@ -262,18 +222,18 @@ func (c *App) TIndex(w http.ResponseWriter, r *http.Request, Config map[string]s
 
 
 // Собираем страницу
-func (l *App) BPage(r *http.Request, blockSrc string, objPage ResponseData, values map[string]interface{}) string {
+func (s *servers) BPage(r *http.Request, blockSrc string, objPage model.ResponseData, values map[string]interface{}) string {
 
-	var objMaket, objBlocks ResponseData
-	moduleResult := ModuleResult{}
+	var objMaket, objBlocks model.ResponseData
+	moduleResult := model.ModuleResult{}
 	statModule := map[string]interface{}{}
 
 	// флаг режима генерации модулей (последовательно/параллельно)
 
-	p := &Page{}
-	p.Title 	= Title
-	p.Domain 	= Domain
-	p.Metric	= Metric
+	p := &model.Page{}
+	p.Title 	= s.cfg.Title
+	p.Domain 	= s.cfg.Domain
+	p.Metric	= template.HTML(s.cfg.Metric)
 	p.Prefix 	= values["Prefix"]
 	//p.Request 	= values["Request"]
 	p.CSS 		= []string{}
@@ -296,7 +256,7 @@ func (l *App) BPage(r *http.Request, blockSrc string, objPage ResponseData, valu
 	// ДОДЕЛАТЬ СРОЧНО!!!
 
 	// 2 запрос на объекты блоков страницы
-	l.Curl("GET", "_link?obj="+pageUID+"&source="+blockSrc+"&mode=in", "", &objBlocks)
+	s.service.Curl("GET", "_link?obj="+pageUID+"&source="+blockSrc+"&mode=in", "", &objBlocks)
 
 	//for _, v := range objBlocks.Data {
 	//	fmt.Println("objBlocks: ", v.Title, v.Id)
@@ -447,23 +407,9 @@ func (l *App) BPage(r *http.Request, blockSrc string, objPage ResponseData, valu
 }
 
 
-// генерируем один блок - внешний запрос
-func (c *App) GetBlock(w http.ResponseWriter, r *http.Request) {
-	var objBlock ResponseData
-	vars := mux.Vars(r)
-	block := vars["block"]
-	dataPage 		:= Data{} // пустое значение, используется в блоке для кеширования если он вызывается из страницы
-
-	c.Curl("GET", "_objs/"+block, "", &objBlock)
-
-	moduleResult := c.ModuleBuild(objBlock.Data[0], r, dataPage, nil, false)
-
-	w.Write([]byte(moduleResult.result))
-}
-
 
 // генерируем один блок через внутренний запрос - для cocpit-a
-func (c *App) TBlock(r *http.Request, block Data, Config map[string]string) template.HTML {
+func (c *servers) TBlock(r *http.Request, block model.Data, Config map[string]string) template.HTML {
 	dataPage 		:= Data{} // пустое значение, используется в блоке для кеширования если он вызывается из страницы
 
 	moduleResult := c.ModuleBuild(block, r, dataPage, nil, false)

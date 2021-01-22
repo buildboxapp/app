@@ -107,7 +107,7 @@ func (h *httpserver) MiddleAuthProcessor(next http.Handler) http.Handler {
 		}
 
 		// не соответствие переданного ключа и UID-а API (пропускаем пинги)
-		if strings.TrimSpace(authKey) != h.cfg.UidGui && r.URL.Path != "/ping" {
+		if strings.TrimSpace(authKey) != h.cfg.UidApp && r.URL.Path != "/ping" {
 			lib.ResponseJSON(w, nil, "Unauthorized", nil, nil)
 			return
 		}

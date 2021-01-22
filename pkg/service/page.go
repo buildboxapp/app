@@ -10,8 +10,8 @@ import (
 )
 
 
-// Ping ...
-func (s *service) Ping(ctx context.Context) (result []model.Pong, err error) {
+// Page ...
+func (s *service) Page(ctx context.Context) (result []model.Pong, err error) {
 	pp := strings.Split(s.cfg.Domain, "/")
 	name := "ru"
 	version := "ru"

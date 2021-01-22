@@ -20,7 +20,7 @@ type Config struct {
 	UrlProxy						string         	`envconfig:"URL_PROXY" default:""`
 	UrlGui         					string         	`envconfig:"URL_GUI" default:""`
 	UrlApi							string         	`envconfig:"URL_API" default:""`
-	UidGui         					string         	`envconfig:"UID_GUI" default:""`
+	UidApp         					string         	`envconfig:"UID_APP" default:""`
 
 	// Logger
 	LogsDir         				string         	`envconfig:"LOGS_DIR" default:"logs"`
@@ -91,7 +91,7 @@ type Config struct {
 	ProxyLevelLogsPointsrc	string `envconfig:"PROXY_LEVEL_LOGS_POINTSRC" default:""`
 	ProxyLevelLogsPointvalue	string `envconfig:"PROXY_LEVEL_LOGS_POINTVALUE" default:""`
 
-	ReplicasApp	string `envconfig:"REPLICAS_APP" default:""`
+	ReplicasApp	Int `envconfig:"REPLICAS_APP" default:""`
 	Robot	string `envconfig:"ROBOT" default:""`
 
 	Title	string `envconfig:"TITLE" default:""`

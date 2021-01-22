@@ -2,6 +2,7 @@ package app_lib
 
 import (
 	"context"
+	"github.com/buildboxapp/app/pkg/model"
 	"sort"
 	"strconv"
 	"strings"
@@ -103,128 +104,6 @@ func (c *App) WriteFile(path string, data []byte) {
 
 
 
-// всегде возвращает результат в интерфейс + ошибка (полезно для внешних запросов с неизвестной структурой)
-// сериализуем в объект, при передаче ссылки на переменную типа
-func (c *App) Curl(method, urlc, bodyJSON string, response interface{}) (result interface{}, err error) {
-
-	//fmt.Println("ДЕЛАЮ ЗАПРОС urlc: ", urlc)
-
-	var mapValues map[string]string
-	var req *http.Request
-	client := &http.Client{}
-
-	// приводим к единому формату (на конце без /)
-	urlapi := c.State["UrlApi"]
-	urlgui := c.State["UrlGui"]
-
-	if urlapi[len(urlapi)-1:] != "/" {
-		urlapi = urlapi + "/"
-	}
-	if urlgui[len(urlgui)-1:] != "/" {
-		urlgui = urlgui + "/"
-	}
-
-	// дополняем путем до API если не передан вызов внешнего запроса через http://
-	if urlc[:4] != "http" {
-		if urlc[:1] != "/" {
-			urlc = urlapi + urlc
-		} else {
-			urlc = urlgui + urlc[1:]
-		}
-	}
-
-	//fmt.Println("urlc: ", urlc)
-
-	if method == "" {
-		method = "POST"
-	}
-
-	method = strings.Trim(method, " ")
-	values := url.Values{}
-	actionType := ""
-
-	//c.Logger.Warning("urlc " , urlc)
-	//fmt.Println("urlc1 " , urlc)
-
-	// если в гете мы передали еще и json (его добавляем в строку запроса)
-	// только если в запросе не указаны передаваемые параметры
-	clearUrl := strings.Contains(urlc, "?")
-
-	bodyJSON = strings.Replace(bodyJSON, "  ", "", -1)
-	err = json.Unmarshal([]byte(bodyJSON), &mapValues)
-
-	if method == "JSONTOGET" && bodyJSON != "" && clearUrl {
-		actionType = "JSONTOGET"
-	}
-	if (method == "JSONTOPOST" && bodyJSON != "") {
-		actionType = "JSONTOPOST"
-	}
-
-	switch actionType {
-	case "JSONTOGET":		// преобразуем параметры в json в строку запроса
-		if err == nil {
-			for k, v := range mapValues {
-				values.Set(k, v)
-			}
-			uri, _ := url.Parse(urlc)
-			uri.RawQuery = values.Encode()
-			urlc = uri.String()
-			req, err = http.NewRequest("GET", urlc, strings.NewReader(bodyJSON))
-		} else {
-			c.Logger.Warning("Error! Fail parsed bodyJSON from GET Curl: ", err)
-		}
-	case "JSONTOPOST":		// преобразуем параметры в json в тело запроса
-
-		if err == nil {
-			for k, v := range mapValues {
-				values.Set(k, v)
-			}
-			req, err = http.NewRequest("POST", urlc, strings.NewReader(values.Encode()))
-			req.PostForm = values
-			req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-		} else {
-			c.Logger.Warning("Error! Fail parsed bodyJSON to POST: ", err)
-		}
-	default:
-		req, err = http.NewRequest(method, urlc, strings.NewReader(bodyJSON))
-	}
-
-	//req.Header.Add("If-None-Match", `W/"wyzzy"`)
-	if err != nil {
-		return "", err
-	}
-
-
-	resp, err := client.Do(req)
-	//fmt.Println(resp.Body, " = ", err)
-
-	if err != nil {
-		c.Logger.Warning("Error request: metod:", method, ", url:", urlc, ", bodyJSON:", bodyJSON)
-		return "", err
-	} else {
-		defer resp.Body.Close()
-	}
-
-	responseData, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
-	responseString := string(responseData)
-
-	//c.Logger.Warning("Сделан: ", method, " на: ", urlc, " ответ: ",responseString)
-
-	// возвращаем объект ответа, если передано - в какой объект класть результат
-	if response != nil {
-		json.Unmarshal([]byte(responseString), &response)
-	}
-
-	// всегда отдаем в интерфейсе результат (полезно, когда внешние запросы или сериализация на клиенте)
-	json.Unmarshal([]byte(responseString), &result)
-
-	//fmt.Println("urlc result: ", result)
-
-	return result, err
-}
 
 
 func ListenForShutdown(ch <- chan os.Signal)  {
@@ -954,7 +833,7 @@ func (l *App) ModuleError(err interface{}, r *http.Request) template.HTML  {
 
 // отправка запроса на получения данных из интерфейса GUI
 // параметры переданные в строке (r.URL) отправляем в теле запроса
-func (c *App) GUIQuery(tquery string, r *http.Request) Response  {
+func (c *App) GUIQuery(tquery string, r *http.Request) model.Response  {
 
 	var resultInterface interface{}
 	var dataResp, returnResp Response
@@ -1013,7 +892,7 @@ func (c *App) GUIQuery(tquery string, r *http.Request) Response  {
 
 
 // удаляем элемент из слайса
-func (p *ResponseData) RemoveData(i int) bool {
+func (p *model.ResponseData) RemoveData(i int) bool {
 
 	if (i < len(p.Data)){
 		p.Data = append(p.Data[:i], p.Data[i+1:]...)
@@ -1025,158 +904,4 @@ func (p *ResponseData) RemoveData(i int) bool {
 	return true
 }
 
-
-////////////////////////////////////////////////////////////////////////////////////////
-/////////////// ФУНКЦИИ ДЛЯ ВЛОЖЕНИЯ ОБЪЕКТОВ Data В ФОРМАТ ДЕРЕВА /////////////////////
-////////////////////////////////////////////////////////////////////////////////////////
-// формируем вложенную структуру объектов
-func DataToIncl(objData []Data) []*DataTree {
-
-	// переводим slice в map, чтобы можно было удалять объект и обращаться по ключу при формировании подуровней навигатора
-	mapLevel := map[string]*DataTree{}
-	for _, v := range objData {
-		item := DataTree{}
-
-		item.Uid = v.Uid
-		item.Source = v.Source
-		item.Type = v.Type
-		item.Attributes = v.Attributes
-		item.Title = v.Title
-		item.Type = v.Type
-		item.Parent = v.Parent
-		item.Rev = v.Rev
-		item.Сopies = v.Сopies
-
-		mapLevel[v.Uid] = &item
-	}
-
-	// делаю обратное наследование, добавляю в Sub значения всех потомков (для оптимальной функции вложения)
-	for _, v := range mapLevel {
-		if _, found := v.Attributes["leader"]; found {
-			Leader := v.Attributes["leader"].Src
-			if Leader != "" && v.Uid != "" {
-				d, f := mapLevel[Leader]
-				if f {
-					d.Sub = append(d.Sub, v.Uid)
-				}
-			}
-		}
-
-	}
-
-	// пробегаем карту полигонов и переносим вложенные внутрь
-	for _, item := range mapLevel {
-		item.ScanSub(&mapLevel)
-	}
-
-	// преобразуем карту в слайс
-	sliceNavigator := []*DataTree{}
-	for _, m := range mapLevel {
-		sliceNavigator = append(sliceNavigator, m)
-		//log.Error("============")
-		//log.Error(*m)
-	}
-
-	// сортируем по order как число
-	SortItems(sliceNavigator, "order", "int")
-
-
-	return sliceNavigator
-}
-
-// метод типа Items (перемещаем структуры в карте, исходя из заявленной вложенности элементов)
-// (переделать дубль фукнции)
-func (p *DataTree) ScanSub(maps *map[string]*DataTree) {
-	if p.Sub != nil && len(p.Sub) != 0 {
-		for _, c := range p.Sub {
-			gg := *maps
-			fromP := gg[c]
-			if fromP != nil {
-				copyPolygon := *fromP
-				p.Incl = append(p.Incl, &copyPolygon)
-				delete(*maps, c)
-				copyPolygon.ScanSub(maps)
-			}
-		}
-	}
-}
-
-// сортируем в слейсе полигонов по полю sort
-// typesort - тип сортировки (string/int) - если int то преобразуем в число перед сортировкой
-// fieldsort - поле для сортировки
-func SortItems(p []*DataTree, fieldsort string, typesort string) {
-
-	sort.Slice(p, func(i, j int) bool {
-
-		value1 := "0"
-		value2 := "0"
-		if typesort == "int" {
-			value1 = "0"
-			value2 = "0"
-		}
-
-
-		if oi, found := p[i].Attributes[fieldsort]; found {
-			if oi.Value != "" {
-				value1 = oi.Value
-			}
-		}
-		if oj, found := p[j].Attributes[fieldsort]; found {
-			if oj.Value != "" {
-				value2 = oj.Value
-			}
-		}
-
-		vi1, err1 := strconv.Atoi(value1)
-		vi2, err2 := strconv.Atoi(value2)
-
-		// если передан int, но произошла ошибка, то не не меняем
-		if typesort == "int" {
-			if err1 == nil && err2 == nil {
-				return vi1 < vi2
-			} else {
-				return false
-			}
-		} else {
-			// если стринг, то всегда проверяем как-будто это сравнение строк
-			return vi1 < vi2
-		}
-
-
-	})
-
-	for i, _ := range p {
-		if p[i].Incl != nil && len(p[i].Incl) != 0 {
-			f := p[i].Incl
-			SortItems(f, fieldsort, typesort)
-		}
-	}
-}
-
-// вспомогательная фукнция выбирает только часть дерево от заданного лидера
-func TreeShowIncl(in []*DataTree, obj string) (out []*DataTree) {
-	if obj == "" {
-		return in
-	}
-
-	for _, v := range in {
-
-		if v.Source == obj {
-			out = append(out, v)
-			return out
-		} else {
-
-			out = TreeShowIncl(v.Incl, obj)
-			if len(out) != 0 {
-				return out
-			}
-		}
-
-	}
-	return out
-}
-
-////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////
 

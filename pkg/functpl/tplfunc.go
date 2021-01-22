@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Masterminds/sprig"
+	"github.com/buildboxapp/app/pkg/model"
 	"github.com/satori/go.uuid"
 	"html/template"
 	"io/ioutil"
@@ -606,9 +607,9 @@ func tostring(i interface{}) (res string) {
 
 // функция преобразует переданные данные в формат типа Items с вложенными подпукнтами
 func totree(i interface{}, objstart string) (res interface{}) {
-	var objD []Data
+	var objD []model.Data
 	var objRes []interface{}
-	var objTree []DataTreeOut
+	var objTree []model.DataTreeOut
 
 	b3, _ := json.Marshal(i)
 	err := json.Unmarshal(b3, &objD)

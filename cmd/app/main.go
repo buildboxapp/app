@@ -23,6 +23,8 @@ import (
 	"io"
 )
 
+const sep = string(os.PathSeparator)
+
 var fileLog *os.File
 var outpurLog io.Writer
 
@@ -41,13 +43,6 @@ func main()  {
 	if err != nil {
 		return
 	}
-
-	defer func() {
-		if r := recover(); r != nil {
-			fmt.Printf("\n%s Warning! Error. Fail start page. %s", warning, err)
-			return
-		}
-	}()
 
 	appCLI := cli.NewApp()
 	appCLI.Usage = "Demon Buildbox Proxy started"
@@ -120,7 +115,7 @@ func Start(configfile, dir, port string) {
 		cfg.UidGui,
 		cfg.LogIntervalReload.Value,
 		cfg.LogIntervalClearFiles.Value,
-		cfg.LogPeriodSaveFiles
+		cfg.LogPeriodSaveFiles,
 	)
 	logger.RotateInit(ctx)
 
@@ -135,6 +130,7 @@ func Start(configfile, dir, port string) {
 		if rec != nil {
 			b := string(debug.Stack())
 			logger.Panic(fmt.Errorf("%s", b), "Recover panic from main function.")
+			os.Exit(1)
 		}
 	}()
 

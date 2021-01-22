@@ -14,7 +14,10 @@ type handlers struct {
 }
 
 type Handlers interface {
+	Alive(w http.ResponseWriter, r *http.Request)
 	Ping(w http.ResponseWriter, r *http.Request)
+	Page(w http.ResponseWriter, r *http.Request)
+	Block(w http.ResponseWriter, r *http.Request)
 }
 
 func New(
