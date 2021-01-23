@@ -47,6 +47,9 @@ func PageDecodeRequest(ctx context.Context, r *http.Request) (in model.ServicePa
 	in.Url = r.URL.Query().Encode()
 	in.Referer = r.Referer()
 	in.RequestURI = r.RequestURI
+	in.Form = r.Form
+	in.Host = r.Host
+	in.Query = r.URL.Query()
 
 	// указатель на профиль текущего пользователя
 	var profile model.ProfileData

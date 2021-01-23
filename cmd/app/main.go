@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/buildboxapp/app/pkg/config"
+	"github.com/buildboxapp/app/pkg/model"
 	"github.com/labstack/gommon/color"
 	"github.com/restream/reindexer"
 	"net/http"
@@ -142,10 +143,7 @@ func Start(configfile, dir, port string) {
 
 	///////////////// ЛОГИРОВАНИЕ //////////////////
 	// кладем в глабольные переменные
-	cfg.Domain 		= Config["domain"]
-	LogsDir 	= Config["app_logs"]
-	LogsLevel 	= Config["app_level_logs_pointsrc"]
-	UidAPP		= Config["data-uid"]
+	UidService		= Config["data-uid"]
 	ReplicasService, err = strconv.Atoi(Config["replicas_app"])
 	if err != nil {
 		ReplicasService = 1
@@ -190,9 +188,9 @@ func Start(configfile, dir, port string) {
 	app.Logger = log
 
 	// включено кеширование
-	if app.State["CachePointsrc"] != "" {
-		app.DB = reindexer.NewReindex(app.State["CachePointsrc"])
-		err := app.DB.OpenNamespace(app.State["Namespace"], reindexer.DefaultNamespaceOptions(), ValueCache{})
+	if cfg.CachePointsrc != "" {
+		app.DB = reindexer.NewReindex(cfg.CachePointsrc)
+		err := app.DB.OpenNamespace(cfg.Namespace, reindexer.DefaultNamespaceOptions(), model.ValueCache{})
 		if err != nil {
 			fmt.Printf("%s Error connecting to database. Plaese check this parameter in the configuration. %s\n", fail, app.Get("cache_pointsrc"))
 			fmt.Printf("%s\n", err)

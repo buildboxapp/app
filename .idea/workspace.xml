@@ -26,22 +26,17 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="695e3ced-4e40-4126-a43d-f20a9b66d621" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/pkg/model/service.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cmd/app/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/cmd/app/main.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pkg/cache/cache.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/cache/cache.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pkg/config/model.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/config/model.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/config/utils.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/config/utils.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pkg/func/function.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/func/function.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/model/contracts.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/model/contracts.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/model/models.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/model/models.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/servers/handlers.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/servers/httpserver/handlers/block.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/servers/httpserver/handlers/block.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/model/service.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/model/service.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pkg/servers/httpserver/handlers/page.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/servers/httpserver/handlers/page.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/servers/middleware.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/servers/middleware.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pkg/service/block.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/service/block.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pkg/service/page.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/service/page.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pkg/service/service.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/service/service.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/utils/utils.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/utils/utils.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -183,10 +178,10 @@
     <proxy>direct</proxy>
   </component>
   <component name="WindowStateProjectService">
-    <state x="360" y="222" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1602924246856">
+    <state x="360" y="222" width="1071" height="707" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1611390929626">
       <screen x="0" y="0" width="1792" height="1120" />
     </state>
-    <state x="360" y="222" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.1792.1120@0.0.1792.1120" timestamp="1602924246856" />
+    <state x="360" y="222" width="1071" height="707" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.1792.1120@0.0.1792.1120" timestamp="1611390929626" />
     <state width="1750" height="318" key="GridCell.Tab.0.bottom" timestamp="1607609052006">
       <screen x="0" y="0" width="1792" height="1120" />
     </state>
@@ -235,9 +230,9 @@
       <screen x="0" y="0" width="1792" height="1120" />
     </state>
     <state x="0" y="25" width="895" height="1095" key="com.intellij.openapi.vcs.update.UpdateOrStatusOptionsDialogupdate-v2/0.0.1792.1120@0.0.1792.1120" timestamp="1611318783182" />
-    <state x="551" y="60" width="850" height="977" key="find.popup" timestamp="1611354979283">
+    <state x="551" y="60" width="850" height="977" key="find.popup" timestamp="1611397631357">
       <screen x="0" y="0" width="1792" height="1120" />
     </state>
-    <state x="551" y="60" width="850" height="977" key="find.popup/0.0.1792.1120@0.0.1792.1120" timestamp="1611354979283" />
+    <state x="551" y="60" width="850" height="977" key="find.popup/0.0.1792.1120@0.0.1792.1120" timestamp="1611397631357" />
   </component>
 </project>

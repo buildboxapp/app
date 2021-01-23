@@ -2,7 +2,9 @@ package cache
 
 import (
 	"fmt"
+	"github.com/buildboxapp/app/pkg/config"
 	"github.com/buildboxapp/app/pkg/model"
+	"github.com/buildboxapp/lib/log"
 
 	"github.com/restream/reindexer"
 	"net/http"
@@ -12,22 +14,24 @@ import (
 )
 
 type cache struct {
-	DB *Reindexer
+	DB *reindexer.Reindexer
+	cfg config.Config
+	logger log.Log
 }
 
 type Cache interface {
-	
+	SetCahceKey(r *http.Request, p model.Data) (key, keyParam string)
 }
 
 // формируем ключ кеша
-func (c *cache) SetCahceKey(r *http.Request, p model.Data) (key, keyParam string)  {
+func (c *cache) SetCahceKey(p model.Data, path, query string) (key, keyParam string)  {
 	key2 := ""
 	key3 := ""
 
 	// формируем сложный ключ-хеш
 	key1, _ := json.Marshal(p.Uid)
-	key2 = r.URL.Path // переводим в текст параметры пути запроса (/nedra/user)
-	key3 = fmt.Sprintf("%v", r.URL.Query()) // переводим в текст параметры строки запроса (?sdf=df&df=df)
+	key2 = path // переводим в текст параметры пути запроса (/nedra/user)
+	key3 = fmt.Sprintf("%v", query) // переводим в текст параметры строки запроса (?sdf=df&df=df)
 
 	cache_nokey2, _ := p.Attr("cache_nokey2", "value")
 	cache_nokey3, _ := p.Attr("cache_nokey3", "value")
@@ -61,7 +65,7 @@ func (c *cache) СacheGet(key string, block model.Data, r *http.Request, page mo
 	var res string
 	var rows *reindexer.Iterator
 
-	rows = l.DB.Query(l.State["Namespace"]).
+	rows = c.DB.Query(c.cfg.Namespace).
 		Where("Uid", reindexer.EQ, key).
 		ReqTotal().
 		Exec()
@@ -72,7 +76,7 @@ func (c *cache) СacheGet(key string, block model.Data, r *http.Request, page mo
 		elem := rows.Object().(*model.ValueCache)
 		res = elem.Value
 
-		flagFresh := Timefresh(elem.Deadtime);
+		flagFresh := c.Timefresh(elem.Deadtime);
 
 		if flagFresh == "true" {
 
@@ -111,7 +115,7 @@ func (c *cache) CacheSet(key string, block model.Data, page model.Data, value, u
 	var deadTime time.Duration
 
 	// если интервал не задан, то не кешируем
-	f := refreshTime(block)
+	f := c.refreshTime(block)
 
 	//log.Warning("block: ", block)
 	if f == 0 {
@@ -135,9 +139,9 @@ func (c *cache) CacheSet(key string, block model.Data, page model.Data, value, u
 	valueCache.Deadtime = dt.String()
 	valueCache.Status = ""
 
-	err := l.DB.Upsert(l.State["Namespace"], valueCache)
+	err := c.DB.Upsert(c.cfg.Namespace, valueCache)
 	if err != nil {
-		l.Logger.Error(err, "Error! Created cache from is failed! ")
+		c.Logger.Error(err, "Error! Created cache from is failed! ")
 		return false
 	}
 

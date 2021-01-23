@@ -6,9 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/buildboxapp/app/pkg/model"
-	"github.com/gorilla/mux"
 	"html/template"
-	"net/http"
 	"strings"
 	"sync"
 	"time"
@@ -51,7 +49,7 @@ func (s *service) Page(ctx context.Context, in model.ServicePageIn) (out model.S
 		for k, v := range objPage.Data {
 			app, _ := v.Attr("app", "src")
 			if app != s.cfg.DataUid {
-				objPage.RemoveData(k)
+				s.utils.RemoveElementFromData(&objPage, k)
 			}
 		}
 	}
@@ -71,15 +69,14 @@ func (s *service) Page(ctx context.Context, in model.ServicePageIn) (out model.S
 	values["RequestURI"] = in.RequestURI
 	values["Profile"] = in.Profile
 
-
-	out.Body = s.BPage(r, s.cfg.TplAppBlocksPointsrc, objPage, values)
+	out.Body = s.BPage(in, objPage, values)
 
 	return out, err
 }
 
 
 // Собираем страницу
-func (s *service) BPage(r *http.Request, blockSrc string, objPage model.ResponseData, values map[string]interface{}) string {
+func (s *service) BPage(in model.ServicePageIn, objPage model.ResponseData, values map[string]interface{}) string {
 
 	var objMaket, objBlocks model.ResponseData
 	var t *template.Template
@@ -114,7 +111,7 @@ func (s *service) BPage(r *http.Request, blockSrc string, objPage model.Response
 	// ДОДЕЛАТЬ СРОЧНО!!!
 
 	// 2 запрос на объекты блоков страницы
-	s.utils.Curl("GET", "_link?obj="+pageUID+"&source="+blockSrc+"&mode=in", "", &objBlocks)
+	s.utils.Curl("GET", "_link?obj="+pageUID+"&source="+s.cfg.TplAppBlocksPointsrc+"&mode=in", "", &objBlocks)
 
 	//for _, v := range objBlocks.Data {
 	//	fmt.Println("objBlocks: ", v.Title, v.Id)
@@ -174,7 +171,7 @@ func (s *service) BPage(r *http.Request, blockSrc string, objPage model.Response
 
 			if strings.Contains(shemaJSON, idBlock) {		// наличие этого блока в схеме
 				wg.Add(1)
-				go s.ModuleBuildParallel(ctx, v, r, objPage.Data[0], values, true,  buildChan, wg)
+				go s.ModuleBuildParallel(in, ctx, v, objPage.Data[0], values, true,  buildChan, wg)
 			}
 		}
 
@@ -217,7 +214,7 @@ func (s *service) BPage(r *http.Request, blockSrc string, objPage model.Response
 
 			idBlock, _ := v.Attr("id", "value") 	// название блока
 			if strings.Contains(shemaJSON, idBlock) {		// наличие этого блока в схеме
-				moduleResult = s.ModuleBuild(v, r, objPage.Data[0], values, true)
+				moduleResult = s.ModuleBuild(in, v, objPage.Data[0], values, true)
 
 				p.Blocks[v.Id] = moduleResult.Result
 				statModule = moduleResult.Stat
@@ -252,7 +249,7 @@ func (s *service) BPage(r *http.Request, blockSrc string, objPage model.Response
 	maketFile = s.cfg.Workingdir + "/"+ maketFile
 
 	// в режиме отладки пересборка шаблонов происходит при каждом запросе
-	if debugMode {
+	if s.cfg.CompileTemplates.Value {
 		//t = template.Must(template.New(maketFile).Funcs(funcMap).ParseFiles(maketFile))
 		t = template.Must(template.ParseFiles(maketFile))
 		t.Execute(&c, p)
@@ -266,108 +263,108 @@ func (s *service) BPage(r *http.Request, blockSrc string, objPage model.Response
 
 
 // возвращаем сформированную страницу в template.HTML (для cockpit-a и dashboard)
-func (s *service) TIndex(w http.ResponseWriter, r *http.Request, Config map[string]string) template.HTML {
-
-	var objPage, objApp model.ResponseData
-	vars := mux.Vars(r)
-	page := vars["obj"] // ид-страницы передается через переменную obj
-
-	// указатель на профиль текущего пользователя
-	ctx := r.Context()
-	var profile model.ProfileData
-	profileRaw := ctx.Value("UserRaw")
-	json.Unmarshal([]byte(fmt.Sprint(profileRaw)), &profile)
-
-
-	// можем задать также через &page=страница
-	if r.FormValue("page") != "" {
-		page = r.FormValue("page")
-	}
-
-	if page == "" {
-		return ""
-	}
-
-	// заменяем значения при вызове ф-ции из GUI ибо они пустые, ведь приложение полностью не инициализировано через конфиг
-
-	if page == "" {
-		return template.HTML("Error: Not id page")
-	}
-
-	// запрос объекта страницы
-	s.utils.Curl("GET", "_objs/"+page, "", &objPage)
-
-	//fmt.Println("objPage: ", objPage)
-
-	if &objPage == nil {
-		return template.HTML("Error: Not found page-object.") // если не найден объект страницы
-	}
-
-	if len(objPage.Data) == 0 {
-		return template.HTML("Error: Not found page-object.") // если не найден объект страницы
-	}
-
-	// Uid-приложения
-	appUid, found := objPage.Data[0].Attr("app", "src")
-	if !found {
-		return template.HTML("Error: Not selected application from this page.")
-	}
-
-	// запрос объекта приложения
-	c.Curl("GET", "_objs/"+appUid, "", &objApp)
-	if &objApp == nil {
-		return template.HTML("Error: Not found application-object.") // если не найден объект приложения
-	}
-
-	//fmt.Println("objApp: ", objApp)
-
-	// получаем значения аттрибутов для данного приложения
-	path_template, found := objApp.Data[0].Attr("path_templates", "value")
-	if !found {
-		return template.HTML("Error: Not selected path_templates from this application.")
-	}
-
-	// получаем значения аттрибутов для данного приложения
-	tpl_app_blocks_pointsrc, found := objApp.Data[0].Attr("tpl_app_blocks", "src")
-	if !found {
-		return template.HTML("Error: Not selected tpl_app_blocks from this application.")
-	}
-
-	//pp := strings.Split(Domain, "/")
-	//if len(pp) == 1 {
-	//	ClientPath = Domain + "/" + "gui"
-	//}
-
-	// получили значение Request в json - возвращаем в http.Request
-	//var PageRequest *http.Request
-	//json.Unmarshal([]byte(JRequest), &PageRequest)
-
-	// формируем значение переменных, переданных в страницу
-	values := map[string]interface{}{}
-	values["Prefix"] = s.cfg.ClientPath + path_template
-	values["Domain"] = s.cfg.Domain
-	values["Path"] = s.cfg.ClientPath
-	values["CDN"] = ""
-	values["Title"] = s.cfg.Title
-	values["URL"] = r.URL.Query().Encode()
-	values["Referer"] = r.Referer()
-	values["RequestURI"] = r.RequestURI
-	values["Profile"] = profile
-
-
-	result := s.BPage(r, tpl_app_blocks_pointsrc, objPage, values)
-
-	return template.HTML(result)
-}
+//func (s *service) TIndex(w http.ResponseWriter, r *http.Request, Config map[string]string) template.HTML {
+//
+//	var objPage, objApp model.ResponseData
+//	vars := mux.Vars(r)
+//	page := vars["obj"] // ид-страницы передается через переменную obj
+//
+//	// указатель на профиль текущего пользователя
+//	ctx := r.Context()
+//	var profile model.ProfileData
+//	profileRaw := ctx.Value("UserRaw")
+//	json.Unmarshal([]byte(fmt.Sprint(profileRaw)), &profile)
+//
+//
+//	// можем задать также через &page=страница
+//	if r.FormValue("page") != "" {
+//		page = r.FormValue("page")
+//	}
+//
+//	if page == "" {
+//		return ""
+//	}
+//
+//	// заменяем значения при вызове ф-ции из GUI ибо они пустые, ведь приложение полностью не инициализировано через конфиг
+//
+//	if page == "" {
+//		return template.HTML("Error: Not id page")
+//	}
+//
+//	// запрос объекта страницы
+//	s.utils.Curl("GET", "_objs/"+page, "", &objPage)
+//
+//	//fmt.Println("objPage: ", objPage)
+//
+//	if &objPage == nil {
+//		return template.HTML("Error: Not found page-object.") // если не найден объект страницы
+//	}
+//
+//	if len(objPage.Data) == 0 {
+//		return template.HTML("Error: Not found page-object.") // если не найден объект страницы
+//	}
+//
+//	// Uid-приложения
+//	appUid, found := objPage.Data[0].Attr("app", "src")
+//	if !found {
+//		return template.HTML("Error: Not selected application from this page.")
+//	}
+//
+//	// запрос объекта приложения
+//	s.utils.Curl("GET", "_objs/"+appUid, "", &objApp)
+//	if &objApp == nil {
+//		return template.HTML("Error: Not found application-object.") // если не найден объект приложения
+//	}
+//
+//	//fmt.Println("objApp: ", objApp)
+//
+//	// получаем значения аттрибутов для данного приложения
+//	path_template, found := objApp.Data[0].Attr("path_templates", "value")
+//	if !found {
+//		return template.HTML("Error: Not selected path_templates from this application.")
+//	}
+//
+//	// получаем значения аттрибутов для данного приложения
+//	tpl_app_blocks_pointsrc, found := objApp.Data[0].Attr("tpl_app_blocks", "src")
+//	if !found {
+//		return template.HTML("Error: Not selected tpl_app_blocks from this application.")
+//	}
+//
+//	//pp := strings.Split(Domain, "/")
+//	//if len(pp) == 1 {
+//	//	ClientPath = Domain + "/" + "gui"
+//	//}
+//
+//	// получили значение Request в json - возвращаем в http.Request
+//	//var PageRequest *http.Request
+//	//json.Unmarshal([]byte(JRequest), &PageRequest)
+//
+//	// формируем значение переменных, переданных в страницу
+//	values := map[string]interface{}{}
+//	values["Prefix"] = s.cfg.ClientPath + path_template
+//	values["Domain"] = s.cfg.Domain
+//	values["Path"] = s.cfg.ClientPath
+//	values["CDN"] = ""
+//	values["Title"] = s.cfg.Title
+//	values["URL"] = r.URL.Query().Encode()
+//	values["Referer"] = r.Referer()
+//	values["RequestURI"] = r.RequestURI
+//	values["Profile"] = profile
+//
+//
+//	result := s.BPage(in, tpl_app_blocks_pointsrc, objPage, values)
+//
+//	return template.HTML(result)
+//}
 
 
 // генерируем один блок через внутренний запрос - для cocpit-a
-func (s *service) TBlock(r *http.Request, block model.Data, Config map[string]string) template.HTML {
-	dataPage 		:= model.Data{} // пустое значение, используется в блоке для кеширования если он вызывается из страницы
-	moduleResult := s.ModuleBuild(block, r, dataPage, nil, false)
-
-	return moduleResult.Result
-}
+//func (s *service) TBlock(r *http.Request, block model.Data, Config map[string]string) template.HTML {
+//	dataPage 		:= model.Data{} // пустое значение, используется в блоке для кеширования если он вызывается из страницы
+//	moduleResult := s.ModuleBuild(block, r, dataPage, nil, false)
+//
+//	return moduleResult.Result
+//}
 
 
 // Параметры обязательные для задания

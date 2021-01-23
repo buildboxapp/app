@@ -8,6 +8,8 @@ type Config struct {
 	ConfigName         				string         	`envconfig:"CONFIG_NAME" default:""`
 	RootDir         				string         	`envconfig:"ROOT_DIR" default:""`
 	BuildModuleParallel         	Bool         	`envconfig:"BUILD_MODULE_PARALLEL" default:"true"`
+	CompileTemplates         		Bool         	`envconfig:"COMPILE_TEMPLATES" default:"false"`
+
 	TimeoutBlockGenerate         	Duration  		`envconfig:"TIMEOUT_BLOCK_GENERATE" default:"10s" description:"интервал после которого будет завершена работа по генерации блока"`
 
 
@@ -76,6 +78,9 @@ type Config struct {
 	BaseCache	string `envconfig:"BASE_CACHE" default:""`
 
 	Cache	string `envconfig:"CACHE" default:""`
+	CachePointsrc	string `envconfig:"CACHE_POINTSRC" default:""`
+	CachePointvalue	string `envconfig:"CACHE_POINTVALUE" default:""`
+
 	CopiesServiceapp	string `envconfig:"COPIES_SERVICEAPP" default:""`
 
 	DataSource	string `envconfig:"DATA_SOURCE" default:""`
@@ -90,6 +95,7 @@ type Config struct {
 	Logo	string `envconfig:"LOGO" default:""`
 
 	Metric	string `envconfig:"METRIC" default:""`
+	Namespace	string `envconfig:"NAMESPACE" default:""`
 
 	PathTemplates	string `envconfig:"PATH_TEMPLATES" default:""`
 	PortApp	string `envconfig:"PORT_APP" default:""`

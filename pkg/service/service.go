@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"github.com/buildboxapp/app/pkg/cache"
 	"github.com/buildboxapp/app/pkg/config"
 	"github.com/buildboxapp/app/pkg/model"
 	"github.com/buildboxapp/app/pkg/utils"
@@ -14,6 +15,7 @@ type service struct {
 	cfg config.Config
 	metrics metric.ServiceMetric
 	utils utils.Utils
+	cache cache.Cache
 }
 
 // Service interface
@@ -28,11 +30,13 @@ func New(
 	cfg config.Config,
 	metrics metric.ServiceMetric,
 	utils utils.Utils,
+	cache cache.Cache,
 ) Service {
 	return &service{
 		logger,
 		cfg,
 		metrics,
 		utils,
+		cache,
 	}
 }

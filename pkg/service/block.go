@@ -37,15 +37,10 @@ func (s *service) Block(ctx context.Context, in model.ServiceBlockIn) (out model
 // p 	- объект переданных в модуль данных блока (запрос/конфигураци)
 // r 	- значения реквеста
 // page - объект страницы, которую парсим
-func (s *service) ModuleBuild(block model.Data, r *http.Request, page model.Data, values map[string]interface{}, enableCache bool) (result model.ModuleResult) 	{
+func (s *service) ModuleBuild(in model.ServicePageIn, block model.Data, page model.Data, values map[string]interface{}, enableCache bool) (result model.ModuleResult) 	{
 	var c bytes.Buffer
 	var err error
 
-	// указатель на профиль текущего пользователя
-	ctx := r.Context()
-	var profile model.ProfileData
-	profileRaw := ctx.Value("UserRaw")
-	json.Unmarshal([]byte(fmt.Sprint(profileRaw)), &profile)
 
 	// заменяем в State localhost на адрес домена (если это подпроцесс то все норм, но если это корневой сервис,
 	// то у него url_proxy - localhost и узнать реньше адрес мы не можем, ибо еще домен не инициировался
@@ -154,16 +149,16 @@ func (s *service) ModuleBuild(block model.Data, r *http.Request, page model.Data
 	}
 
 	b.Value["Rand"] =  uuid[1:6]  // переопределяем отдельно для каждого модуля
-	b.Value["URL"] = r.URL.Query().Encode()
+	b.Value["URL"] = in.Url
 	b.Value["Prefix"] = "/" + s.cfg.Domain + "/" +s.cfg.PathTemplates
 	b.Value["Domain"] = s.cfg.Domain
 	b.Value["CDN"] = s.cfg.UrlFs
 	b.Value["Path"] = s.cfg.ClientPath
 	b.Value["Title"] = s.cfg.Title
-	b.Value["Form"] = r.Form
-	b.Value["RequestURI"] = r.RequestURI
-	b.Value["Referer"] = r.Referer()
-	b.Value["Profile"] = profile
+	b.Value["Form"] = in.Form
+	b.Value["RequestURI"] = in.RequestURI
+	b.Value["Referer"] = in.Referer
+	b.Value["Profile"] = in.Profile
 
 
 
@@ -307,11 +302,11 @@ func (s *service) ModuleBuild(block model.Data, r *http.Request, page model.Data
 
 // ДЛЯ ПАРАЛЛЕЛЬНОЙ сборки модуля
 // получаем объект модуля (отображения)
-func (s *service) ModuleBuildParallel(ctxM context.Context, p Data, r *http.Request, page Data, values map[string]interface{}, enableCache bool, buildChan chan ModuleResult, wg *sync.WaitGroup) 	{
+func (s *service) ModuleBuildParallel(in model.ServicePageIn, ctxM context.Context, p model.Data, page model.Data, values map[string]interface{}, enableCache bool, buildChan chan model.ModuleResult, wg *sync.WaitGroup) 	{
 	defer wg.Done()
 	t1 := time.Now()
 
-	result := ModuleResult{}
+	result := model.ModuleResult{}
 
 	// проверка на выход по сигналу
 	select {
@@ -320,36 +315,16 @@ func (s *service) ModuleBuildParallel(ctxM context.Context, p Data, r *http.Requ
 	default:
 	}
 
-	// заменяем в State localhost на адрес домена (если это подпроцесс то все норм, но если это корневой сервис,
-	// то у него url_proxy - localhost и узнать реньше адрес мы не можем, ибо еще домен не инициировался
-	// а значит подменяем localhost при каждом обращении к модулю
-	//if strings.Contains(l.State["url_proxy"], "localhost") {
-	//	url_shema := "http"
-	//	if r.TLS != nil {
-	//		url_shema = "https"
-	//	}
-	//	l.State["url_proxy"] = url_shema + "://" + r.Host
-	//}
-
-	if strings.Contains(l.State["UrlProxy"], "localhost") {
-		l.State["UrlProxy"] = "//" + r.Host
+	if strings.Contains(s.cfg.UrlProxy, "localhost") {
+		s.cfg.UrlProxy = "//" + in.Host
 	}
 
-	State = l.State // задаем глобальную переменную состояния приложения, через (l *App) не работает для ф-ция шаблонизатора
-
-	// указатель на профиль текущего пользователя
-	ctx := r.Context()
-	var profile ProfileData
-	profileRaw := ctx.Value("UserRaw")
-	json.Unmarshal([]byte(fmt.Sprint(profileRaw)), &profile)
-
-
 	var c bytes.Buffer
-	var b Block
+	var b model.Block
 	var errT, err error
 	var key, keyParam string
 	b.Value = map[string]interface{}{}
-	result.id = p.Id
+	result.Id = p.Id
 
 	stat := map[string]interface{}{}
 	stat["start"] = t1
@@ -362,9 +337,9 @@ func (s *service) ModuleBuildParallel(ctxM context.Context, p Data, r *http.Requ
 	//////////////////////////////
 	cacheOn, _ := p.Attr("cache", "value")
 
-	if l.State["BaseCache"] != "" && cacheOn != "" && enableCache {
+	if s.cfg.BaseCache != "" && cacheOn != "" && enableCache {
 
-		key, keyParam := l.SetCahceKey(r, p)
+		key, keyParam := s.cache.SetCahceKey(p, in.Path, in.Query)
 
 		// ПРОВЕРКА КЕША (если есть, отдаем из кеша)
 		if res, found := l.СacheGet(key, p, r, page, values, keyParam); found {
@@ -408,7 +383,7 @@ func (s *service) ModuleBuildParallel(ctxM context.Context, p Data, r *http.Requ
 	// в блоке есть настройки поля расширенного фильтра, который можно добавить в самом блоке
 	// дополняем параметры request-a, доп. параметрами, которые переданы через блок
 	extfilter, _ 	:= p.Attr("extfilter", "value") // дополнительный фильтр для блока
-	dp := []Data{p}
+	dp := []model.Data{p}
 	extfilter = l.DogParse(extfilter, r, &dp, b.Value)
 	extfilter = strings.Replace(extfilter, "?", "", -1)
 
@@ -458,17 +433,17 @@ func (s *service) ModuleBuildParallel(ctxM context.Context, p Data, r *http.Requ
 
 
 	// обработк @-функции в конфигурации
-	dp = []Data{p}
+	dp = []model.Data{p}
 	dogParseConfiguration := l.DogParse(tconfiguration, r, &dp, b.Value)
 
 	// конфигурация без обработки @-функции
-	var confRaw map[string]Element
+	var confRaw map[string]model.Element
 	if tconfiguration != "" {
 		err = json.Unmarshal([]byte(tconfiguration), &confRaw)
 	}
 
 	// конфигурация с обработкой @-функции
-	var conf map[string]Element
+	var conf map[string]model.Element
 	if dogParseConfiguration != "" {
 		err = json.Unmarshal([]byte(dogParseConfiguration), &conf)
 	}
@@ -531,7 +506,7 @@ func (s *service) ModuleBuildParallel(ctxM context.Context, p Data, r *http.Requ
 
 	b.Data = dataSet
 	b.Page = page
-	b.Metric = Metric
+	b.Metric = model.Metric
 	b.Configuration = conf
 	//b.ConfigurationRaw = confRaw
 	b.ConfigurationRaw = tconfiguration
