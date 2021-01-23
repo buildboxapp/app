@@ -1,7 +1,8 @@
-package app_lib
+package cache
 
 import (
 	"fmt"
+	"github.com/buildboxapp/app/pkg/model"
 
 	"github.com/restream/reindexer"
 	"net/http"
@@ -10,9 +11,16 @@ import (
 	"encoding/json"
 )
 
+type cache struct {
+	DB *Reindexer
+}
+
+type Cache interface {
+	
+}
 
 // формируем ключ кеша
-func (l *App) SetCahceKey(r *http.Request, p Data) (key, keyParam string)  {
+func (c *cache) SetCahceKey(r *http.Request, p model.Data) (key, keyParam string)  {
 	key2 := ""
 	key3 := ""
 
@@ -49,7 +57,7 @@ func (l *App) SetCahceKey(r *http.Request, p Data) (key, keyParam string)  {
 
 // key - ключ, который будет указан в кеше
 // option - объект блока (запроса и тд) то, где хранится время кеширования
-func (l *App) СacheGet(key string, block Data, r *http.Request, page Data, values map[string]interface{}, url string) (string, bool)  {
+func (c *cache) СacheGet(key string, block model.Data, r *http.Request, page model.Data, values map[string]interface{}, url string) (string, bool)  {
 	var res string
 	var rows *reindexer.Iterator
 
@@ -61,7 +69,7 @@ func (l *App) СacheGet(key string, block Data, r *http.Request, page Data, valu
 
 	// если есть значение, то обязательно отдаем его, но поменяем
 	for rows.Next() {
-		elem := rows.Object().(*ValueCache)
+		elem := rows.Object().(*model.ValueCache)
 		res = elem.Value
 
 		flagFresh := Timefresh(elem.Deadtime);
@@ -98,8 +106,8 @@ func (l *App) СacheGet(key string, block Data, r *http.Request, page Data, valu
 // key - ключ, который будет указан в кеше
 // option - объект блока (запроса и тд) то, где хранится время кеширования
 // data - то, что кладется в кеш
-func (l *App) CacheSet(key string, block Data, page Data, value, url string) bool {
-	var valueCache = ValueCache{}
+func (c *cache) CacheSet(key string, block model.Data, page model.Data, value, url string) bool {
+	var valueCache = model.ValueCache{}
 	var deadTime time.Duration
 
 	// если интервал не задан, то не кешируем
@@ -139,7 +147,7 @@ func (l *App) CacheSet(key string, block Data, page Data, value, url string) boo
 	return true
 }
 
-func (l *App) cacheUpdate(key string, block Data, r *http.Request, page Data, values map[string]interface{}, url string) {
+func (c *cache) cacheUpdate(key string, block model.Data, r *http.Request, page model.Data, values map[string]interface{}, url string) {
 
 	// получаем контент модуля
 	value := l.ModuleBuild(block, r, page, values, false)
@@ -150,7 +158,7 @@ func (l *App) cacheUpdate(key string, block Data, r *http.Request, page Data, va
 	return
 }
 
-func (l *App) refreshTime(options Data) int {
+func (c *cache) refreshTime(options model.Data) int {
 
 	refresh, _ := options.Attr("cache", "value")
 	if refresh == "" {

@@ -7,6 +7,9 @@ type Config struct {
 	// Config
 	ConfigName         				string         	`envconfig:"CONFIG_NAME" default:""`
 	RootDir         				string         	`envconfig:"ROOT_DIR" default:""`
+	BuildModuleParallel         	Bool         	`envconfig:"BUILD_MODULE_PARALLEL" default:"true"`
+	TimeoutBlockGenerate         	Duration  		`envconfig:"TIMEOUT_BLOCK_GENERATE" default:"10s" description:"интервал после которого будет завершена работа по генерации блока"`
+
 
 	// Pay
 	PayShopid         				string         	`envconfig:"PAY_SHOPID" default:""`
@@ -70,13 +73,17 @@ type Config struct {
 	AppVersionPointsrc	string `envconfig:"APP_VERSION_POINTSRC" default:""`
 	AppVersionPointvalue	string `envconfig:"APP_VERSION_POINTVALUE" default:""`
 
+	BaseCache	string `envconfig:"BASE_CACHE" default:""`
+
 	Cache	string `envconfig:"CACHE" default:""`
 	CopiesServiceapp	string `envconfig:"COPIES_SERVICEAPP" default:""`
 
+	DataSource	string `envconfig:"DATA_SOURCE" default:""`
 	DataUid	string `envconfig:"DATA_UID" default:""`
 	Description	string `envconfig:"DESCRIPTION" default:""`
 	Domain	string `envconfig:"DOMAIN" default:""`
 	Driver	string `envconfig:"DRIVER" default:""`
+
 
 	Error500	string `envconfig:"ERROR500" default:""`
 

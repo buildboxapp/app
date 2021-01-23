@@ -23,7 +23,6 @@ type App struct {
 }
 
 
-var t *template.Template
 var result template.HTML
 var debugMode = true
 var FlagParallel = true		// флаг генерации блоков в параллельном режиме
@@ -47,10 +46,10 @@ type Pong struct {
 
 
 type ModuleResult struct {
-	id string
-	result template.HTML
-	stat map[string]interface{}
-	err error
+	Id string
+	Result template.HTML
+	Stat map[string]interface{}
+	Err error
 }
 
 //type ProfileData struct {
@@ -356,7 +355,7 @@ type Block struct {
 	JS 					[]string `json:"js"`
 	Metric				template.HTML `json:"metric"`
 	Request				*http.Request
-	mx 					sync.Mutex
+	Mx 					sync.Mutex
 }
 
 func (p *Block) Set(key, value string) {

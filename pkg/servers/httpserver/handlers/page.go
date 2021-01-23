@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/buildboxapp/app/pkg/model"
 	"github.com/gorilla/mux"
 	"net/http"
@@ -16,44 +17,59 @@ import (
 // @Failure 500 {object} model.Pong
 // @Router /api/v1/page [get]
 func (h *handlers) Page(w http.ResponseWriter, r *http.Request) {
-	block, err := PageDecodeRequest(r.Context(), r)
+	in, err := PageDecodeRequest(r.Context(), r)
 	if err != nil {
-		h.logger.Error(err, "[PLogin] Error function execution (PLoginDecodeRequest).")
+		h.logger.Error(err, "[Page] Error function execution (PageDecodeRequest).")
 		return
 	}
-	serviceResult, err := h.service.Page(r.Context(), block)
+	serviceResult, err := h.service.Page(r.Context(), in)
 	if err != nil {
-		h.logger.Error(err, "[PLogin] Error service execution (Page).")
+		h.logger.Error(err, "[Page] Error service execution (Page).")
 		return
 	}
 	response, _ := PageEncodeResponse(r.Context(), &serviceResult)
 	if err != nil {
-		h.logger.Error(err, "[PLogin] Error function execution (PLoginEncodeResponse).")
+		h.logger.Error(err, "[Page] Error function execution (PageEncodeResponse).")
 		return
 	}
 	err = PageTransportResponse(w, response)
 	if err != nil {
-		h.logger.Error(err, "[PLogin] Error function execution (PLoginTransportResponse).")
+		h.logger.Error(err, "[Page] Error function execution (PageTransportResponse).")
 		return
 	}
 
 	return
 }
 
-func PageDecodeRequest(ctx context.Context, r *http.Request) (block string, err error)  {
+func PageDecodeRequest(ctx context.Context, r *http.Request) (in model.ServicePageIn, err error)  {
 	vars := mux.Vars(r)
-	block = vars["block"]
+	in.Page = vars["page"]
+	in.Url = r.URL.Query().Encode()
+	in.Referer = r.Referer()
+	in.RequestURI = r.RequestURI
 
-	return block, err
+	// указатель на профиль текущего пользователя
+	var profile model.ProfileData
+	profileRaw := r.Context().Value("UserRaw")
+	json.Unmarshal([]byte(fmt.Sprint(profileRaw)), &profile)
+
+	in.Profile = profile
+
+	return in, err
 }
 
-func PageEncodeResponse(ctx context.Context, serviceResult *[]model.Pong) (response []model.Pong, err error)  {
-	return *serviceResult, err
+func PageEncodeResponse(ctx context.Context, serviceResult *model.ServicePageOut) (response string, err error)  {
+	response = serviceResult.Body
+	return response, err
 }
 
 func PageTransportResponse(w http.ResponseWriter, response interface{}) (err error)  {
 	d, err := json.Marshal(response)
+	w.WriteHeader(200)
 
+	if err != nil {
+		w.WriteHeader(403)
+	}
 	w.Write(d)
 	return err
 }

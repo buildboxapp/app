@@ -2,6 +2,9 @@ package servers
 
 import (
 	"fmt"
+	"github.com/buildboxapp/app/pkg/config"
+	"github.com/buildboxapp/lib"
+	"github.com/buildboxapp/lib/log"
 	bbmetric "github.com/buildboxapp/lib/metric"
 	"net/http"
 	"runtime/debug"
@@ -9,7 +12,7 @@ import (
 	"time"
 )
 
-func MiddleLogger(next http.Handler, name string, serviceMetrics bbmetric.ServiceMetric) http.Handler {
+func MiddleLogger(next http.Handler, name string, logger log.Log, serviceMetrics bbmetric.ServiceMetric) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 
@@ -21,7 +24,7 @@ func MiddleLogger(next http.Handler, name string, serviceMetrics bbmetric.Servic
 				r.RequestURI,
 				name,
 				timeInterval)
-			log.Info(mes)
+			logger.Info(mes)
 		}
 
 		// сохраняем статистику всех запросов, в том числе и пинга (потому что этот зарпос фиксируется в количестве)
@@ -29,7 +32,7 @@ func MiddleLogger(next http.Handler, name string, serviceMetrics bbmetric.Servic
 	})
 }
 
-func AuthProcessor(next http.Handler) http.Handler {
+func AuthProcessor(next http.Handler, cfg config.Config) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var authKey string
 
@@ -50,7 +53,7 @@ func AuthProcessor(next http.Handler) http.Handler {
 		}
 
 		// не соответствие переданного ключа и UID-а API (пропускаем пинги)
-		if strings.TrimSpace(authKey) != UidAPP && r.URL.Path != "/ping" {
+		if strings.TrimSpace(authKey) != cfg.UidApp && r.URL.Path != "/ping" {
 			lib.ResponseJSON(w, nil, "Unauthorized", nil, nil)
 			return
 		}
@@ -59,14 +62,14 @@ func AuthProcessor(next http.Handler) http.Handler {
 	})
 }
 
-func Recover(next http.Handler) http.Handler {
+func Recover(next http.Handler, logger log.Log) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func(r *http.Request) {
 			rec := recover()
 			if rec != nil {
 				b := string(debug.Stack())
 				//fmt.Println(r.URL.String())
-				log.Panic(fmt.Errorf("%s", b), "Recover panic from path: ", r.URL.String(), "; form: ", r.Form)
+				logger.Panic(fmt.Errorf("%s", b), "Recover panic from path: ", r.URL.String(), "; form: ", r.Form)
 				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			}
 		}(r)

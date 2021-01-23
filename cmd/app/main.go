@@ -230,3 +230,18 @@ func Start(configfile, dir, port string) {
 
 	stdlog.Fatal(http.ListenAndServe(":"+app.Get("PortAPP"), router))
 }
+
+func InitFuncMap() {
+	// добавляем карту функций FuncMap функциями из библиотеки github.com/Masterminds/sprig
+	// только те, которые не описаны в FuncMap самостоятельно
+	for k, v := range FuncMapS {
+		if _, found := FuncMap[k]; !found {
+			FuncMap[k] = v
+		}
+	}
+}
+
+func ListenForShutdown(ch <- chan os.Signal)  {
+	<- ch
+	os.Exit(0)
+}

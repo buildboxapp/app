@@ -22,6 +22,22 @@ func (d *Float) UnmarshalText(text []byte) error {
 	return err
 }
 
+//Float32 custom duration for toml configs
+type Bool struct {
+	bool
+	Value bool
+}
+
+//UnmarshalText method satisfying toml unmarshal interface
+func (d *Bool) UnmarshalText(text []byte) error {
+	var err error
+	d.Value = false
+	if string(text) == "true" {
+		d.Value = true
+	}
+	return err
+}
+
 //Duration custom duration for toml configs
 type Duration struct {
 	time.Duration
