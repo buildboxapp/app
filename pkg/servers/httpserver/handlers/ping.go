@@ -15,7 +15,7 @@ import (
 // @Failure 500 {object} model.Pong
 // @Router /api/v1/ping [get]
 func (h *handlers) Ping(w http.ResponseWriter, r *http.Request) {
-	_, err := PingDecodeRequest(r.Context(), r)
+	_, err := pingDecodeRequest(r.Context(), r)
 	if err != nil {
 		h.logger.Error(err, "[Ping] Error function execution (PLoginDecodeRequest).")
 		return
@@ -25,12 +25,12 @@ func (h *handlers) Ping(w http.ResponseWriter, r *http.Request) {
 		h.logger.Error(err, "[Ping] Error service execution (service.Ping).")
 		return
 	}
-	response, _ := PingEncodeResponse(r.Context(), serviceResult)
+	response, _ := pingEncodeResponse(r.Context(), serviceResult)
 	if err != nil {
 		h.logger.Error(err, "[Ping] Error function execution (PLoginEncodeResponse).")
 		return
 	}
-	err = PingTransportResponse(w, response)
+	err = pingTransportResponse(w, response)
 	if err != nil {
 		h.logger.Error(err, "[Ping] Error function execution (PLoginTransportResponse).")
 		return
@@ -39,15 +39,15 @@ func (h *handlers) Ping(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-func PingDecodeRequest(ctx context.Context, r *http.Request) (request *[]model.Pong, err error)  {
+func pingDecodeRequest(ctx context.Context, r *http.Request) (request *[]model.Pong, err error)  {
 	return request, err
 }
 
-func PingEncodeResponse(ctx context.Context, serviceResult []model.Pong) (response []model.Pong, err error)  {
+func pingEncodeResponse(ctx context.Context, serviceResult []model.Pong) (response []model.Pong, err error)  {
 	return serviceResult, err
 }
 
-func PingTransportResponse(w http.ResponseWriter, response interface{}) (err error)  {
+func pingTransportResponse(w http.ResponseWriter, response interface{}) (err error)  {
 	d, err := json.Marshal(response)
 
 	w.Write(d)

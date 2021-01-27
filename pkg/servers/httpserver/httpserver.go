@@ -36,12 +36,12 @@ func (h *httpserver) Run() error {
 	//	panic(err)
 	//}
 	srv := &http.Server{
-		Addr:         ":" + h.cfg.PortGui,
+		Addr:         ":" + h.cfg.PortApp,
 		Handler:      h.NewRouter(),
 		ReadTimeout:  h.cfg.ReadTimeout.Value,
 		WriteTimeout: h.cfg.WriteTimeout.Value,
 	}
-	h.logger.Info("Запуск https сервера", zap.String("port", h.cfg.PortGui))
+	h.logger.Info("Запуск https сервера", zap.String("port", h.cfg.PortApp))
 	//e := srv.ListenAndServeTLS(h.cfg.SSLCertPath, h.cfg.SSLPrivateKeyPath)
 
 	e := srv.ListenAndServe()

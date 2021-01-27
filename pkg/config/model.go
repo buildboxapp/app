@@ -12,7 +12,6 @@ type Config struct {
 
 	TimeoutBlockGenerate         	Duration  		`envconfig:"TIMEOUT_BLOCK_GENERATE" default:"10s" description:"интервал после которого будет завершена работа по генерации блока"`
 
-
 	// Pay
 	PayShopid         				string         	`envconfig:"PAY_SHOPID" default:""`
 	PaySecretKey         			string         	`envconfig:"PAY_SECRET_KEY" default:""`
@@ -25,7 +24,7 @@ type Config struct {
 	UrlProxy						string         	`envconfig:"URL_PROXY" default:""`
 	UrlGui         					string         	`envconfig:"URL_GUI" default:""`
 	UrlApi							string         	`envconfig:"URL_API" default:""`
-	UidApp         					string         	`envconfig:"UID_APP" default:""`
+	UidService         				string         	`envconfig:"UID_SERVICE" default:""`
 
 	// Logger
 	LogsDir         				string         	`envconfig:"LOGS_DIR" default:"logs"`

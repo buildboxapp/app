@@ -15,6 +15,9 @@ type Utils interface {
 	AddressProxy()
 	Curl(method, urlc, bodyJSON string, response interface{}) (result interface{}, err error)
 	RemoveElementFromData(p *model.ResponseData, i int) bool
+	DataToIncl(objData []model.Data) []*model.DataTree
+	TreeShowIncl(in []*model.DataTree, obj string) (out []*model.DataTree)
+	SortItems(p []*model.DataTree, fieldsort string, typesort string)
 }
 
 

@@ -2,6 +2,7 @@
 package config
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/BurntSushi/toml"
 	"github.com/buildboxapp/lib"
@@ -81,6 +82,28 @@ func (c *Config) SetRootDir()  {
 		return
 	}
 	c.RootDir = rootdir
+}
+
+
+// получаем значение из конфигурации по ключу
+func (c *Config) GetValue(key string) (result string, err error) {
+	var rr = map[string]interface{}{}
+	var flagOk = false
+
+	// преобразуем значение типа конфигурации в структуру и получем значения в тексте
+	b1, _ := json.Marshal(c)
+	json.Unmarshal(b1, &rr)
+
+	for i, v := range rr {
+		if i == key {
+			result = fmt.Sprint(v)
+			flagOk = true
+		}
+	}
+	if !flagOk {
+		err = fmt.Errorf("%s", "Value from key not found")
+	}
+	return
 }
 
 // инициируем переменную значениями по-умолчанию (из структуры с дефалтовыми значениями)

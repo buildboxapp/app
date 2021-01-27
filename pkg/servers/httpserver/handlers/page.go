@@ -17,7 +17,7 @@ import (
 // @Failure 500 {object} model.Pong
 // @Router /api/v1/page [get]
 func (h *handlers) Page(w http.ResponseWriter, r *http.Request) {
-	in, err := PageDecodeRequest(r.Context(), r)
+	in, err := pageDecodeRequest(r.Context(), r)
 	if err != nil {
 		h.logger.Error(err, "[Page] Error function execution (PageDecodeRequest).")
 		return
@@ -27,12 +27,12 @@ func (h *handlers) Page(w http.ResponseWriter, r *http.Request) {
 		h.logger.Error(err, "[Page] Error service execution (Page).")
 		return
 	}
-	response, _ := PageEncodeResponse(r.Context(), &serviceResult)
+	response, _ := pageEncodeResponse(r.Context(), &serviceResult)
 	if err != nil {
 		h.logger.Error(err, "[Page] Error function execution (PageEncodeResponse).")
 		return
 	}
-	err = PageTransportResponse(w, response)
+	err = pageTransportResponse(w, response)
 	if err != nil {
 		h.logger.Error(err, "[Page] Error function execution (PageTransportResponse).")
 		return
@@ -41,7 +41,7 @@ func (h *handlers) Page(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-func PageDecodeRequest(ctx context.Context, r *http.Request) (in model.ServicePageIn, err error)  {
+func pageDecodeRequest(ctx context.Context, r *http.Request) (in model.ServicePageIn, err error)  {
 	vars := mux.Vars(r)
 	in.Page = vars["page"]
 	in.Url = r.URL.Query().Encode()
@@ -61,12 +61,12 @@ func PageDecodeRequest(ctx context.Context, r *http.Request) (in model.ServicePa
 	return in, err
 }
 
-func PageEncodeResponse(ctx context.Context, serviceResult *model.ServicePageOut) (response string, err error)  {
+func pageEncodeResponse(ctx context.Context, serviceResult *model.ServicePageOut) (response string, err error)  {
 	response = serviceResult.Body
 	return response, err
 }
 
-func PageTransportResponse(w http.ResponseWriter, response interface{}) (err error)  {
+func pageTransportResponse(w http.ResponseWriter, response interface{}) (err error)  {
 	d, err := json.Marshal(response)
 	w.WriteHeader(200)
 

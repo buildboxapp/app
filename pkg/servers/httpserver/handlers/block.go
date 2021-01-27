@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/buildboxapp/app/pkg/model"
 	"github.com/gorilla/mux"
+	"html/template"
 	"net/http"
 )
 
@@ -17,7 +18,7 @@ import (
 // @Failure 500 {object} model.Pong
 // @Router /api/v1/block [get]
 func (h *handlers) Block(w http.ResponseWriter, r *http.Request) {
-	in, err := BlockDecodeRequest(r.Context(), r)
+	in, err := blockDecodeRequest(r.Context(), r)
 	if err != nil {
 		h.logger.Error(err, "[Block] Error function execution (BlockDecodeRequest).")
 		return
@@ -27,12 +28,12 @@ func (h *handlers) Block(w http.ResponseWriter, r *http.Request) {
 		h.logger.Error(err, "[Block] Error service execution (Block).")
 		return
 	}
-	response, _ := BlockEncodeResponse(r.Context(), &serviceResult)
+	response, _ := blockEncodeResponse(r.Context(), &serviceResult)
 	if err != nil {
 		h.logger.Error(err, "[Block] Error function execution (BlockEncodeResponse).")
 		return
 	}
-	err = BlockTransportResponse(w, response)
+	err = blockTransportResponse(w, response)
 	if err != nil {
 		h.logger.Error(err, "[Block] Error function execution (BlockTransportResponse).")
 		return
@@ -41,7 +42,7 @@ func (h *handlers) Block(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-func BlockDecodeRequest(ctx context.Context, r *http.Request) (in model.ServiceBlockIn, err error)  {
+func blockDecodeRequest(ctx context.Context, r *http.Request) (in model.ServiceBlockIn, err error)  {
 	vars := mux.Vars(r)
 	in.Block = vars["block"]
 	in.Url = r.URL.Query().Encode()
@@ -58,12 +59,12 @@ func BlockDecodeRequest(ctx context.Context, r *http.Request) (in model.ServiceB
 	return in, err
 }
 
-func BlockEncodeResponse(ctx context.Context, serviceResult *model.ServiceBlockOut) (response string, err error)  {
-	response = serviceResult.Body
+func blockEncodeResponse(ctx context.Context, serviceResult *model.ServiceBlockOut) (response template.HTML, err error)  {
+	response = serviceResult.Result
 	return response, err
 }
 
-func BlockTransportResponse(w http.ResponseWriter, response interface{}) (err error)  {
+func blockTransportResponse(w http.ResponseWriter, response interface{}) (err error)  {
 	d, err := json.Marshal(response)
 	w.WriteHeader(200)
 

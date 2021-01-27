@@ -3,6 +3,10 @@ package function
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/buildboxapp/app/pkg/config"
+	"github.com/buildboxapp/app/pkg/model"
+	"github.com/buildboxapp/lib/log"
+	uuid "github.com/satori/go.uuid"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -10,69 +14,114 @@ import (
 	"time"
 )
 
+
+type function struct {
+	cfg config.Config
+	formula Formula
+	dogfunc DogFunc
+	tplfunc TplFunc
+}
+
+type Function interface {
+	Exec(p string, queryData *[]model.Data, values map[string]interface{}) (result string)
+	TplFunc() TplFunc
+}
+
 ////////////////////////////////////////////////////////////
 
-type Formula struct {
-	Value 		string `json:"value"`
-	Document 	[]Data `json:"document"`
-	Request		*http.Request
-	Inserts		[]*Insert
-	Values     	map[string]interface{}	//  параметры переданные в шаблон при генерации страницы (доступны в шаблоне как $.Value)
-	App 		*App
+type formula struct {
+	value 		string `json:"value"`
+	document 	[]model.Data `json:"document"`
+	request		*http.Request
+	inserts		[]*insert
+	values     	map[string]interface{}	//  параметры переданные в шаблон при генерации страницы (доступны в шаблоне как $.Value)
+	cfg 		config.Config
+	dogfunc		DogFunc
+}
+
+type Formula interface {
+	Replace() (result string)
+	Parse() bool
+	Calculate()
+	SetValue(value string)
+	SetValues(value map[string]interface{})
+	SetDocument(value []model.Data)
+	SetInserts(value []*insert)
 }
 
 // Вставка - это одна функция, которая может иметь вложения
 // Text - строка вставки, по которому мы будем заменять в общем тексте
-type Insert struct {
-	Text 		string 		`json:"text"`
-	Arguments 	[]string 	`json:"arguments"`
-	Result		string 		`json:"result"`
-	Functions	Function
+type insert struct {
+	text 		string 		`json:"text"`
+	arguments 	[]string 	`json:"arguments"`
+	result		string 		`json:"result"`
+	dogfuncs	dogfunc
 }
 
 // Исчисляемая фукнция с аргументами и параметрами
 // может иметь вложения
-type Function struct {
-	Name 		string 		`json:"name"`
-	Arguments 	[]string 	`json:"arguments"`
-	Result 		string 		`json:"result"`
+type dogfunc struct {
+	name 		string 		`json:"name"`
+	arguments 	[]string 	`json:"arguments"`
+	result 		string 		`json:"result"`
+	cfg 		config.Config `json:"cfg"`
+	tplfunc		TplFunc
+}
+
+type DogFunc interface {
+	TplValue(v map[string]interface{}, arg []string) (result string)
+	ConfigValue(arg []string) (result string)
+	SplitIndex(arg []string) (result string)
+	Time(arg []string) (result string)
+	TimeFormat(arg []string) (result string)
+	FuncURL(r *http.Request, arg []string) (result string)
+	Path(d []model.Data, arg []string) (result string)
+	DReplace(arg []string) (result string)
+	UserObj(r *http.Request, arg []string) (result string)
+	UserProfile(r *http.Request, arg []string) (result string)
+	UserRole(r *http.Request, arg []string) (result string)
+	Obj(data []model.Data, arg []string) (result string)
+	FieldValue(data []model.Data, arg []string) (result string)
+	FieldSrc(data []model.Data, arg []string) (result string)
+	FieldSplit(data []model.Data, arg []string) (result string)
+	DateModify(arg []string) (result string)
+	DogSendmail(arg []string) (result string)
 }
 
 ////////////////////////////////////////////////////////////
 // !!! ПОКА ТОЛЬКО ПОСЛЕДОВАТЕЛЬНАЯ ОБРАБОТКА (без сложений)
 ////////////////////////////////////////////////////////////
 
-func (p *Formula) Replace() (result string) {
-
+func (p *formula) Replace() (result string) {
 	p.Parse()
 	p.Calculate()
 
-	for _, v := range p.Inserts {
-		p.Value = strings.Replace(p.Value, v.Text, v.Result, -1)
+	for _, v := range p.inserts {
+		p.value = strings.Replace(p.value, v.text, v.result, -1)
 	}
 
-	return p.Value
+	return p.value
 }
 
-func (p *Formula) Parse() bool  {
+func (p *formula) Parse() bool  {
 
-	if p.Value == "" {
+	if p.value == "" {
 		return false
 	}
 
-	//content := []byte(p.Value)
+	//content := []byte(p.value)
 	//pattern := regexp.MustCompile(`@(\w+)\(([\w]+)(?:,\s*([\w]+))*\)`)
-	value := p.Value
+	value := p.value
 
 	pattern := regexp.MustCompile(`@(\w+)\(\s*('[^']*'|#[^#]*#|[^,()@]*?)\s*(?:,\s*('[^']*'|#[^#]*#|[^,()@]*?)\s*)?(?:,\s*('[^']*'|#[^#]*#|[^,()@]*?)\s*)?(?:,\s*('[^']*'|#[^#]*#|[^,()@]*?)\s*)?(?:,\s*('[^']*'|#[^#]*#|[^,()@]*?)\s*)?\)`)
 	allIndexes := pattern.FindAllStringSubmatch(value, -1)
 
 	for _, loc := range allIndexes {
 
-		i := Insert{}
-		f := Function{}
-		i.Functions = f
-		p.Inserts = append(p.Inserts, &i)
+		i := insert{}
+		f := dogfunc{}
+		i.dogfuncs = f
+		p.inserts = append(p.inserts, &i)
 
 		strFunc := string(loc[0])
 
@@ -84,8 +133,8 @@ func (p *Formula) Parse() bool  {
 			return false
 		}
 
-		i.Text = strFunc
-		i.Functions.Name = f1[0] // название функции
+		i.text = strFunc
+		i.dogfuncs.name = f1[0] // название функции
 
 		// готовим параметры для передачи в функцию обработки
 		if len(f1[1]) > 0 {
@@ -101,7 +150,7 @@ func (p *Formula) Parse() bool  {
 				v = strings.Trim(v, "'")
 				argsClear = append(argsClear, v)
 			}
-			i.Functions.Arguments = argsClear
+			i.dogfuncs.arguments = argsClear
 		}
 
 		//for j, loc1 := range loc {
@@ -117,7 +166,7 @@ func (p *Formula) Parse() bool  {
 		//
 		//	// название фукнции
 		//	if j == 1 {
-		//		i.Functions.Name = res
+		//		i.dogfuncs.Name = res
 		//	}
 		//
 		//	// аргументы для функции
@@ -128,7 +177,7 @@ func (p *Formula) Parse() bool  {
 		//			//f.Arguments = append(f.Arguments, argRec)
 		//		} else {
 		//			// добавляем аргумент в слайс аргументов
-		//			i.Functions.Arguments = append(i.Functions.Arguments, res)
+		//			i.dogfuncs.Arguments = append(i.dogfuncs.Arguments, res)
 		//		}
 		//	}
 		//}
@@ -137,56 +186,79 @@ func (p *Formula) Parse() bool  {
 	return true
 }
 
-func (p *Formula) Calculate()  {
+func (p *formula) Calculate()  {
 
-	for k, v := range p.Inserts {
-		param := strings.ToUpper(v.Functions.Name)
+	for k, v := range p.inserts {
+		param := strings.ToUpper(v.dogfuncs.name)
 
 		switch param {
 		case "RAND":
-			uuid := UUID()
-			p.Inserts[k].Result = uuid[1:6]
+			uuid := uuid.NewV4().String()
+			p.inserts[k].result = uuid[1:6]
 		case "SENDMAIL":
-			p.Inserts[k].Result = DogSendmail(v.Functions.Arguments)
+			p.inserts[k].result = p.dogfunc.DogSendmail(v.dogfuncs.arguments)
 		case "PATH":
-			p.Inserts[k].Result = Path(p.Document, v.Functions.Arguments)
+			p.inserts[k].result = p.dogfunc.Path(p.document, v.dogfuncs.arguments)
 		case "REPLACE":
-			p.Inserts[k].Result = DReplace(v.Functions.Arguments)
+			p.inserts[k].result = p.dogfunc.DReplace(v.dogfuncs.arguments)
 		case "TIME":
-			p.Inserts[k].Result = Time(v.Functions.Arguments)
+			p.inserts[k].result = p.dogfunc.Time(v.dogfuncs.arguments)
 		case "DATEMODIFY":
-			p.Inserts[k].Result = DateModify(v.Functions.Arguments)
+			p.inserts[k].result = p.dogfunc.DateModify(v.dogfuncs.arguments)
 
 		case "USER":
-			p.Inserts[k].Result = UserObj(p.Request, v.Functions.Arguments)
+			p.inserts[k].result = p.dogfunc.UserObj(p.request, v.dogfuncs.arguments)
 		case "ROLE":
-			p.Inserts[k].Result = UserRole(p.Request, v.Functions.Arguments)
+			p.inserts[k].result = p.dogfunc.UserRole(p.request, v.dogfuncs.arguments)
 		case "PROFILE":
-			p.Inserts[k].Result = UserProfile(p.Request, v.Functions.Arguments)
+			p.inserts[k].result = p.dogfunc.UserProfile(p.request, v.dogfuncs.arguments)
 
 		case "OBJ":
-			p.Inserts[k].Result = Obj(p.Document, v.Functions.Arguments)
+			p.inserts[k].result = p.dogfunc.Obj(p.document, v.dogfuncs.arguments)
 		case "URL":
-			p.Inserts[k].Result = FuncURL(p.Request, v.Functions.Arguments)
+			p.inserts[k].result = p.dogfunc.FuncURL(p.request, v.dogfuncs.arguments)
 
 		case "SPLITINDEX":
-			p.Inserts[k].Result = SplitIndex(v.Functions.Arguments)
+			p.inserts[k].result = p.dogfunc.SplitIndex(v.dogfuncs.arguments)
 
 		case "TPLVALUE":
-			p.Inserts[k].Result = TplValue(p.Values, v.Functions.Arguments)
+			p.inserts[k].result = p.dogfunc.TplValue(p.values, v.dogfuncs.arguments)
 		case "CONFIGVALUE":
-			p.Inserts[k].Result = ConfigValue(v.Functions.Arguments)
+			p.inserts[k].result = p.dogfunc.ConfigValue(v.dogfuncs.arguments)
 		case "FIELDVALUE":
-			p.Inserts[k].Result = FieldValue(p.Document, v.Functions.Arguments)
+			p.inserts[k].result = p.dogfunc.FieldValue(p.document, v.dogfuncs.arguments)
 		case "FIELDSRC":
-			p.Inserts[k].Result = FieldSrc(p.Document, v.Functions.Arguments)
+			p.inserts[k].result = p.dogfunc.FieldSrc(p.document, v.dogfuncs.arguments)
 		case "FIELDSPLIT":
-			p.Inserts[k].Result = FieldSplit(p.Document, v.Functions.Arguments)
+			p.inserts[k].result = p.dogfunc.FieldSplit(p.document, v.dogfuncs.arguments)
 		default:
-			p.Inserts[k].Result = ""
+			p.inserts[k].result = ""
 		}
 	}
 
+}
+
+func (f *formula) SetValue(value string)  {
+	f.value = value
+}
+
+func (f *formula) SetValues(value map[string]interface{})  {
+	f.values = value
+}
+
+func (f *formula) SetDocument(value []model.Data)  {
+	f.document = value
+}
+
+func (f *formula) SetInserts(value []*insert)  {
+	f.inserts = value
+}
+
+
+func NewFormula(cfg config.Config, dogfunc DogFunc) Formula {
+	return &formula{
+		cfg: cfg,
+	}
 }
 
 
@@ -195,13 +267,8 @@ func (p *Formula) Calculate()  {
 ///////////////////////////////////////////////////
 
 // Получение значений $.Value шаблона (работает со значением по-умолчанию)
-func (c *App) TplValue(v map[string]interface{}, arg []string) (result string) {
+func (d *dogfunc) TplValue(v map[string]interface{}, arg []string) (result string) {
 	var valueDefault string
-
-	// берем через глобальную переменную, через (c *App) не работает для ф-ций шаблонизатора
-	if len(State) == 0 {
-		return "Error parsing @-function TplValue (State is null)"
-	}
 
 	if len(arg) > 0 {
 		param := arg[0]
@@ -212,27 +279,22 @@ func (c *App) TplValue(v map[string]interface{}, arg []string) (result string) {
 		result, found := v[strings.Trim(param, " ")]
 		if !found {
 			if valueDefault == "" {
-				return "Error parsing @-function TplValue (Value from this key is not found.)"
+				return "Error parsing @-dogfunc TplValue (Value from this key is not found.)"
 			}
 			return fmt.Sprint(valueDefault)
 		}
 		return fmt.Sprint(result)
 
 	} else {
-		return "Error parsing @-function TplValue (Arguments is null)"
+		return "Error parsing @-dogfunc TplValue (Arguments is null)"
 	}
 
 	return fmt.Sprint(result)
 }
 
 // Получение значений из конфигурации проекта (хранится State в объекте приложение App)
-func (c *App) ConfigValue(arg []string) (result string) {
+func (d *dogfunc) ConfigValue(arg []string) (result string) {
 	var valueDefault string
-
-	// берем через глобальную переменную, через (c *App) не работает для ф-ций шаблонизатора
-	if len(State) == 0 {
-		return "Error parsing @-function ConfigValue (State is null)"
-	}
 
 	if len(arg) > 0 {
 		param := arg[0]
@@ -240,17 +302,17 @@ func (c *App) ConfigValue(arg []string) (result string) {
 			valueDefault = arg[1]
 		}
 
-		result, found := State[strings.Trim(param, " ")]
-		if !found {
+		result, err := d.cfg.GetValue(strings.Trim(param, " "))
+		if err != nil {
 			if valueDefault == "" {
-				return "Error parsing @-function ConfigValue (Value from this key is not found.)"
+				return "Error parsing @-dogfunc ConfigValue (Value from this key is not found.)"
 			}
 			return fmt.Sprint(valueDefault)
 		}
 		return fmt.Sprint(result)
 
 	} else {
-		return "Error parsing @-function ConfigValue (Arguments is null)"
+		return "Error parsing @-dogfunc ConfigValue (Arguments is null)"
 	}
 
 	return fmt.Sprint(result)
@@ -262,15 +324,15 @@ func (c *App) ConfigValue(arg []string) (result string) {
 // sep - разделитель (строка)
 // index - порядковый номер (число) (от 0) возвращаемого элемента
 // default - значение по-умолчанию (не обязательно)
-func (c *App) SplitIndex(arg []string) (result string) {
+func (d *dogfunc) SplitIndex(arg []string) (result string) {
 	var valueDefault string
 
 	if len(arg) > 0 {
 
-		str := Replace(arg[0], "'", "", -1)
-		sep := Replace(arg[1], "'", "", -1)
-		index := Replace(arg[2], "'", "", -1)
-		defaultV := Replace(arg[3], "'", "", -1)
+		str := d.tplfunc.Replace(arg[0], "'", "", -1)
+		sep := d.tplfunc.Replace(arg[1], "'", "", -1)
+		index := d.tplfunc.Replace(arg[2], "'", "", -1)
+		defaultV := d.tplfunc.Replace(arg[3], "'", "", -1)
 
 		in, err := strconv.Atoi(index)
 		if err != nil {
@@ -299,7 +361,7 @@ func (c *App) SplitIndex(arg []string) (result string) {
 }
 
 // Получение текущей даты
-func (c *App) Time(arg []string) (result string) {
+func (d *dogfunc) Time(arg []string) (result string) {
 
 	if len(arg) > 0 {
 		param := strings.ToUpper(arg[0])
@@ -316,7 +378,7 @@ func (c *App) Time(arg []string) (result string) {
 }
 
 // Получение идентификатор User-а
-func (c *App) TimeFormat(arg []string) (result string) {
+func (d *dogfunc) TimeFormat(arg []string) (result string) {
 	var valueDefault string
 
 	if len(arg) > 0 {
@@ -335,7 +397,7 @@ func (c *App) TimeFormat(arg []string) (result string) {
 			mask = "2006-01-02 15:04:05"
 		}
 
-		result = timeformat(ss, mask, format)
+		result = d.tplfunc.Timeformat(ss, mask, format)
 	}
 	if result == "" {
 		result = valueDefault
@@ -344,7 +406,7 @@ func (c *App) TimeFormat(arg []string) (result string) {
 	return result
 }
 
-func (c *App) FuncURL(r *http.Request, arg []string) (result string) {
+func (d *dogfunc) FuncURL(r *http.Request, arg []string) (result string) {
 	r.ParseForm()
 	var valueDefault string
 
@@ -366,7 +428,7 @@ func (c *App) FuncURL(r *http.Request, arg []string) (result string) {
 }
 
 // Вставляем значения системных полей объекта
-func (c *App) Path(d []Data, arg []string) (result string) {
+func (d *dogfunc) Path(dm []model.Data, arg []string) (result string) {
 	var valueDefault string
 
 	if len(arg) > 0 {
@@ -376,22 +438,20 @@ func (c *App) Path(d []Data, arg []string) (result string) {
 			valueDefault = strings.ToUpper(arg[1])
 		}
 
-		if len(State) != 0 {
 			switch param {
 			case "API":
-				result = State["UrlApi"]
+				result = d.cfg.UrlApi
 			case "GUI":
-				result = State["UrlGui"]
+				result = d.cfg.UrlGui
 			case "PROXY":
-				result = State["UrlProxy"]
+				result = d.cfg.UrlProxy
 			case "CLIENT":
-				result = State["ClientPath"]
+				result = d.cfg.ClientPath
 			case "DOMAIN":
-				result = State["Domain"]
+				result = d.cfg.Domain
 			default:
-				result = State["ClientPath"]
+				result = d.cfg.ClientPath
 			}
-		}
 	}
 
 	if result == "" {
@@ -402,7 +462,7 @@ func (c *App) Path(d []Data, arg []string) (result string) {
 }
 
 // Заменяем значение
-func (c *App) DReplace(arg []string) (result string) {
+func (d *dogfunc) DReplace(arg []string) (result string) {
 	var count int
 	var str, oldS, newS string
 	var err error
@@ -426,7 +486,7 @@ func (c *App) DReplace(arg []string) (result string) {
 }
 
 // Получение идентификатор User-а (для Cockpit-a)
-func (c *App) UserObj(r *http.Request, arg []string) (result string) {
+func (d *dogfunc) UserObj(r *http.Request, arg []string) (result string) {
 
 	//fmt.Println("User")
 	//fmt.Println(arg)
@@ -442,9 +502,9 @@ func (c *App) UserObj(r *http.Request, arg []string) (result string) {
 		param := strings.ToUpper(arg[0])
 		ctxUser := r.Context().Value("User") // текущий профиль пользователя
 
-		var uu ProfileData
+		var uu model.ProfileData
 
-		json.Unmarshal([]byte(marshal(ctxUser)), &uu)
+		json.Unmarshal([]byte(d.tplfunc.Marshal(ctxUser)), &uu)
 
 
 		if &uu != nil {
@@ -475,15 +535,15 @@ func (c *App) UserObj(r *http.Request, arg []string) (result string) {
 }
 
 // Получение UserProfile (для Cockpit-a)
-func (c *App) UserProfile(r *http.Request, arg []string) (result string) {
+func (d *dogfunc) UserProfile(r *http.Request, arg []string) (result string) {
 	if len(arg) > 0 {
 
 		param := strings.ToUpper(arg[0])
 		ctxUser := r.Context().Value("User") // текущий профиль пользователя
 
-		var uu *ProfileData
+		var uu *model.ProfileData
 		if ctxUser != nil {
-			uu = ctxUser.(*ProfileData)
+			uu = ctxUser.(*model.ProfileData)
 		}
 
 		if uu != nil {
@@ -506,16 +566,16 @@ func (c *App) UserProfile(r *http.Request, arg []string) (result string) {
 }
 
 // Получение текущей роли User-а
-func (c *App) UserRole(r *http.Request, arg []string) (result string) {
+func (d *dogfunc) UserRole(r *http.Request, arg []string) (result string) {
 	if len(arg) > 0 {
 
 		param := strings.ToUpper(arg[0])
 		param2 := strings.ToUpper(arg[1])
 		ctxUser := r.Context().Value("User") // текущий профиль пользователя
 
-		var uu *ProfileData
+		var uu *model.ProfileData
 		if ctxUser != nil {
-			uu = ctxUser.(*ProfileData)
+			uu = ctxUser.(*model.ProfileData)
 		}
 
 		if uu != nil {
@@ -546,7 +606,7 @@ func (c *App) UserRole(r *http.Request, arg []string) (result string) {
 }
 
 // Вставляем значения системных полей объекта
-func (c *App) Obj(data []Data, arg []string) (result string) {
+func (d *dogfunc) Obj(data []model.Data, arg []string) (result string) {
 	var valueDefault, r string
 	var res = []string{}
 	if len(arg) == 0 {
@@ -566,9 +626,6 @@ func (c *App) Obj(data []Data, arg []string) (result string) {
 		separator = arg[2]
 	}
 
-
-
-
 	for _, d := range data {
 		switch param {
 		case "UID":	// получаем все uid-ы из переданного массива объектов
@@ -586,7 +643,7 @@ func (c *App) Obj(data []Data, arg []string) (result string) {
 		}
 		res = append(res, r)
 	}
-	result = join(res, separator)
+	result = d.tplfunc.Join(res, separator)
 
 	if result == "" {
 		result = valueDefault
@@ -597,7 +654,7 @@ func (c *App) Obj(data []Data, arg []string) (result string) {
 
 // Вставляем значения (Value) элементов из формы
 // Если поля нет, то выводит переданное значение (может быть любой символ)
-func (c *App) FieldValue(data []Data, arg []string) (result string) {
+func (d *dogfunc) FieldValue(data []model.Data, arg []string) (result string) {
 	var valueDefault, separator string
 	var resSlice = []string{}
 
@@ -621,7 +678,7 @@ func (c *App) FieldValue(data []Data, arg []string) (result string) {
 			resSlice = append(resSlice, strings.Trim(val, " "))
 		}
 	}
-	result = join(resSlice, separator)
+	result = d.tplfunc.Join(resSlice, separator)
 
 	if result == "" {
 		result = valueDefault
@@ -632,7 +689,7 @@ func (c *App) FieldValue(data []Data, arg []string) (result string) {
 
 // Вставляем ID-объекта (SRC) элементов из формы
 // Если поля нет, то выводит переданное значение (может быть любой символ)
-func (c *App) FieldSrc(data []Data, arg []string) (result string) {
+func (d *dogfunc) FieldSrc(data []model.Data, arg []string) (result string) {
 	var valueDefault, separator string
 	var resSlice = []string{}
 
@@ -654,7 +711,7 @@ func (c *App) FieldSrc(data []Data, arg []string) (result string) {
 			resSlice = append(resSlice, strings.Trim(val, " "))
 		}
 	}
-	result = join(resSlice, separator)
+	result = d.tplfunc.Join(resSlice, separator)
 
 	if result == "" {
 		result = valueDefault
@@ -663,12 +720,11 @@ func (c *App) FieldSrc(data []Data, arg []string) (result string) {
 	return result
 }
 
-
 // Разбиваем значения по элементу (Value(по-умолчанию)/Src) элементов из формы по разделителю и возвращаем
 // значение по указанному номеру (начала от 0)
 // Синтаксис: FieldValueSplit(поле, элемент, разделитель, номер_элемента)
 // для разделителя есть кодовые слова slash - / (нельзя вставить в фукнцию)
-func (c *App) FieldSplit(data []Data, arg []string) (result string) {
+func (d *dogfunc) FieldSplit(data []model.Data, arg []string) (result string) {
 	var resSlice = []string{}
 	var r string
 
@@ -716,20 +772,16 @@ func (c *App) FieldSplit(data []Data, arg []string) (result string) {
 		resSlice = append(resSlice, r)
 	}
 
-	result = join(resSlice, ",")
+	result = d.tplfunc.Join(resSlice, ",")
 
 	return result
 }
-
-///////////////////////////////////////////////////
-// Фукнции @ обработки наследованные от математического пакета
-///////////////////////////////////////////////////
 
 // Добавление даты к переданной
 // date - дата, которую модифицируют (значение должно быть в формате времени)
 // modificator - модификатор (например "+24h")
 // format - формат переданного времени (по-умолчанию - 2006-01-02T15:04:05Z07:00 (формат: time.RFC3339)
-func (c *App) DateModify(arg []string) (result string) {
+func (d *dogfunc) DateModify(arg []string) (result string) {
 
 	if len(arg) < 2 {
 		return "Error! Count params must have min 2 (date, modificator; option: format)"
@@ -750,39 +802,45 @@ func (c *App) DateModify(arg []string) (result string) {
 	}
 
 	// преобразуем модификатор во время
-	d, err := time.ParseDuration(modificator)
+	p, err := time.ParseDuration(modificator)
 	if err != nil {
 		return dateArg
 	}
 
-	return fmt.Sprint(date.Add(d))
+	return fmt.Sprint(date.Add(p))
 }
 
 
+///////////////////////////////////////////////////////////////
 // Отправляем почтового сообщения
-func (c *App) Sendmail(arg []string) (result string) {
+func (d *dogfunc) DogSendmail(arg []string) (result string) {
 	if len(arg) < 9 {
 		return "Error! Count params must have min 9 (server, port, user, pass, from, to, subject, message, turbo: string)"
 	}
-	result = Sendmail(arg[0], arg[1], arg[2], arg[3], arg[4], arg[5], arg[6], arg[7], arg[8])
+	result = d.tplfunc.Sendmail(arg[0], arg[1], arg[2], arg[3], arg[4], arg[5], arg[6], arg[7], arg[8])
 
 	return result
+}
+
+func NewDogFunc(cfg config.Config, tplfunc TplFunc) DogFunc {
+	return &dogfunc{
+		cfg: cfg,
+		tplfunc: tplfunc,
+	}
 }
 
 
 ///////////////////////////////////////////////////////////////
 // Собачья-обработка (поиск в строке @функций и их обработка)
 ///////////////////////////////////////////////////////////////
-func (c *App) DogParse(p string, r *http.Request, queryData *[]Data, values map[string]interface{}) (result string) {
-	s1 := Formula{}
+func (d *function) Exec(p string, queryData *[]model.Data, values map[string]interface{}) (result string) {
 
 	// прогоняем полученную строку такое кол-во раз, сколько вложенных уровней + 1 (для сравнения)
 	for {
-		s1.Value = p
-		s1.Request = r
-		s1.Values = values
-		s1.Document = *queryData
-		res_parse := s1.Replace()
+		d.formula.SetValue(p)
+		d.formula.SetValues(values)
+		d.formula.SetDocument(*queryData)
+		res_parse := d.formula.Replace()
 
 		if p == res_parse {
 			result = res_parse
@@ -793,5 +851,20 @@ func (c *App) DogParse(p string, r *http.Request, queryData *[]Data, values map[
 
 	return
 }
-///////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////
+
+func (d *function) TplFunc() TplFunc {
+	return d.tplfunc
+}
+
+func New(cfg config.Config, logger log.Log) Function {
+	tplfunc := NewTplFunc(cfg, logger)
+	dogfunc := NewDogFunc(cfg, tplfunc)
+	formula := NewFormula(cfg, dogfunc)
+
+	return &function{
+		cfg: cfg,
+		formula: formula,
+		dogfunc: dogfunc,
+		tplfunc: tplfunc,
+	}
+}

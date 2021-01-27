@@ -1,11 +1,16 @@
 package function
 
 import (
+	"crypto/sha1"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/Masterminds/sprig"
+	"github.com/buildboxapp/app/pkg/config"
 	"github.com/buildboxapp/app/pkg/model"
+	"github.com/buildboxapp/app/pkg/utils"
+	"github.com/buildboxapp/lib/log"
 	"github.com/satori/go.uuid"
 	"html/template"
 	"io/ioutil"
@@ -22,60 +27,124 @@ import (
 var FuncMapS = sprig.FuncMap()
 
 var FuncMap = template.FuncMap{
-	"separator": 	 separator,
-	"attr":	 		 attr,
-	"datetotext":	 datetotext,
-	"output": 	 	 output,
-	"cut":			 cut,
-	"concatination": concatination,
-	"join": 		 join,
-	"rand":			 rand,
-	"uuid":			 UUID,
-	"refind":		 refind,
-	"rereplace":	 rereplace,
-	"replace":		 Replace,
-	"contains": 	 contains,
-	"dict":          dict,
-	"sum":           sum,
-	"split":         split,
-	"set":           set,
-	"get":           get,
-	"delete":        deletekey,
-	"marshal":       marshal,
-	"value":       	 value,
-	"hash":       	 hash,
-	"unmarshal":     unmarshal,
-	"compare":    	 compare,
-	"totree": 	 	 totree,
-	"tostring":		 tostring,
-	"toint":		 toint,
-	"tofloat":		 tofloat,
-	"tointerface":	 tointerface,
-	"tohtml":		 tohtml,
-	"timefresh":	 Timefresh,
-	"timenow":		 timenow,
-	"timeformat":	 timeformat,
-	"timetostring":  timetostring,
-	"timeyear":	 	 timeyear,
-	"timemount":	 timemount,
-	"timeday":	 	 timeday,
-	"timeparse":	 timeparse,
-	"tomoney":		 tomoney,
+	"separator": 	 tplfunc.Separator,
+	"attr":	 		 tplfunc.Attr,
+	"datetotext":	 tplfunc.Datetotext,
+	"output": 	 	 tplfunc.Output,
+	"cut":			 tplfunc.Cut,
+	"concatination": tplfunc.Concatination,
+	"join": 		 tplfunc.Join,
+	"rand":			 tplfunc.Rand,
+	"uuid":			 tplfunc.UUID,
+	"refind":		 tplfunc.Refind,
+	"rereplace":	 tplfunc.Rereplace,
+	"replace":		 tplfunc.Replace,
+	"contains": 	 tplfunc.Contains,
+	"dict":          tplfunc.Dict,
+	"sum":           tplfunc.Sum,
+	"split":         tplfunc.Split,
+	"set":           tplfunc.Set,
+	"get":           tplfunc.Get,
+	"delete":        tplfunc.Deletekey,
+	"marshal":       tplfunc.Marshal,
+	"value":       	 tplfunc.Value,
+	"hash":       	 tplfunc.Hash,
+	"unmarshal":     tplfunc.Unmarshal,
+	"compare":    	 tplfunc.Compare,
+	"totree": 	 	 tplfunc.Totree,
+	"tostring":		 tplfunc.Tostring,
+	"toint":		 tplfunc.Toint,
+	"tofloat":		 tplfunc.Tofloat,
+	"tointerface":	 tplfunc.Tointerface,
+	"tohtml":		 tplfunc.Tohtml,
+	"timefresh":	 tplfunc.Timefresh,
+	"timenow":		 tplfunc.Timenow,
+	"timeformat":	 tplfunc.Timeformat,
+	"timetostring":  tplfunc.Timetostring,
+	"timeyear":	 	 tplfunc.Timeyear,
+	"timemount":	 tplfunc.Timemount,
+	"timeday":	 	 tplfunc.Timeday,
+	"timeparse":	 tplfunc.Timeparse,
+	"tomoney":		 tplfunc.Tomoney,
 	//"timeaddday":    timeaddday,
-	"invert":		 invert,
-	"substring":	 substring,
-	"dogparse":		 dogparse,
-	"confparse":	 confparse,
-	"varparse":	 	 parseparam,
-	"parseparam":	 parseparam,
-	"divfloat":		 divfloat,
-	"sendmail":		 Sendmail,
+	"invert":		 tplfunc.Invert,
+	"substring":	 tplfunc.Substring,
+	"dogparse":		 tplfunc.Dogparse,
+	"confparse":	 tplfunc.Confparse,
+	"varparse":	 	 tplfunc.Parseparam,
+	"parseparam":	 tplfunc.Parseparam,
+	"divfloat":		 tplfunc.Divfloat,
+	"sendmail":		 tplfunc.Sendmail,
 
 }
 
+type tplfunc struct {
+	cfg config.Config
+	logger log.Log
+}
+
+type TplFunc interface {
+	GetFuncMap() template.FuncMap
+	Separator() string
+	Sendmail(server, port, user, pass, from, to, subject, message, turbo string) (result string)
+	Divfloat(a, b interface{}) interface{}
+	Confparse(configuration string, r *http.Request, queryData interface{}) (result interface{})
+	Dogparse(p string, r *http.Request, queryData interface{}, values map[string]interface{}) (result string)
+	Attr(name, element string, data interface{}) (result interface{})
+	UUID() string
+	Rand() string
+	Hash(str string) string
+	Timenow() time.Time
+	Timeformat(str interface{}, mask, format string) string
+	Timetostring(time time.Time, format string) string
+	Timeyear(t time.Time) string
+	Timemount(t time.Time) string
+	Timeday(t time.Time) string
+	Timeparse(str, mask string) (res time.Time, err error)
+	Refind(mask, str string, n int) (res [][]string)
+	Rereplace(str, mask, new string) (res string)
+	Parseparam(str string, configuration, data interface{}, resulttype string) (result interface{})
+	Timefresh(str interface{}) string
+	Invert(str string) string
+	Join(slice []string, sep string) (result string)
+	Split(str, sep string) (result interface{})
+	Tomoney(str,dec string) (res string)
+	Contains1(message, str, substr string) string
+	Contains(str, substr, message, messageelse string) string
+	Datetotext(str string) (result string)
+	Replace(str, old, new string, n int) (message string)
+	Compare(var1, var2, message string) string
+	Dict(values ...interface{}) (map[string]interface{}, error)
+	Set(d map[string]interface{}, key string, value interface{}) map[string]interface{}
+	Get(d map[string]interface{}, key string) (value interface{})
+	Deletekey(d map[string]interface{}, key string) (value string)
+	Sum(res,i int) int
+	Cut(res string, i int, sep string) string
+	Substring(str string, args ...int) string
+	Tostring(i interface{}) (res string)
+	Totree(i interface{}, objstart string) (res interface{})
+	Tohtml(i interface{}) (template.HTML)
+	Toint(i interface{}) (res int)
+	Tofloat(i interface{}) (res float64)
+	Tointerface(input interface{}) (res interface{})
+	Concatination(values ...string) (res string)
+	Marshal(i interface{}) (res string)
+	Unmarshal(i string) (res interface{})
+	Value(element string, configuration, data interface{}) (result interface{})
+	Output(element string, configuration, data interface{}, resulttype string) (result interface{})
+}
+
+// возвращаем значение карты функции
+func (t *tplfunc) GetFuncMap() template.FuncMap {
+	return FuncMap
+}
+
 // формируем сепаратор для текущей ОС
-func separator() string {
+func (t *tplfunc) Separator() string {
+	fm := t.GetFuncMap()
+	template.New("name").Funcs(fm).ParseFiles("tplName")
 	return string(filepath.Separator)
+
 }
 
 // отправка email-сообщения
@@ -87,7 +156,7 @@ func separator() string {
 // pass - пароль пользователя
 // message - сообщение
 // turbo - режим отправки в отдельной горутине
-func Sendmail(server, port, user, pass, from, to, subject, message, turbo string) (result string) {
+func (t *tplfunc) Sendmail(server, port, user, pass, from, to, subject, message, turbo string) (result string) {
 	var resMessage interface{}
 	var fromFull, toFull, subjectFull string
 	result = "true"
@@ -97,10 +166,10 @@ func Sendmail(server, port, user, pass, from, to, subject, message, turbo string
 		auth := smtp.PlainAuth("", user, pass, server)
 
 		// приводим к одному виду чтобы можно было использвоать и <> и []
-		from = Replace(from, ">", "]", -1)
-		from = Replace(from, "<", "[", -1)
-		to = Replace(to, ">", "]", -1)
-		to = Replace(to, "<", "[", -1)
+		from = t.Replace(from, ">", "]", -1)
+		from = t.Replace(from, "<", "[", -1)
+		to = t.Replace(to, ">", "]", -1)
+		to = t.Replace(to, "<", "[", -1)
 
 		slFrom := strings.Split(from, ",")
 		slTo := strings.Split(to, ",")
@@ -129,10 +198,10 @@ func Sendmail(server, port, user, pass, from, to, subject, message, turbo string
 			addrTo = append(addrTo, addr)
 		}
 
-		from = Replace(from, "]", ">", -1)
-		from = Replace(from, "[", "<", -1)
-		to = Replace(to, "]", ">", -1)
-		to = Replace(to, "[", "<", -1)
+		from = t.Replace(from, "]", ">", -1)
+		from = t.Replace(from, "[", "<", -1)
+		to = t.Replace(to, "]", ">", -1)
+		to = t.Replace(to, "[", "<", -1)
 		mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
 		fromFull = "From: "+from+"\n"
 		toFull = "To: "+to+"\n"
@@ -153,7 +222,7 @@ func Sendmail(server, port, user, pass, from, to, subject, message, turbo string
 
 		sendMes := subjectFull + fromFull + toFull + mime + fmt.Sprint(resMessage)
 		fmt.Println(sendMes)
-		if err := smtp.SendMail(server+":"+port, auth, join(addrFrom, ","), addrTo, []byte(sendMes)); err != nil {
+		if err := smtp.SendMail(server+":"+port, auth, t.Join(addrFrom, ","), addrTo, []byte(sendMes)); err != nil {
 			result = fmt.Sprintln(err)
 		}
 	}
@@ -169,7 +238,7 @@ func Sendmail(server, port, user, pass, from, to, subject, message, turbo string
 	return result
 }
 
-func divfloat(a, b interface{}) interface{} {
+func (t *tplfunc) Divfloat(a, b interface{}) interface{} {
 	aF := fmt.Sprint(a)
 	bF := fmt.Sprint(b)
 	fa, err := strconv.ParseFloat(aF, 64)
@@ -183,20 +252,21 @@ func divfloat(a, b interface{}) interface{} {
 }
 
 // обработка @-функций внутри конфигурации (в шаблонизаторе)
-func confparse(configuration string, r *http.Request, queryData interface{}) (result interface{})  {
+func (t *tplfunc) Confparse(configuration string, r *http.Request, queryData interface{}) (result interface{})  {
+	var d model.Data
+	var frml = New(t.cfg, t.logger)
 
-	var d Data
 	b, err := json.Marshal(queryData)
 	json.Unmarshal(b, &d)
 
 	if err != nil {
 		return "Error! Failed marshal queryData: " + fmt.Sprint(err)
 	}
-	dv := []Data{d}
-	confParse := DogParse(configuration, r, &dv, nil)
+	dv := []model.Data{d}
+	confParse := frml.Exec(configuration, &dv, nil)
 
 	// конфигурация с обработкой @-функции
-	var conf map[string]Element
+	var conf map[string]model.Element
 	if confParse != "" {
 		err = json.Unmarshal([]byte(confParse), &conf)
 	}
@@ -209,23 +279,24 @@ func confparse(configuration string, r *http.Request, queryData interface{}) (re
 }
 
 // обработка @-функций внутри шаблонизатора
-func dogparse(p string, r *http.Request, queryData interface{}, values map[string]interface{}) (result string)  {
+func (t *tplfunc) Dogparse(p string, r *http.Request, queryData interface{}, values map[string]interface{}) (result string)  {
+	var frml = New(t.cfg, t.logger)
 
-	var d Data
+	var d model.Data
 	b, _ := json.Marshal(queryData)
 	json.Unmarshal(b, &d)
 
-	dv := []Data{d}
-	result = DogParse(p, r, &dv, values)
+	dv := []model.Data{d}
+	result = frml.Exec(p, &dv, values)
 
 	return result
 }
 
 
 // получаем значение из переданного объекта
-func attr(name, element string, data interface{}) (result interface{}) {
-	var dt Data
-	json.Unmarshal([]byte(marshal(data)), &dt)
+func (t *tplfunc) Attr(name, element string, data interface{}) (result interface{}) {
+	var dt model.Data
+	json.Unmarshal([]byte(t.Marshal(data)), &dt)
 
 	dtl := &dt
 	result, _ = dtl.Attr(name, element)
@@ -233,25 +304,33 @@ func attr(name, element string, data interface{}) (result interface{}) {
 	return result
 }
 
-func UUID() string {
+func (t *tplfunc) UUID() string {
 	stUUID := uuid.NewV4()
 	return stUUID.String()
 }
 
-func rand() string {
-	uuid := UUID()
+func (t *tplfunc) Rand() string {
+	uuid := t.UUID()
 	return uuid[1:6]
 }
 
-func timenow() time.Time {
+func (t *tplfunc) Hash(str string) string {
+	h := sha1.New()
+	h.Write([]byte(str))
+	sha1_hash := hex.EncodeToString(h.Sum(nil))
+
+	return sha1_hash
+}
+
+func (t *tplfunc) Timenow() time.Time {
 	return time.Now().UTC()
 }
 
 // преобразуем текст в дату (если ошибка - возвращаем false), а потом обратно в строку нужного формата
-func timeformat(str interface{}, mask, format string) string {
+func (t *tplfunc) Timeformat(str interface{}, mask, format string) string {
 	ss := fmt.Sprintf("%v", str)
 
-	timeFormat, err := timeparse(ss, mask)
+	timeFormat, err := t.Timeparse(ss, mask)
 	if err != nil {
 		return fmt.Sprint(err)
 	}
@@ -261,28 +340,28 @@ func timeformat(str interface{}, mask, format string) string {
 }
 
 // преобразуем текст в дату (если ошибка - возвращаем false), а потом обратно в строку нужного формата
-func timetostring(time time.Time, format string) string {
+func (t *tplfunc) Timetostring(time time.Time, format string) string {
 	res := time.Format(format)
 
 	return res
 }
 
-func timeyear(t time.Time) string {
-	ss := fmt.Sprintf("%v", t.Year())
+func (t *tplfunc) Timeyear(tm time.Time) string {
+	ss := fmt.Sprintf("%v", tm.Year())
 	return ss
 }
 
-func timemount(t time.Time) string {
-	ss := fmt.Sprintf("%v", t.Month())
+func (t *tplfunc) Timemount(tm time.Time) string {
+	ss := fmt.Sprintf("%v", tm.Month())
 	return ss
 }
 
-func timeday(t time.Time) string {
-	ss := fmt.Sprintf("%v", t.Day())
+func (t *tplfunc) Timeday(tm time.Time) string {
+	ss := fmt.Sprintf("%v", tm.Day())
 	return ss
 }
 
-func timeparse(str, mask string) (res time.Time, err error) {
+func (t *tplfunc) Timeparse(str, mask string) (res time.Time, err error) {
 	mask = strings.ToUpper(mask)
 
 	time.Now().UTC()
@@ -327,7 +406,7 @@ func timeparse(str, mask string) (res time.Time, err error) {
 }
 
 // альтернативный формат добавления даты год-месяц-день (0-1-0)
-//func timeaddday(t time.Time, dateformat string) (input time.Time, error string) {
+//func (t *tplfunc) timeaddday(t time.Time, dateformat string) (input time.Time, error string) {
 //	var intervalYMD []int
 //	intervalSl := strings.Split(dateformat, "-")
 //
@@ -358,7 +437,7 @@ func timeparse(str, mask string) (res time.Time, err error) {
 //	return input, ""
 //}
 
-func refind(mask, str string, n int) (res [][]string)  {
+func (t *tplfunc) Refind(mask, str string, n int) (res [][]string)  {
 		if n == 0 {
 			n = -1
 		}
@@ -368,14 +447,14 @@ func refind(mask, str string, n int) (res [][]string)  {
 		return
 }
 
-func rereplace(str, mask, new string) (res string)  {
+func (t *tplfunc) Rereplace(str, mask, new string) (res string)  {
 	re := regexp.MustCompile(mask)
 	res = re.ReplaceAllString(str, new)
 
 	return
 }
 
-func parseparam(str string, configuration, data interface{}, resulttype string) (result interface{}) {
+func (t *tplfunc) Parseparam(str string, configuration, data interface{}, resulttype string) (result interface{}) {
 
 	// разбиваем строку на слайс для замкены и склейки
 	sl := strings.Split(str, "%")
@@ -384,8 +463,8 @@ func parseparam(str string, configuration, data interface{}, resulttype string) 
 		for k, v := range sl {
 			// нечетные значения - это выделенные переменные
 			if k == 1 || k == 3 || k == 5 || k == 7 || k == 9 || k == 11 || k == 13 || k == 15 || k == 17 || k == 19 || k == 21 || k == 23 {
-				resfunc := output(v, configuration, data, resulttype)
-				sl[k] = fmt.Sprint(resfunc)
+				res := t.Output(v, configuration, data, resulttype)
+				sl[k] = fmt.Sprint(res)
 			}
 		}
 		result = strings.Join(sl, "")
@@ -401,7 +480,7 @@ func parseparam(str string, configuration, data interface{}, resulttype string) 
 }
 
 // функция указывает переданная дата до или после текущего времени
-func Timefresh(str interface{}) string {
+func (t *tplfunc) Timefresh(str interface{}) string {
 
 	ss := fmt.Sprintf("%v", str)
 	start := time.Now().UTC()
@@ -417,7 +496,7 @@ func Timefresh(str interface{}) string {
 }
 
 // инвертируем строку
-func invert(str string) string {
+func (t *tplfunc) Invert(str string) string {
 	var result string
 	for i := len(str); i > 0; i-- {
 		result = result + string(str[i-1])
@@ -426,23 +505,23 @@ func invert(str string) string {
 }
 
 // переводим массив в строку
-func join(slice []string, sep string) (result string) {
+func (t *tplfunc) Join(slice []string, sep string) (result string) {
 	result = strings.Join(slice, sep)
 
 	return result
 }
 
 // разбиваем строку на массив
-func split(str, sep string) (result interface{}) {
+func (t *tplfunc) Split(str, sep string) (result interface{}) {
 	result = strings.Split(str, sep)
 
 	return result
 }
 
 // переводим в денежное отображение строки - 12.344.342
-func tomoney(str,dec string) (res string) {
+func (t *tplfunc) Tomoney(str,dec string) (res string) {
 
-	for i, v1 := range invert(str) {
+	for i, v1 := range t.Invert(str) {
 		if (i == 3) || (i == 6) || (i == 9) {
 			if (string(v1) != " ") && (string(v1) != "+") && (string(v1) != "-") {
 				res = res + dec
@@ -450,10 +529,10 @@ func tomoney(str,dec string) (res string) {
 		}
 		res = res + string(v1)
 	}
-	return invert(res)
+	return t.Invert(res)
 }
 
-func contains1(message, str, substr string) string {
+func (t *tplfunc) Contains1(message, str, substr string) string {
 	sl1 := strings.Split(substr, "|")
 	for _,v := range sl1 {
 		if strings.Contains(str, v) {
@@ -463,7 +542,7 @@ func contains1(message, str, substr string) string {
 	return ""
 }
 
-func contains(str, substr, message, messageelse string) string {
+func (t *tplfunc) Contains(str, substr, message, messageelse string) string {
 	sl1 := strings.Split(substr, "|")
 	for _,v := range sl1 {
 		if strings.Contains(str, v) {
@@ -474,7 +553,7 @@ func contains(str, substr, message, messageelse string) string {
 }
 
 // преобразую дату из 2013-12-24 в 24 января 2013
-func datetotext(str string) (result string) {
+func (t *tplfunc) Datetotext(str string) (result string) {
 	mapMount := map[string]string{"01":"января","02":"февраля","03":"марта","04":"апреля","05":"мая","06":"июня","07":"июля","08":"августа","09":"сентября","10":"октября","11":"ноября","12":"декабря"}
 	spd := strings.Split(str, "-")
 	if len(spd) == 3 {
@@ -487,13 +566,13 @@ func datetotext(str string) (result string) {
 }
 
 // заменяем
-func Replace(str, old, new string, n int) (message string) {
+func (t *tplfunc) Replace(str, old, new string, n int) (message string) {
 	message = strings.Replace(str, old, new, n)
 	return message
 }
 
 // сравнивает два значения и вы	водит текст, если они равны
-func compare(var1, var2, message string) string {
+func (t *tplfunc) Compare(var1, var2, message string) string {
 	if var1 == var2 {
 		return message
 	}
@@ -502,7 +581,7 @@ func compare(var1, var2, message string) string {
 
 // фукнцкия мультитпликсирования передаваемых параметров при передаче в шаблонах нескольких параметров
 // {{template "sub-template" dict "Data" . "Values" $.Values}}
-func dict(values ...interface{}) (map[string]interface{}, error) {
+func (t *tplfunc) Dict(values ...interface{}) (map[string]interface{}, error) {
 	if len(values) == 0 {
 		return nil, errors.New("invalid dict call")
 	}
@@ -532,12 +611,12 @@ func dict(values ...interface{}) (map[string]interface{}, error) {
 	return dict, nil
 }
 
-func set(d map[string]interface{}, key string, value interface{}) map[string]interface{} {
+func (t *tplfunc) Set(d map[string]interface{}, key string, value interface{}) map[string]interface{} {
 	d[key] = value
 	return d
 }
 
-func get(d map[string]interface{}, key string) (value interface{}) {
+func (t *tplfunc) Get(d map[string]interface{}, key string) (value interface{}) {
 	value, found := d[key]
 	if !found {
 		value = ""
@@ -545,18 +624,18 @@ func get(d map[string]interface{}, key string) (value interface{}) {
 	return value
 }
 
-func deletekey(d map[string]interface{}, key string) (value string) {
+func (t *tplfunc) Deletekey(d map[string]interface{}, key string) (value string) {
 	delete(d, key)
 	return "true"
 }
 // суммируем
-func sum(res,i int) int {
+func (t *tplfunc) Sum(res,i int) int {
 	res = res + i
 	return res
 }
 
 // образаем по заданному кол-ву символов
-func cut(res string, i int, sep string) string {
+func (t *tplfunc) Cut(res string, i int, sep string) string {
 	res = strings.Trim(res, " ")
 	if i <= len([]rune(res)) {
 		res = string([]rune(res)[:i]) + sep
@@ -566,7 +645,7 @@ func cut(res string, i int, sep string) string {
 
 // обрезаем строку (строка, откуда, [сколько])
 // если откуда отрицательно, то обрезаем с конца
-func substring(str string, args ...int) string {
+func (t *tplfunc) Substring(str string, args ...int) string {
 	str = strings.Trim(str, " ")
 	lenstr := len([]rune(str))
 	from := 0
@@ -600,16 +679,17 @@ func substring(str string, args ...int) string {
 		return string([]rune(str)[from:to])	// вырежем диапазон
 }
 
-func tostring(i interface{}) (res string) {
+func (t *tplfunc) Tostring(i interface{}) (res string) {
 	res = fmt.Sprint(i)
 	return res
 }
 
 // функция преобразует переданные данные в формат типа Items с вложенными подпукнтами
-func totree(i interface{}, objstart string) (res interface{}) {
+func (t *tplfunc) Totree(i interface{}, objstart string) (res interface{}) {
 	var objD []model.Data
 	var objRes []interface{}
 	var objTree []model.DataTreeOut
+	utl := utils.New(t.cfg, t.logger)
 
 	b3, _ := json.Marshal(i)
 	err := json.Unmarshal(b3, &objD)
@@ -617,8 +697,8 @@ func totree(i interface{}, objstart string) (res interface{}) {
 		return "Error convert to ResponseData"
 	}
 
-	in := DataToIncl(objD)
-	resTree := TreeShowIncl(in, objstart)
+	in := utl.DataToIncl(objD)
+	resTree := utl.TreeShowIncl(in, objstart)
 
 	// наполняем дерево
 	for _, v := range resTree {
@@ -637,12 +717,12 @@ func totree(i interface{}, objstart string) (res interface{}) {
 	return objTree
 }
 
-func tohtml(i interface{}) (template.HTML) {
+func (t *tplfunc) Tohtml(i interface{}) (template.HTML) {
 
 	return template.HTML(i.(string))
 }
 
-func toint(i interface{}) (res int) {
+func (t *tplfunc) Toint(i interface{}) (res int) {
 	str := fmt.Sprint(i)
 	i = strings.Trim(str, " ")
 	res, err := strconv.Atoi(str)
@@ -653,7 +733,7 @@ func toint(i interface{}) (res int) {
 	return res
 }
 
-func tofloat(i interface{}) (res float64) {
+func (t *tplfunc) Tofloat(i interface{}) (res float64) {
 	str := fmt.Sprint(i)
 	str = strings.Trim(str, " ")
 	str = strings.ReplaceAll(str, ",", ".")
@@ -665,7 +745,7 @@ func tofloat(i interface{}) (res float64) {
 	return res
 }
 
-func tointerface(input interface{}) (res interface{}) {
+func (t *tplfunc) Tointerface(input interface{}) (res interface{}) {
 	b3, _ := json.Marshal(input)
 	err := json.Unmarshal(b3, &res)
 	if err != nil {
@@ -674,17 +754,17 @@ func tointerface(input interface{}) (res interface{}) {
 	return
 }
 
-func concatination(values ...string) (res string) {
+func (t *tplfunc) Concatination(values ...string) (res string) {
 	res = strings.Join(values, "")
 	return res
 }
 
-func marshal(i interface{}) (res string) {
+func (t *tplfunc) Marshal(i interface{}) (res string) {
 	b3, _ := json.Marshal(&i)
 	return string(b3)
 }
 
-func unmarshal(i string) (res interface{}) {
+func (t *tplfunc) Unmarshal(i string) (res interface{}) {
 	var conf interface{}
 	i = strings.Trim(i, "  ")
 
@@ -698,12 +778,12 @@ func unmarshal(i string) (res interface{}) {
 // СТАРОЕ! ДЛЯ РАБОТЫ В ШАБЛОНАХ ГУЯ СТАРЫХ (ПЕРЕДЕЛАТЬ И УБРАТЬ)
 // получаем значение из массива данных по имени элемента
 // ПЕРЕДЕЛАТЬ! приходится постоянно сериализовать данные
-func value(element string, configuration, data interface{}) (result interface{}) {
-	var conf map[string]Element
-	json.Unmarshal([]byte(marshal(configuration)), &conf)
+func (t *tplfunc) Value(element string, configuration, data interface{}) (result interface{}) {
+	var conf map[string]model.Element
+	json.Unmarshal([]byte(t.Marshal(configuration)), &conf)
 
-	var dt Data
-	json.Unmarshal([]byte(marshal(data)), &dt)
+	var dt model.Data
+	json.Unmarshal([]byte(t.Marshal(data)), &dt)
 
 	if element == "" {
 		return
@@ -722,7 +802,7 @@ func value(element string, configuration, data interface{}) (result interface{})
 			if v.Type == "element" {
 				var source map[string]string
 
-				json.Unmarshal([]byte(marshal(v.Source)), &source)
+				json.Unmarshal([]byte(t.Marshal(v.Source)), &source)
 				field := ""
 				point := ""
 				if _, found := source["field"]; found {
@@ -747,16 +827,16 @@ func value(element string, configuration, data interface{}) (result interface{})
 
 // получаем значение из массива данных по имени элемента
 // ПЕРЕДЕЛАТЬ! приходится постоянно сериализовать данные
-func output(element string, configuration, data interface{}, resulttype string) (result interface{}) {
-	var conf map[string]Element
-	json.Unmarshal([]byte(marshal(configuration)), &conf)
+func (t *tplfunc) Output(element string, configuration, data interface{}, resulttype string) (result interface{}) {
+	var conf map[string]model.Element
+	json.Unmarshal([]byte(t.Marshal(configuration)), &conf)
 
 	if resulttype == "" {
 		resulttype = "text"
 	}
 
-	var dt Data
-	json.Unmarshal([]byte(marshal(data)), &dt)
+	var dt model.Data
+	json.Unmarshal([]byte(t.Marshal(data)), &dt)
 
 
 	if element == "" {
@@ -780,7 +860,7 @@ func output(element string, configuration, data interface{}, resulttype string) 
 			if v.Type == "element" {
 				var source map[string]string
 
-				json.Unmarshal([]byte(marshal(v.Source)), &source)
+				json.Unmarshal([]byte(t.Marshal(v.Source)), &source)
 				field := ""
 				point := ""
 				if _, found := source["field"]; found {
@@ -810,6 +890,22 @@ func output(element string, configuration, data interface{}, resulttype string) 
 	return result
 }
 
+func AddExtFuncMapMasterminds() {
+	// добавляем карту функций FuncMap функциями из библиотеки github.com/Masterminds/sprig
+	// только те, которые не описаны в FuncMap самостоятельно
+	for k, v := range FuncMapS {
+		if _, found := FuncMap[k]; !found {
+			FuncMap[k] = v
+		}
+	}
+}
 
+func NewTplFunc(cfg config.Config, logger log.Log) TplFunc {
+	// добавляем в FuncMap значения библиотеки Masterminds
+	AddExtFuncMapMasterminds()
 
-
+	return &tplfunc{
+		cfg: cfg,
+		logger: logger,
+	}
+}

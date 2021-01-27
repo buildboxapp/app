@@ -27,12 +27,12 @@ func (h *httpserver) NewRouter() *mux.Router {
 	handler := handlers.New(h.src, h.logger, h.cfg)
 
 	rt := new(mux.Router)
-	rt.HandleFunc("/alive", handlers.Alive).Methods("GET")
+	rt.HandleFunc("/alive", handler.Alive).Methods("GET")
 	rt.PathPrefix("/swagger/").Handler(httpSwagger.Handler(
 		httpSwagger.URL("/swagger/doc.json"),
 	))
 
-	router.Use(h.MiddleRecover)
+	router.Use(h.Recover)
 	router.Use(h.metric.Middleware)
 
 	router.PathPrefix("/upload/").Handler(http.StripPrefix("/upload/", http.FileServer(http.Dir(h.cfg.Workingdir+"/upload/"))))

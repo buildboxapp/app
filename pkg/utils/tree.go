@@ -77,7 +77,7 @@ func (u *utils) DataToIncl(objData []model.Data) []*model.DataTree {
 	}
 
 	// сортируем по order как число
-	SortItems(sliceNavigator, "order", "int")
+	u.SortItems(sliceNavigator, "order", "int")
 
 
 	return sliceNavigator
@@ -103,9 +103,9 @@ func (p *DataTree) scanSub(maps *map[string]*DataTree) {
 // сортируем в слейсе полигонов по полю sort
 // typesort - тип сортировки (string/int) - если int то преобразуем в число перед сортировкой
 // fieldsort - поле для сортировки
-func SortItems(p []*model.DataTree, fieldsort string, typesort string) {
+func (u *utils) SortItems(pd []*model.DataTree, fieldsort string, typesort string) {
 
-	sort.Slice(p, func(i, j int) bool {
+	sort.Slice(u, func(i, j int) bool {
 
 		value1 := "0"
 		value2 := "0"
@@ -115,12 +115,12 @@ func SortItems(p []*model.DataTree, fieldsort string, typesort string) {
 		}
 
 
-		if oi, found := p[i].Attributes[fieldsort]; found {
+		if oi, found := pd[i].Attributes[fieldsort]; found {
 			if oi.Value != "" {
 				value1 = oi.Value
 			}
 		}
-		if oj, found := p[j].Attributes[fieldsort]; found {
+		if oj, found := pd[j].Attributes[fieldsort]; found {
 			if oj.Value != "" {
 				value2 = oj.Value
 			}
@@ -144,16 +144,16 @@ func SortItems(p []*model.DataTree, fieldsort string, typesort string) {
 
 	})
 
-	for i, _ := range p {
-		if p[i].Incl != nil && len(p[i].Incl) != 0 {
-			f := p[i].Incl
-			SortItems(f, fieldsort, typesort)
+	for i, _ := range pd {
+		if pd[i].Incl != nil && len(pd[i].Incl) != 0 {
+			f := pd[i].Incl
+			u.SortItems(f, fieldsort, typesort)
 		}
 	}
 }
 
 // вспомогательная фукнция выбирает только часть дерево от заданного лидера
-func TreeShowIncl(in []*model.DataTree, obj string) (out []*model.DataTree) {
+func (u *utils) TreeShowIncl(in []*model.DataTree, obj string) (out []*model.DataTree) {
 	if obj == "" {
 		return in
 	}
@@ -165,7 +165,7 @@ func TreeShowIncl(in []*model.DataTree, obj string) (out []*model.DataTree) {
 			return out
 		} else {
 
-			out = TreeShowIncl(v.Incl, obj)
+			out = u.TreeShowIncl(v.Incl, obj)
 			if len(out) != 0 {
 				return out
 			}

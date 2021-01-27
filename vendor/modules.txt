@@ -34,6 +34,9 @@ github.com/buildboxapp/lib/metric
 # github.com/cpuguy83/go-md2man/v2 v2.0.0
 ## explicit
 github.com/cpuguy83/go-md2man/v2/md2man
+# github.com/fatih/structs v1.1.0
+## explicit
+github.com/fatih/structs
 # github.com/getlantern/context v0.0.0-20190109183933-c447772a6520
 ## explicit
 # github.com/getlantern/errors v1.0.1
@@ -62,10 +65,6 @@ github.com/go-openapi/swag
 github.com/golang/snappy
 # github.com/gomarkdown/markdown v0.0.0-20201113031856-722100d81a8e
 ## explicit
-github.com/gomarkdown/markdown
-github.com/gomarkdown/markdown/ast
-github.com/gomarkdown/markdown/html
-github.com/gomarkdown/markdown/parser
 # github.com/google/uuid v1.1.2
 ## explicit
 github.com/google/uuid

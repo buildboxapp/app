@@ -12,6 +12,7 @@ require (
 	github.com/buildboxapp/lib v1.1.2
 	github.com/buildboxapp/logger v0.1.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.0 // indirect
+	github.com/fatih/structs v1.1.0
 	github.com/getlantern/context v0.0.0-20190109183933-c447772a6520 // indirect
 	github.com/getlantern/errors v1.0.1 // indirect
 	github.com/getlantern/hex v0.0.0-20190417191902-c6586a6fe0b7 // indirect
@@ -19,8 +20,8 @@ require (
 	github.com/getlantern/ops v0.0.0-20200403153110-8476b16edcd6 // indirect
 	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/golang/snappy v0.0.2 // indirect
-	github.com/gomarkdown/markdown v0.0.0-20201113031856-722100d81a8e
-	github.com/google/uuid v1.1.2 // indirect
+	github.com/gomarkdown/markdown v0.0.0-20201113031856-722100d81a8e // indirect
+	github.com/google/uuid v1.1.2
 	github.com/gorilla/mux v1.8.0
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/huandu/xstrings v1.3.2 // indirect

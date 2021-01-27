@@ -3,7 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/buildboxapp/app/pkg/cache"
 	"github.com/buildboxapp/app/pkg/config"
+	"github.com/buildboxapp/app/pkg/function"
 	"github.com/buildboxapp/app/pkg/model"
 	"github.com/labstack/gommon/color"
 	"github.com/restream/reindexer"
@@ -12,6 +14,7 @@ import (
 	"os/signal"
 	"runtime/debug"
 	"strconv"
+	"strings"
 
 	"github.com/buildboxapp/lib"
 	"github.com/buildboxapp/lib/log"
@@ -105,6 +108,10 @@ func Start(configfile, dir, port string) {
 		rootDir, _ := lib.RootDir()
 		cfg.LogsDir = rootDir + sep + "upload" + sep + cfg.Domain + sep + cfg.LogsDir
 	}
+	// инициализируем кеширование
+	cfg.Namespace	= strings.ReplaceAll(cfg.Domain, "/", "_")
+	cfg.UrlProxy	= cfg.AddressProxyPointsrc
+
 
 	// инициализировать лог и его ротацию
 	var logger = log.New(
@@ -112,8 +119,8 @@ func Start(configfile, dir, port string) {
 		cfg.LogsLevel,
 		lib.UUID(),
 		cfg.Domain,
-		"gui",
-		cfg.UidGui,
+		"app",
+		cfg.UidService,
 		cfg.LogIntervalReload.Value,
 		cfg.LogIntervalClearFiles.Value,
 		cfg.LogPeriodSaveFiles,
@@ -121,123 +128,44 @@ func Start(configfile, dir, port string) {
 	logger.RotateInit(ctx)
 
 	fmt.Printf("\n%s Enabled logs. Level:%s, Dir:%s\n", done, cfg.LogsLevel, cfg.LogsDir)
-	logger.Info("Запускаем gui-сервис: ",cfg.Domain)
+	logger.Info("Запускаем app-сервис: ",cfg.Domain)
 
 	// создаем метрики
-	metrics := metric.New(ctx, logger, cfg.LogIntervalMetric.Value)
+	metrics := metric.New(
+		ctx,
+		logger,
+		cfg.LogIntervalMetric.Value,
+	)
 
 	defer func() {
 		rec := recover()
 		if rec != nil {
 			b := string(debug.Stack())
 			logger.Panic(fmt.Errorf("%s", b), "Recover panic from main function.")
+			cancel()
 			os.Exit(1)
 		}
 	}()
-
-
-
-
-
-
-
-	///////////////// ЛОГИРОВАНИЕ //////////////////
-	// кладем в глабольные переменные
-	UidService		= Config["data-uid"]
-	ReplicasService, err = strconv.Atoi(Config["replicas_app"])
-	if err != nil {
-		ReplicasService = 1
-	}
-
-
-	// формирование пути к лог-файлам и метрикам
-	if LogsDir == "" {
-		LogsDir = "logs"
-	}
-	// если путь указан относительно / значит задан абсолютный путь, иначе в директории
-	if LogsDir[:1] != "/" {
-		LogsDir = lib.RootDir() + "/upload/" + Domain + "/" + LogsDir
-	}
-
-	fmt.Printf("%s Enabled logs. Level:%s, Dir:%s\n", done, LogsLevel, LogsDir)
-
-	// инициализировать лог и его ротацию
-	log = bblog.New(LogsDir, LogsLevel, bblib.UUID(), Domain, "app", UidAPP, logIntervalReload, logIntervalClearFiles, logPeriodSaveFiles)
-	log.RotateInit(ctx)
-
-	lib.Logger = log	// инициируем логер в либе
-
-	log.Info("Запускаем app-сервис: ",Domain)
-	//////////////////////////////////////////////////
-
-
-	// задаем глобальную переменную BuildBox (от нее строятся пути при загрузке шаблонов)
-	app.ServiceMetrics = ServiceMetrics
-	app.State = Config //state
-	app.State["Workingdir"] = dir
 
 	// для завершения сервиса ждем сигнал в процесс
 	ch := make(chan os.Signal)
 	signal.Notify(ch, os.Kill)
 	go ListenForShutdown(ch)
 
+	fnc := function.New(
+		cfg,
+		*logger,
+	)
 
-	// инициализируем кеширование
-	app.State["Namespace"] 	= Replace(app.State["Domain"], "/", "_", -1)
-	app.State["UrlProxy"]	= app.State["AddressProxyPointsrc"]
-	app.Logger = log
+	cach := cache.New(
+		cfg,
+		*logger,
+		fnc,
+	)
 
-	// включено кеширование
-	if cfg.CachePointsrc != "" {
-		app.DB = reindexer.NewReindex(cfg.CachePointsrc)
-		err := app.DB.OpenNamespace(cfg.Namespace, reindexer.DefaultNamespaceOptions(), model.ValueCache{})
-		if err != nil {
-			fmt.Printf("%s Error connecting to database. Plaese check this parameter in the configuration. %s\n", fail, app.Get("cache_pointsrc"))
-			fmt.Printf("%s\n", err)
-			app.Logger.Error(err, "Error connecting to database. Plaese check this parameter in the configuration: ", app.Get("cache_pointsrc"))
-			return
-		} else {
-			fmt.Printf("%s Cache-service is running", done)
-			app.Logger.Info("Cache-service is running")
-			app.State["BaseCache"] = "on"
-		}
-	}
-
-	if app.Get("Domain") != "" {
-		app.State["ClientPath"] = "/" + app.Get("Domain") + "/ru"
-	}
-
-	//fmt.Println(app.State["client_path"] )
-
-	var dirTemplate = app.State["Workingdir"] + "/gui/templates/*.html"
-	fmt.Printf("%s Load template directory: %s\n", done, dirTemplate)
-	log.Info("Load template directory: ", dirTemplate)
-
-	router := NewRouter(ServiceMetrics) //.StrictSlash(true)
-
-	router.Use(ServiceMetrics.Middleware)
-
-	//router.Use(AuthProcessor)
-	router.Use(Recover)
-
-	router.PathPrefix("/upload/").Handler(http.StripPrefix("/upload/", http.FileServer(http.Dir(app.State["Workingdir"] + "/upload"))))
-	router.PathPrefix("/templates/").Handler(http.StripPrefix("/templates/", http.FileServer(http.Dir(app.State["Workingdir"] + "/templates"))))
-
-	fmt.Printf("%s Starting APP-service: %s\n", done, app.Get("PortAPP"))
-	log.Info("Starting APP-service: ", app.Get("PortAPP"))
-
-	stdlog.Fatal(http.ListenAndServe(":"+app.Get("PortAPP"), router))
 }
 
-func InitFuncMap() {
-	// добавляем карту функций FuncMap функциями из библиотеки github.com/Masterminds/sprig
-	// только те, которые не описаны в FuncMap самостоятельно
-	for k, v := range FuncMapS {
-		if _, found := FuncMap[k]; !found {
-			FuncMap[k] = v
-		}
-	}
-}
+
 
 func ListenForShutdown(ch <- chan os.Signal)  {
 	<- ch

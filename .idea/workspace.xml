@@ -25,18 +25,73 @@
     </select>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="695e3ced-4e40-4126-a43d-f20a9b66d621" name="Default Changelist" comment="">
+    <list default="true" id="695e3ced-4e40-4126-a43d-f20a9b66d621" name="Default Changelist" comment="first commit">
+      <change afterPath="$PROJECT_DIR$/pkg/block/block.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/vendor/github.com/fatih/structs/.gitignore" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/vendor/github.com/fatih/structs/.travis.yml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/vendor/github.com/fatih/structs/LICENSE" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/vendor/github.com/fatih/structs/README.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/vendor/github.com/fatih/structs/field.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/vendor/github.com/fatih/structs/structs.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/vendor/github.com/fatih/structs/tags.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cmd/app/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/cmd/app/main.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/go.mod" beforeDir="false" afterPath="$PROJECT_DIR$/go.mod" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/go.sum" beforeDir="false" afterPath="$PROJECT_DIR$/go.sum" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pkg/cache/cache.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/cache/cache.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/config/config.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/config/config.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pkg/config/model.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/config/model.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/func/function.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/func/function.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/function/dogfunc.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/function/dogfunc.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/function/tplfunc.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/function/tplfunc.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pkg/model/service.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/model/service.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/servers/httpserver/handlers/block.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/servers/httpserver/handlers/block.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pkg/servers/httpserver/handlers/page.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/servers/httpserver/handlers/page.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/servers/httpserver/handlers/ping.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/servers/httpserver/handlers/ping.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/servers/httpserver/httpserver.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/servers/httpserver/httpserver.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/servers/httpserver/middleware.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/servers/httpserver/middleware.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/servers/httpserver/routers.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/servers/httpserver/routers.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/servers/middleware.go" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/pkg/service/block.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/service/block.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pkg/service/page.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/service/page.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pkg/service/service.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/service/service.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/utils/tree.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/utils/tree.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pkg/utils/utils.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/utils/utils.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/buildboxapp/lib/function.go" beforeDir="false" afterPath="$PROJECT_DIR$/vendor/github.com/buildboxapp/lib/function.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/gomarkdown/markdown/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/gomarkdown/markdown/.gitpod" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/gomarkdown/markdown/LICENSE.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/gomarkdown/markdown/README.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/gomarkdown/markdown/ast/attribute.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/gomarkdown/markdown/ast/doc.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/gomarkdown/markdown/ast/node.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/gomarkdown/markdown/ast/print.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/gomarkdown/markdown/changes-from-blackfriday.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/gomarkdown/markdown/codecov.yml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/gomarkdown/markdown/doc.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/gomarkdown/markdown/fuzz.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/gomarkdown/markdown/go.mod" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/gomarkdown/markdown/go.sum" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/gomarkdown/markdown/html/doc.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/gomarkdown/markdown/html/renderer.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/gomarkdown/markdown/html/smartypants.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/gomarkdown/markdown/markdown.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/gomarkdown/markdown/parser/aside.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/gomarkdown/markdown/parser/attribute.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/gomarkdown/markdown/parser/block.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/gomarkdown/markdown/parser/callout.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/gomarkdown/markdown/parser/caption.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/gomarkdown/markdown/parser/citation.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/gomarkdown/markdown/parser/esc.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/gomarkdown/markdown/parser/figures.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/gomarkdown/markdown/parser/include.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/gomarkdown/markdown/parser/inline.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/gomarkdown/markdown/parser/matter.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/gomarkdown/markdown/parser/options.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/gomarkdown/markdown/parser/parser.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/gomarkdown/markdown/parser/ref.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/gomarkdown/markdown/todo.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/gomarkdown/markdown/tracking-perf.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/modules.txt" beforeDir="false" afterPath="$PROJECT_DIR$/vendor/modules.txt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -54,7 +109,7 @@
   <component name="Git.Settings">
     <option name="RECENT_BRANCH_BY_REPOSITORY">
       <map>
-        <entry key="$PROJECT_DIR$" value="b8f9d9c1878d30e96e74776dbfdc88cc32d1ce4d" />
+        <entry key="$PROJECT_DIR$" value="31c3958fb9cf99a022ce75d69e1fbe1c14a19582" />
       </map>
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -230,9 +285,9 @@
       <screen x="0" y="0" width="1792" height="1120" />
     </state>
     <state x="0" y="25" width="895" height="1095" key="com.intellij.openapi.vcs.update.UpdateOrStatusOptionsDialogupdate-v2/0.0.1792.1120@0.0.1792.1120" timestamp="1611318783182" />
-    <state x="551" y="60" width="850" height="977" key="find.popup" timestamp="1611397631357">
+    <state x="551" y="60" width="850" height="977" key="find.popup" timestamp="1611584109743">
       <screen x="0" y="0" width="1792" height="1120" />
     </state>
-    <state x="551" y="60" width="850" height="977" key="find.popup/0.0.1792.1120@0.0.1792.1120" timestamp="1611397631357" />
+    <state x="551" y="60" width="850" height="977" key="find.popup/0.0.1792.1120@0.0.1792.1120" timestamp="1611584109743" />
   </component>
 </project>

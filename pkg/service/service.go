@@ -2,8 +2,10 @@ package service
 
 import (
 	"context"
+	"github.com/buildboxapp/app/pkg/block"
 	"github.com/buildboxapp/app/pkg/cache"
 	"github.com/buildboxapp/app/pkg/config"
+	"github.com/buildboxapp/app/pkg/function"
 	"github.com/buildboxapp/app/pkg/model"
 	"github.com/buildboxapp/app/pkg/utils"
 	"github.com/buildboxapp/lib/log"
@@ -16,6 +18,8 @@ type service struct {
 	metrics metric.ServiceMetric
 	utils utils.Utils
 	cache cache.Cache
+	block block.Block
+	function function.Function
 }
 
 // Service interface
@@ -32,11 +36,17 @@ func New(
 	utils utils.Utils,
 	cache cache.Cache,
 ) Service {
+	var tplfunc = function.NewTplFunc(cfg, logger)
+	var function = function.New(cfg, logger)
+	var blocks = block.New(cfg, logger, cache, utils, function, tplfunc)
+
 	return &service{
 		logger,
 		cfg,
 		metrics,
 		utils,
 		cache,
+		blocks,
+		function,
 	}
 }

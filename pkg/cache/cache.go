@@ -1,10 +1,15 @@
 package cache
 
+import "C"
 import (
 	"fmt"
+	"github.com/buildboxapp/app/pkg/block"
 	"github.com/buildboxapp/app/pkg/config"
+	"github.com/buildboxapp/app/pkg/function"
 	"github.com/buildboxapp/app/pkg/model"
+	"github.com/buildboxapp/app/pkg/service"
 	"github.com/buildboxapp/lib/log"
+	"github.com/labstack/gommon/color"
 
 	"github.com/restream/reindexer"
 	"net/http"
@@ -17,10 +22,15 @@ type cache struct {
 	DB *reindexer.Reindexer
 	cfg config.Config
 	logger log.Log
+	function function.Function
 }
 
 type Cache interface {
-	SetCahceKey(r *http.Request, p model.Data) (key, keyParam string)
+	SetCahceKey(p model.Data, path, query string) (key, keyParam string)
+	СacheGet(key string, block model.Data, page model.Data, values map[string]interface{}, url string) (string, bool)
+	CacheSet(key string, block model.Data, page model.Data, value, url string) bool
+	CacheUpdate(key string, block model.Data, page model.Data, values map[string]interface{}, url string)
+	RefreshTime(options model.Data) int
 }
 
 // формируем ключ кеша
@@ -38,22 +48,22 @@ func (c *cache) SetCahceKey(p model.Data, path, query string) (key, keyParam str
 
 	// учитываем путь и параметры
 	if cache_nokey2 == "" && cache_nokey3 == "" {
-		key = hash(string(key1)) + "_" + hash(string(key2)) + "_" + hash(string(key3))
+		key = c.function.TplFunc().Hash(string(key1)) + "_" + c.function.TplFunc().Hash(string(key2)) + "_" + c.function.TplFunc().Hash(string(key3))
 	}
 
 	// учитываем только путь
 	if cache_nokey2 != "" && cache_nokey3 == "" {
-		key = hash(string(key1)) + "_" + hash(string(key2)) + "_"
+		key = c.function.TplFunc().Hash(string(key1)) + "_" + c.function.TplFunc().Hash(string(key2)) + "_"
 	}
 
 	// учитываем только параметры
 	if cache_nokey2 == "" && cache_nokey3 != "" {
-		key = hash(string(key1)) + "_" + "_" + hash(string(key3))
+		key = c.function.TplFunc().Hash(string(key1)) + "_" + "_" + c.function.TplFunc().Hash(string(key3))
 	}
 
 	// учитываем путь и параметры
 	if cache_nokey2 != "" && cache_nokey3 != "" {
-		key = hash(string(key1)) + "_" + "_"
+		key = c.function.TplFunc().Hash(string(key1)) + "_" + "_"
 	}
 
 	return key, "url:"+key2+"; params:"+key3
@@ -61,7 +71,7 @@ func (c *cache) SetCahceKey(p model.Data, path, query string) (key, keyParam str
 
 // key - ключ, который будет указан в кеше
 // option - объект блока (запроса и тд) то, где хранится время кеширования
-func (c *cache) СacheGet(key string, block model.Data, r *http.Request, page model.Data, values map[string]interface{}, url string) (string, bool)  {
+func (c *cache) СacheGet(key string, block model.Data, page model.Data, values map[string]interface{}, url string) (string, bool)  {
 	var res string
 	var rows *reindexer.Iterator
 
@@ -76,23 +86,23 @@ func (c *cache) СacheGet(key string, block model.Data, r *http.Request, page mo
 		elem := rows.Object().(*model.ValueCache)
 		res = elem.Value
 
-		flagFresh := c.Timefresh(elem.Deadtime);
+		flagFresh := c.function.TplFunc().Timefresh(elem.Deadtime)
 
 		if flagFresh == "true" {
 
 			// блокируем запись, чтобы другие процессы не стали ее обновлять также
 			if elem.Status != "updating" {
 
-				if 	f := refreshTime(block); f == 0 {
+				if 	f := c.RefreshTime(block); f == 0 {
 					return "", false
 				}
 
 				// меняем статус
 				elem.Status = "updating"
-				l.DB.Upsert(l.State["Namespace"], elem)
+				c.DB.Upsert(c.cfg.Namespace, elem)
 
 				// запускаем обновение кеша фоном
-				go l.cacheUpdate(key, block, r, page, values, url)
+				go c.CacheUpdate(key, block, page, values, url)
 			}
 		}
 
@@ -115,7 +125,7 @@ func (c *cache) CacheSet(key string, block model.Data, page model.Data, value, u
 	var deadTime time.Duration
 
 	// если интервал не задан, то не кешируем
-	f := c.refreshTime(block)
+	f := c.RefreshTime(block)
 
 	//log.Warning("block: ", block)
 	if f == 0 {
@@ -141,7 +151,7 @@ func (c *cache) CacheSet(key string, block model.Data, page model.Data, value, u
 
 	err := c.DB.Upsert(c.cfg.Namespace, valueCache)
 	if err != nil {
-		c.Logger.Error(err, "Error! Created cache from is failed! ")
+		c.logger.Error(err, "Error! Created cache from is failed! ")
 		return false
 	}
 
@@ -151,18 +161,18 @@ func (c *cache) CacheSet(key string, block model.Data, page model.Data, value, u
 	return true
 }
 
-func (c *cache) cacheUpdate(key string, block model.Data, r *http.Request, page model.Data, values map[string]interface{}, url string) {
-
+func (c *cache) CacheUpdate(key string, blk model.Data, page model.Data, values map[string]interface{}, url string) {
+	var md = block.New()
 	// получаем контент модуля
-	value := l.ModuleBuild(block, r, page, values, false)
+	value := md.Generate(blk, page, values, false)
 
 	// обновляем кеш
-	l.CacheSet(key, block, page, string(value.result), url)
+	c.CacheSet(key, blk, page, string(value.Result), url)
 
 	return
 }
 
-func (c *cache) refreshTime(options model.Data) int {
+func (c *cache) RefreshTime(options model.Data) int {
 
 	refresh, _ := options.Attr("cache", "value")
 	if refresh == "" {
@@ -175,4 +185,32 @@ func (c *cache) refreshTime(options model.Data) int {
 	}
 
 	return f
+}
+
+func New(cfg config.Config, logger log.Log, function function.Function) Cache {
+	done := color.Green("[OK]")
+	fail := color.Red("[Fail]")
+	var cach = cache{
+		cfg: cfg,
+		logger: logger,
+		function: function,
+	}
+
+	// включено кеширование
+	if cfg.CachePointsrc != "" {
+		cach.DB = reindexer.NewReindex(cfg.CachePointsrc)
+		err := cach.DB.OpenNamespace(cfg.Namespace, reindexer.DefaultNamespaceOptions(), model.ValueCache{})
+		if err != nil {
+			fmt.Printf("%s Error connecting to database. Plaese check this parameter in the configuration. %s\n", fail, cfg.CachePointsrc)
+			fmt.Printf("%s\n", err)
+			logger.Error(err, "Error connecting to database. Plaese check this parameter in the configuration: ", cfg.CachePointsrc)
+			return &cach
+		} else {
+			fmt.Printf("%s Cache-service is running", done)
+			logger.Info("Cache-service is running")
+			cfg.BaseCache = "on"
+		}
+	}
+
+	return &cach
 }

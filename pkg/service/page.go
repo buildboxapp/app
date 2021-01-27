@@ -171,7 +171,7 @@ func (s *service) BPage(in model.ServicePageIn, objPage model.ResponseData, valu
 
 			if strings.Contains(shemaJSON, idBlock) {		// наличие этого блока в схеме
 				wg.Add(1)
-				go s.ModuleBuildParallel(in, ctx, v, objPage.Data[0], values, true,  buildChan, wg)
+				go s.block.ModuleBuildParallel(in, ctx, v, objPage.Data[0], values, true,  buildChan, wg)
 			}
 		}
 
@@ -214,7 +214,7 @@ func (s *service) BPage(in model.ServicePageIn, objPage model.ResponseData, valu
 
 			idBlock, _ := v.Attr("id", "value") 	// название блока
 			if strings.Contains(shemaJSON, idBlock) {		// наличие этого блока в схеме
-				moduleResult = s.ModuleBuild(in, v, objPage.Data[0], values, true)
+				moduleResult = s.block.Generate(in, v, objPage.Data[0], values, true)
 
 				p.Blocks[v.Id] = moduleResult.Result
 				statModule = moduleResult.Stat
