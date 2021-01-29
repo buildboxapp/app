@@ -53,7 +53,7 @@ func (h *httpserver) AuthProcessor(next http.Handler, cfg config.Config) http.Ha
 		}
 
 		// не соответствие переданного ключа и UID-а API (пропускаем пинги)
-		if strings.TrimSpace(authKey) != cfg.UidApp && r.URL.Path != "/ping" {
+		if strings.TrimSpace(authKey) != cfg.UidService && r.URL.Path != "/ping" {
 			lib.ResponseJSON(w, nil, "Unauthorized", nil, nil)
 			return
 		}
