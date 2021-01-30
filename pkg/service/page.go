@@ -14,14 +14,15 @@ import (
 
 
 // Page ...
-func (s *service) Page(ctx context.Context, in model.ServicePageIn) (out model.ServicePageOut, err error) {
-
+func (s *service) Page(ctx context.Context, in model.ServiceIn) (out model.ServicePageOut, err error) {
 	var objPages, objPage model.ResponseData
 
 	// ПЕРЕДЕЛАТЬ или на кеширование страниц и на доп.проверку
 	if in.Page == "" {
 		// получаем все страницы текущего приложения
-		s.utils.Curl("GET", "_link?obj="+s.cfg.DataSource+"&source="+s.cfg.TplAppPagesPointsrc+"&mode=out", "", &objPages)
+		s.utils.Curl("GET", "_link?obj="+s.cfg.DataSource+"&source="+s.cfg.TplAppPagesPointsrc+"&mode=out", "", &objPages, map[string]string{})
+
+		fmt.Println(objPages)
 		for _, v := range objPages.Data {
 			if def, _ := v.Attr("default", "value"); def == "checked" {
 				in.Page = v.Uid
@@ -35,7 +36,7 @@ func (s *service) Page(ctx context.Context, in model.ServicePageIn) (out model.S
 	}
 
 	// запрос объекта страницы
-	_, err = s.utils.Curl("GET", "_objs/"+in.Page, "", &objPage)
+	_, err = s.utils.Curl("GET", "_objs/"+in.Page, "", &objPage, map[string]string{})
 	if err != nil {
 		err = fmt.Errorf("%s (%s)", "Error: Fail GET-request!", err)
 		return out, err
@@ -76,7 +77,7 @@ func (s *service) Page(ctx context.Context, in model.ServicePageIn) (out model.S
 
 
 // Собираем страницу
-func (s *service) BPage(in model.ServicePageIn, objPage model.ResponseData, values map[string]interface{}) string {
+func (s *service) BPage(in model.ServiceIn, objPage model.ResponseData, values map[string]interface{}) string {
 
 	var objMaket, objBlocks model.ResponseData
 	var t *template.Template
@@ -84,7 +85,6 @@ func (s *service) BPage(in model.ServicePageIn, objPage model.ResponseData, valu
 	statModule := map[string]interface{}{}
 
 	// флаг режима генерации модулей (последовательно/параллельно)
-
 	p := &model.Page{}
 	p.Title 	= s.cfg.Title
 	p.Domain 	= s.cfg.Domain
@@ -111,14 +111,14 @@ func (s *service) BPage(in model.ServicePageIn, objPage model.ResponseData, valu
 	// ДОДЕЛАТЬ СРОЧНО!!!
 
 	// 2 запрос на объекты блоков страницы
-	s.utils.Curl("GET", "_link?obj="+pageUID+"&source="+s.cfg.TplAppBlocksPointsrc+"&mode=in", "", &objBlocks)
+	s.utils.Curl("GET", "_link?obj="+pageUID+"&source="+s.cfg.TplAppBlocksPointsrc+"&mode=in", "", &objBlocks, map[string]string{})
 
 	//for _, v := range objBlocks.Data {
 	//	fmt.Println("objBlocks: ", v.Title, v.Id)
 	//}
 
 	// 3 запрос на объект макета
-	s.utils.Curl("GET", "_objs/"+maketUID, "", &objMaket)
+	s.utils.Curl("GET", "_objs/"+maketUID, "", &objMaket, map[string]string{})
 
 	// 4 из объекта макета берем путь к шаблону + css и js
 	maketFile, _ := objMaket.Data[0].Attr("file", "value")

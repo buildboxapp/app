@@ -12,8 +12,8 @@ type utils struct {
 }
 
 type Utils interface {
-	AddressProxy()
-	Curl(method, urlc, bodyJSON string, response interface{}) (result interface{}, err error)
+	AddressProxy() (port string)
+	Curl(method, urlc, bodyJSON string, response interface{}, headers map[string]string) (result interface{}, err error)
 	RemoveElementFromData(p *model.ResponseData, i int) bool
 	DataToIncl(objData []model.Data) []*model.DataTree
 	TreeShowIncl(in []*model.DataTree, obj string) (out []*model.DataTree)

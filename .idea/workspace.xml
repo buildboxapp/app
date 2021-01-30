@@ -27,7 +27,24 @@
   <component name="ChangeListManager">
     <list default="true" id="695e3ced-4e40-4126-a43d-f20a9b66d621" name="Default Changelist" comment="first commit">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/servers/httpserver/middleware.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/servers/httpserver/middleware.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmd/app/_old_main.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmd/app/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/cmd/app/main.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/block/block.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/block/block.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/cache/cache.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/cache/cache.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/config/config.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/config/config.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/function/tplfunc.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/function/tplfunc.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/model/service.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/model/service.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/servers/httpserver/handlers/block.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/servers/httpserver/handlers/block.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/servers/httpserver/handlers/page.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/servers/httpserver/handlers/page.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/servers/httpserver/httpserver.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/servers/httpserver/httpserver.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/servers/httpserver/routers.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/servers/httpserver/routers.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/service/block.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/service/block.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/service/page.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/service/page.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/service/ping.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/service/ping.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/service/service.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/service/service.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/utils/http.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/utils/http.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/utils/proxy.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/utils/proxy.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/utils/utils.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/utils/utils.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -222,9 +239,9 @@
       <screen x="0" y="0" width="1792" height="1120" />
     </state>
     <state x="0" y="25" width="895" height="1095" key="com.intellij.openapi.vcs.update.UpdateOrStatusOptionsDialogupdate-v2/0.0.1792.1120@0.0.1792.1120" timestamp="1611318783182" />
-    <state x="551" y="60" width="850" height="977" key="find.popup" timestamp="1611584109743">
+    <state x="551" y="60" width="850" height="977" key="find.popup" timestamp="1611998539684">
       <screen x="0" y="0" width="1792" height="1120" />
     </state>
-    <state x="551" y="60" width="850" height="977" key="find.popup/0.0.1792.1120@0.0.1792.1120" timestamp="1611584109743" />
+    <state x="551" y="60" width="850" height="977" key="find.popup/0.0.1792.1120@0.0.1792.1120" timestamp="1611998539684" />
   </component>
 </project>

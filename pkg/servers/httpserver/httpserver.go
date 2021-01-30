@@ -2,9 +2,11 @@ package httpserver
 
 import (
 	"context"
+	"fmt"
 	"github.com/buildboxapp/app/pkg/service"
 	"github.com/buildboxapp/lib/log"
 	bbmetric "github.com/buildboxapp/lib/metric"
+	"github.com/labstack/gommon/color"
 	"net/http"
 
 	"github.com/pkg/errors"
@@ -20,7 +22,6 @@ type httpserver struct {
 	ctx context.Context
 	cfg config.Config
 	src service.Service
-	configfile, dir, port string
 	metric bbmetric.ServiceMetric
 	logger log.Log
 }
@@ -31,6 +32,8 @@ type Server interface {
 
 // Run server
 func (h *httpserver) Run() error {
+	done := color.Green("[OK]")
+
 	//err := httpscerts.Check(h.cfg.SSLCertPath, h.cfg.SSLPrivateKeyPath)
 	//if err != nil {
 	//	panic(err)
@@ -41,6 +44,7 @@ func (h *httpserver) Run() error {
 		ReadTimeout:  h.cfg.ReadTimeout.Value,
 		WriteTimeout: h.cfg.WriteTimeout.Value,
 	}
+	fmt.Printf("%s Service run (port:%s)\n", done, h.cfg.PortApp)
 	h.logger.Info("Запуск https сервера", zap.String("port", h.cfg.PortApp))
 	//e := srv.ListenAndServeTLS(h.cfg.SSLCertPath, h.cfg.SSLPrivateKeyPath)
 
@@ -56,7 +60,6 @@ func New(
 	ctx context.Context,
 	cfg config.Config,
 	src service.Service,
-	configfile, dir, port string,
 	metric bbmetric.ServiceMetric,
 	logger log.Log,
 ) Server {
@@ -64,7 +67,6 @@ func New(
 		ctx,
 		cfg,
 		src,
-		configfile, dir, port,
 		metric,
 		logger,
 	}

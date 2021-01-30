@@ -26,58 +26,6 @@ import (
 
 var FuncMapS = sprig.FuncMap()
 
-var FuncMap = template.FuncMap{
-	"separator": 	 tplfunc.Separator,
-	"attr":	 		 tplfunc.Attr,
-	"datetotext":	 tplfunc.Datetotext,
-	"output": 	 	 tplfunc.Output,
-	"cut":			 tplfunc.Cut,
-	"concatination": tplfunc.Concatination,
-	"join": 		 tplfunc.Join,
-	"rand":			 tplfunc.Rand,
-	"uuid":			 tplfunc.UUID,
-	"refind":		 tplfunc.Refind,
-	"rereplace":	 tplfunc.Rereplace,
-	"replace":		 tplfunc.Replace,
-	"contains": 	 tplfunc.Contains,
-	"dict":          tplfunc.Dict,
-	"sum":           tplfunc.Sum,
-	"split":         tplfunc.Split,
-	"set":           tplfunc.Set,
-	"get":           tplfunc.Get,
-	"delete":        tplfunc.Deletekey,
-	"marshal":       tplfunc.Marshal,
-	"value":       	 tplfunc.Value,
-	"hash":       	 tplfunc.Hash,
-	"unmarshal":     tplfunc.Unmarshal,
-	"compare":    	 tplfunc.Compare,
-	"totree": 	 	 tplfunc.Totree,
-	"tostring":		 tplfunc.Tostring,
-	"toint":		 tplfunc.Toint,
-	"tofloat":		 tplfunc.Tofloat,
-	"tointerface":	 tplfunc.Tointerface,
-	"tohtml":		 tplfunc.Tohtml,
-	"timefresh":	 tplfunc.Timefresh,
-	"timenow":		 tplfunc.Timenow,
-	"timeformat":	 tplfunc.Timeformat,
-	"timetostring":  tplfunc.Timetostring,
-	"timeyear":	 	 tplfunc.Timeyear,
-	"timemount":	 tplfunc.Timemount,
-	"timeday":	 	 tplfunc.Timeday,
-	"timeparse":	 tplfunc.Timeparse,
-	"tomoney":		 tplfunc.Tomoney,
-	//"timeaddday":    timeaddday,
-	"invert":		 tplfunc.Invert,
-	"substring":	 tplfunc.Substring,
-	"dogparse":		 tplfunc.Dogparse,
-	"confparse":	 tplfunc.Confparse,
-	"varparse":	 	 tplfunc.Parseparam,
-	"parseparam":	 tplfunc.Parseparam,
-	"divfloat":		 tplfunc.Divfloat,
-	"sendmail":		 tplfunc.Sendmail,
-
-}
-
 type tplfunc struct {
 	cfg config.Config
 	logger log.Log
@@ -136,7 +84,67 @@ type TplFunc interface {
 
 // возвращаем значение карты функции
 func (t *tplfunc) GetFuncMap() template.FuncMap {
-	return FuncMap
+	funcMap := template.FuncMap{
+		"separator": 	 t.Separator,
+		"attr":	 		 t.Attr,
+		"datetotext":	 t.Datetotext,
+		"output": 	 	 t.Output,
+		"cut":			 t.Cut,
+		"concatination": t.Concatination,
+		"join": 		 t.Join,
+		"rand":			 t.Rand,
+		"uuid":			 t.UUID,
+		"refind":		 t.Refind,
+		"rereplace":	 t.Rereplace,
+		"replace":		 t.Replace,
+		"contains": 	 t.Contains,
+		"dict":          t.Dict,
+		"sum":           t.Sum,
+		"split":         t.Split,
+		"set":           t.Set,
+		"get":           t.Get,
+		"delete":        t.Deletekey,
+		"marshal":       t.Marshal,
+		"value":       	 t.Value,
+		"hash":       	 t.Hash,
+		"unmarshal":     t.Unmarshal,
+		"compare":    	 t.Compare,
+		"totree": 	 	 t.Totree,
+		"tostring":		 t.Tostring,
+		"toint":		 t.Toint,
+		"tofloat":		 t.Tofloat,
+		"tointerface":	 t.Tointerface,
+		"tohtml":		 t.Tohtml,
+		"timefresh":	 t.Timefresh,
+		"timenow":		 t.Timenow,
+		"timeformat":	 t.Timeformat,
+		"timetostring":  t.Timetostring,
+		"timeyear":	 	 t.Timeyear,
+		"timemount":	 t.Timemount,
+		"timeday":	 	 t.Timeday,
+		"timeparse":	 t.Timeparse,
+		"tomoney":		 t.Tomoney,
+		//"timeaddday":    timeaddday,
+		"invert":		 t.Invert,
+		"substring":	 t.Substring,
+		"dogparse":		 t.Dogparse,
+		"confparse":	 t.Confparse,
+		"varparse":	 	 t.Parseparam,
+		"parseparam":	 t.Parseparam,
+		"divfloat":		 t.Divfloat,
+		"sendmail":		 t.Sendmail,
+
+	}
+
+	// добавляем карту функций FuncMap функциями из библиотеки github.com/Masterminds/sprig
+	// только те, которые не описаны в FuncMap самостоятельно
+	for k, v := range FuncMapS {
+		if _, found := funcMap[k]; !found {
+			funcMap[k] = v
+		}
+	}
+
+	return funcMap
 }
 
 // формируем сепаратор для текущей ОС
@@ -144,7 +152,6 @@ func (t *tplfunc) Separator() string {
 	fm := t.GetFuncMap()
 	template.New("name").Funcs(fm).ParseFiles("tplName")
 	return string(filepath.Separator)
-
 }
 
 // отправка email-сообщения
@@ -890,22 +897,11 @@ func (t *tplfunc) Output(element string, configuration, data interface{}, result
 	return result
 }
 
-func AddExtFuncMapMasterminds() {
-	// добавляем карту функций FuncMap функциями из библиотеки github.com/Masterminds/sprig
-	// только те, которые не описаны в FuncMap самостоятельно
-	for k, v := range FuncMapS {
-		if _, found := FuncMap[k]; !found {
-			FuncMap[k] = v
-		}
-	}
-}
-
 func NewTplFunc(cfg config.Config, logger log.Log) TplFunc {
-	// добавляем в FuncMap значения библиотеки Masterminds
-	AddExtFuncMapMasterminds()
-
-	return &tplfunc{
+	r := &tplfunc{
 		cfg: cfg,
 		logger: logger,
 	}
+
+	return r
 }

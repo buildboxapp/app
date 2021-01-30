@@ -84,7 +84,6 @@ func (c *Config) SetRootDir()  {
 	c.RootDir = rootdir
 }
 
-
 // получаем значение из конфигурации по ключу
 func (c *Config) GetValue(key string) (result string, err error) {
 	var rr = map[string]interface{}{}
@@ -107,13 +106,15 @@ func (c *Config) GetValue(key string) (result string, err error) {
 }
 
 // инициируем переменную значениями по-умолчанию (из структуры с дефалтовыми значениями)
-func New() Config {
-	var cfg = Config{}
-
-	if err := envconfig.Process("", cfg); err != nil {
+func New(configfile string) Config {
+	var cfg Config
+	if err := envconfig.Process("", &cfg); err != nil {
 		fmt.Printf("%s Error load default enviroment: %s\n", warning, err)
 		os.Exit(1)
 	}
+
+	cfg.Load(configfile)
+	cfg.UidService = strings.Split(configfile, ".")[0]
 
 	return cfg
 }

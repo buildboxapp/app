@@ -25,7 +25,7 @@ func (s *service) Ping(ctx context.Context) (result []model.Pong, err error) {
 	}
 
 	pg, _ := strconv.Atoi(s.cfg.PortApp)
-	pid := strconv.Itoa(os.Getpid())+":"+s.cfg.UidApp
+	pid := strconv.Itoa(os.Getpid())+":"+s.cfg.UidService
 	state, _ := json.Marshal(s.metrics.Get())
 
 	var r = []model.Pong{

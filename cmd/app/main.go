@@ -6,14 +6,14 @@ import (
 	"github.com/buildboxapp/app/pkg/cache"
 	"github.com/buildboxapp/app/pkg/config"
 	"github.com/buildboxapp/app/pkg/function"
-	"github.com/buildboxapp/app/pkg/model"
+	"github.com/buildboxapp/app/pkg/servers"
+	"github.com/buildboxapp/app/pkg/servers/httpserver"
+	"github.com/buildboxapp/app/pkg/service"
+	"github.com/buildboxapp/app/pkg/utils"
 	"github.com/labstack/gommon/color"
-	"github.com/restream/reindexer"
-	"net/http"
 	"os"
 	"os/signal"
 	"runtime/debug"
-	"strconv"
 	"strings"
 
 	"github.com/buildboxapp/lib"
@@ -21,8 +21,6 @@ import (
 	"github.com/buildboxapp/lib/metric"
 
 	"github.com/urfave/cli"
-
-	stdlog "github.com/labstack/gommon/log"
 
 	"io"
 )
@@ -34,8 +32,6 @@ var outpurLog io.Writer
 
 
 func main()  {
-	warning := color.Red("[Fail]")
-
 	// закрываем файл с логами
 	defer fileLog.Close()
 
@@ -95,8 +91,7 @@ func Start(configfile, dir, port string) {
 	defer cancel()
 
 	// инициируем пакеты
-	var cfg = config.New()
-	cfg.Load(configfile)
+	var cfg = config.New(configfile)
 
 	///////////////// ЛОГИРОВАНИЕ //////////////////
 	// формирование пути к лог-файлам и метрикам
@@ -127,7 +122,7 @@ func Start(configfile, dir, port string) {
 	)
 	logger.RotateInit(ctx)
 
-	fmt.Printf("\n%s Enabled logs. Level:%s, Dir:%s\n", done, cfg.LogsLevel, cfg.LogsDir)
+	fmt.Printf("%s Enabled logs. Level:%s, Dir:%s\n", done, cfg.LogsLevel, cfg.LogsDir)
 	logger.Info("Запускаем app-сервис: ",cfg.Domain)
 
 	// создаем метрики
@@ -147,21 +142,56 @@ func Start(configfile, dir, port string) {
 		}
 	}()
 
-	// для завершения сервиса ждем сигнал в процесс
-	ch := make(chan os.Signal)
-	signal.Notify(ch, os.Kill)
-	go ListenForShutdown(ch)
-
 	fnc := function.New(
 		cfg,
 		*logger,
 	)
+
+	ult := utils.New(
+		cfg,
+		*logger,
+	)
+
+	port = ult.AddressProxy()
+	cfg.PortApp = port
 
 	cach := cache.New(
 		cfg,
 		*logger,
 		fnc,
 	)
+
+	// собираем сервис
+	src := service.New(
+		*logger,
+		cfg,
+		metrics,
+		ult,
+		cach,
+	)
+
+	// httpserver
+	httpserver := httpserver.New(
+		ctx,
+		cfg,
+		src,
+		metrics,
+		*logger,
+	)
+
+	// для завершения сервиса ждем сигнал в процесс
+	ch := make(chan os.Signal)
+	signal.Notify(ch, os.Kill)
+	go ListenForShutdown(ch)
+
+	srv := servers.New(
+		"http",
+		src,
+		httpserver,
+		metrics,
+		cfg,
+	)
+	srv.Run()
 
 }
 

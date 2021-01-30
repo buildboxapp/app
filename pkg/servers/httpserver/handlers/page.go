@@ -41,9 +41,10 @@ func (h *handlers) Page(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-func pageDecodeRequest(ctx context.Context, r *http.Request) (in model.ServicePageIn, err error)  {
+func pageDecodeRequest(ctx context.Context, r *http.Request) (in model.ServiceIn, err error)  {
 	vars := mux.Vars(r)
 	in.Page = vars["page"]
+
 	in.Url = r.URL.Query().Encode()
 	in.Referer = r.Referer()
 	in.RequestURI = r.RequestURI

@@ -8,6 +8,7 @@ import (
 	"github.com/gorilla/mux"
 	"html/template"
 	"net/http"
+	"strings"
 )
 
 // Block get user by login+pass pair
@@ -42,12 +43,25 @@ func (h *handlers) Block(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-func blockDecodeRequest(ctx context.Context, r *http.Request) (in model.ServiceBlockIn, err error)  {
+func blockDecodeRequest(ctx context.Context, r *http.Request) (in model.ServiceIn, err error)  {
 	vars := mux.Vars(r)
 	in.Block = vars["block"]
 	in.Url = r.URL.Query().Encode()
 	in.Referer = r.Referer()
 	in.RequestURI = r.RequestURI
+	in.QueryRaw = r.URL.RawQuery
+	in.PostForm = r.PostForm
+	in.Method = r.Method
+
+	cookieCurrent, err := r.Cookie("sessionID")
+	token := ""
+	if err == nil {
+		tokenI := strings.Split(fmt.Sprint(cookieCurrent), "=")
+		if len(tokenI) > 1 {
+			token = tokenI[1]
+		}
+	}
+	in.Token = token
 
 	// указатель на профиль текущего пользователя
 	var profile model.ProfileData

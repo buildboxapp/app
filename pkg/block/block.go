@@ -31,17 +31,17 @@ type block struct {
 }
 
 type Block interface {
-	Generate(in model.ServiceBlockIn, block model.Data, page model.Data, values map[string]interface{}, enableCache bool) (result model.ModuleResult)
-	ModuleBuildParallel(in model.ServiceBlockIn, ctxM context.Context, p model.Data, page model.Data, values map[string]interface{}, enableCache bool, buildChan chan model.ModuleResult, wg *sync.WaitGroup)
+	Generate(in model.ServiceIn, block model.Data, page model.Data, values map[string]interface{}, enableCache bool) (result model.ModuleResult)
+	ModuleBuildParallel(in model.ServiceIn, ctxM context.Context, p model.Data, page model.Data, values map[string]interface{}, enableCache bool, buildChan chan model.ModuleResult, wg *sync.WaitGroup)
 	ErrorModuleBuild(stat map[string]interface{}, buildChan chan model.ModuleResult, timerRun interface{}, errT error)
-	QueryWorker(queryUID, dataname string, source[]map[string]string, r *http.Request) interface{}
+	QueryWorker(queryUID, dataname string, source[]map[string]string, token, queryRaw, metod string, postForm url.Values) interface{}
 	ErrorPage(err interface{}, w http.ResponseWriter, r *http.Request)
-	ModuleError(err interface{}, r *http.Request) template.HTML
-	GUIQuery(tquery string, r *http.Request) model.Response
+	ModuleError(err interface{}) template.HTML
+	GUIQuery(tquery, token, queryRaw, method string, postForm url.Values) model.Response
 }
 
 
-func (b *block) Generate(in model.ServiceBlockIn, block model.Data, page model.Data, values map[string]interface{}, enableCache bool) (result model.ModuleResult) 	{
+func (b *block) Generate(in model.ServiceIn, block model.Data, page model.Data, values map[string]interface{}, enableCache bool) (result model.ModuleResult) 	{
 	var c bytes.Buffer
 	var err error
 	var t *template.Template
@@ -132,7 +132,7 @@ func (b *block) Generate(in model.ServiceBlockIn, block model.Data, page model.D
 		q.Add(k, strings.Join(v, ",")) // Add a new value to the set. Переводим обратно в строку из массива
 	}
 	if len(m) != 0 {
-		r.URL.RawQuery = q.Encode() // Encode and assign back to the original query.
+		in.QueryRaw = q.Encode() // Encode and assign back to the original query.
 	}
 	// //////////////////////////////////////////////////////////////////////////////
 	// //////////////////////////////////////////////////////////////////////////////
@@ -225,7 +225,7 @@ func (b *block) Generate(in model.ServiceBlockIn, block model.Data, page model.D
 				}
 			}
 
-			ress := b.QueryWorker(queryUID, dataname, source)
+			ress := b.QueryWorker(queryUID, dataname, source, in.Token, in.QueryRaw, in.Method, in.PostForm)
 			dataSet[dataname] = ress
 		}
 
@@ -308,7 +308,7 @@ func (b *block) Generate(in model.ServiceBlockIn, block model.Data, page model.D
 	// Включаем режим кеширования
 	jj := b.cfg.BaseCache
 	if jj != "" && cacheOn != "" && enableCache {
-		key, keyParam = b.cache.SetCahceKey(r, block)
+		key, keyParam = b.cache.SetCahceKey(block, in.Path, in.Url)
 
 		// КЕШИРОВАНИЕ данных
 		b.cache.CacheSet(key, block, page, c.String(), keyParam)
@@ -623,6 +623,9 @@ func (b *block) Generate(in model.ServiceBlockIn, block model.Data, page model.D
 //	return
 //}
 
+func (b *block) ModuleBuildParallel(in model.ServiceIn, ctxM context.Context, p model.Data, page model.Data, values map[string]interface{}, enableCache bool, buildChan chan model.ModuleResult, wg *sync.WaitGroup) {
+	return
+}
 // вываливаем ошибку при генерации модуля
 func (b *block) ErrorModuleBuild(stat map[string]interface{}, buildChan chan model.ModuleResult, timerRun interface{}, errT error){
 	var result model.ModuleResult
@@ -639,10 +642,10 @@ func (b *block) ErrorModuleBuild(stat map[string]interface{}, buildChan chan mod
 }
 
 // queryUID - ид-запроса
-func (b *block) QueryWorker(queryUID, dataname string, source[]map[string]string) interface{}  {
+func (b *block) QueryWorker(queryUID, dataname string, source[]map[string]string, token, queryRaw, metod string, postForm url.Values) interface{}  {
 	//var resp Response
 
-	resp :=  b.GUIQuery(queryUID)
+	resp :=  b.GUIQuery(queryUID, token, queryRaw, metod, postForm)
 
 	//switch x := resp1.(type) {
 	//case Response:
@@ -749,15 +752,14 @@ func (l *block) ModuleError(err interface{}) template.HTML  {
 
 // отправка запроса на получения данных из интерфейса GUI
 // параметры переданные в строке (r.URL) отправляем в теле запроса
-func (b *block) GUIQuery(tquery string) model.Response  {
+func (b *block) GUIQuery(tquery, token, queryRaw, method string, postForm url.Values) model.Response  {
 	var resultInterface interface{}
 	var dataResp, returnResp model.Response
 
-	formValues := r.PostForm
-	bodyJSON, _ := json.Marshal(formValues)
+	bodyJSON, _ := json.Marshal(postForm)
 
 	// добавляем к пути в запросе переданные в блок параметры ULR-а (возможно там есть параметры для фильтров)
-	filters := r.URL.RawQuery
+	filters := queryRaw
 	if filters != "" {
 		filters = "?" + filters
 	}
@@ -766,23 +768,15 @@ func (b *block) GUIQuery(tquery string) model.Response  {
 	// добавляем еще токен (cookie) текущего пользователя
 	// это нужно для случая, если мы вызываем запрос из запроса и кука не передается
 	// а если куки нет, то сбрасывается авторизация
-	cookieCurrent, err := r.Cookie("sessionID")
-	token := ""
-	if err == nil {
-		tokenI := strings.Split(fmt.Sprint(cookieCurrent), "=")
-		if len(tokenI) > 1 {
-			token = tokenI[1]
-		}
-		if token != "" {
-			if strings.Contains(filters, "?") {
-				filters = filters + "&token=" + token
-			} else {
-				filters = filters + "?token=" + token
-			}
+	if token != "" {
+		if strings.Contains(filters, "?") {
+			filters = filters + "&token=" + token
+		} else {
+			filters = filters + "?token=" + token
 		}
 	}
 
-	resultInterface, _ = b.utils.Curl(r.Method, "/query/" + tquery + filters, string(bodyJSON), &dataResp)
+	resultInterface, _ = b.utils.Curl(method, "/query/" + tquery + filters, string(bodyJSON), &dataResp, map[string]string{})
 
 	// нам тут нужен Response, но бывают внешние запросы,
 	// поэтому если не Response то дописываем в Data полученное тело

@@ -25,8 +25,8 @@ type service struct {
 // Service interface
 type Service interface {
 	Ping(ctx context.Context) (result []model.Pong, err error)
-	Page(ctx context.Context, in model.ServicePageIn) (out model.ServicePageOut, err error)
-	Block(ctx context.Context, in model.ServiceBlockIn) (out model.ServiceBlockOut, err error)
+	Page(ctx context.Context, in model.ServiceIn) (out model.ServicePageOut, err error)
+	Block(ctx context.Context, in model.ServiceIn) (out model.ServiceBlockOut, err error)
 }
 
 func New(

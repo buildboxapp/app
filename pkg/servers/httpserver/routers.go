@@ -26,9 +26,8 @@ func (h *httpserver) NewRouter() *mux.Router {
 	router := mux.NewRouter().StrictSlash(true)
 	handler := handlers.New(h.src, h.logger, h.cfg)
 
-	rt := new(mux.Router)
-	rt.HandleFunc("/alive", handler.Alive).Methods("GET")
-	rt.PathPrefix("/swagger/").Handler(httpSwagger.Handler(
+	router.HandleFunc("/alive", handler.Alive).Methods("GET")
+	router.PathPrefix("/swagger/").Handler(httpSwagger.Handler(
 		httpSwagger.URL("/swagger/doc.json"),
 	))
 
@@ -41,14 +40,10 @@ func (h *httpserver) NewRouter() *mux.Router {
 	router.PathPrefix("/assets/gui/templates/").Handler(http.StripPrefix("/assets/gui/templates/", http.FileServer(http.Dir(h.cfg.Workingdir+"/templates/"))))
 	router.PathPrefix("/assets/gui/static/").Handler(http.StripPrefix("/assets/gui/static/", http.FileServer(http.Dir(h.cfg.Workingdir+"/upload/gui/static/"))))
 
-	//api
-	apiRouter := rt.PathPrefix("/gui/v1").Subrouter()
-	apiRouter.Use(h.JsonHeaders)
-
-	apiRouter.HandleFunc("/ping", handler.Ping).Methods("GET")
+	//apiRouter := rt.PathPrefix("/gui/v1").Subrouter()
+	router.Use(h.JsonHeaders)
 
 	var routes = Routes{
-
 		// запросы (настроенные)
 		Route{"ProxyPing", "GET", "/ping",  handler.Ping},
 
@@ -69,14 +64,12 @@ func (h *httpserver) NewRouter() *mux.Router {
 		Route{"pprofIndex", "GET", "/debug/pprof/profile", pprof.Profile},
 		Route{"pprofIndex", "GET", "/debug/pprof/symbol", pprof.Symbol},
 		Route{"pprofIndex", "GET", "/debug/pprof/trace", pprof.Trace},
-
-
 	}
 
 	for _, route := range routes {
 		var handler http.Handler
 		handler = route.HandlerFunc
-		handler = h.MiddleLogger(handler, route.Name, h.metric)
+		handler = h.MiddleLogger(handler, route.Name, h.logger, h.metric)
 
 		router.
 			Methods(route.Method).
@@ -85,5 +78,5 @@ func (h *httpserver) NewRouter() *mux.Router {
 			Handler(handler)
 	}
 
-	return rt
+	return router
 }

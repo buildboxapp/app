@@ -3,19 +3,16 @@ package cache
 import "C"
 import (
 	"fmt"
-	"github.com/buildboxapp/app/pkg/block"
 	"github.com/buildboxapp/app/pkg/config"
 	"github.com/buildboxapp/app/pkg/function"
 	"github.com/buildboxapp/app/pkg/model"
-	"github.com/buildboxapp/app/pkg/service"
 	"github.com/buildboxapp/lib/log"
 	"github.com/labstack/gommon/color"
 
-	"github.com/restream/reindexer"
-	"net/http"
-	"time"
-	"strconv"
 	"encoding/json"
+	"github.com/restream/reindexer"
+	"strconv"
+	"time"
 )
 
 type cache struct {
@@ -162,12 +159,12 @@ func (c *cache) CacheSet(key string, block model.Data, page model.Data, value, u
 }
 
 func (c *cache) CacheUpdate(key string, blk model.Data, page model.Data, values map[string]interface{}, url string) {
-	var md = block.New()
-	// получаем контент модуля
-	value := md.Generate(blk, page, values, false)
+	//var md = block.New()
+	//// получаем контент модуля
+	//value := md.Generate(blk, page, values, false)
 
 	// обновляем кеш
-	c.CacheSet(key, blk, page, string(value.Result), url)
+	//c.CacheSet(key, blk, page, string(value.Result), url)
 
 	return
 }

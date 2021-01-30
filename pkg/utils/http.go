@@ -2,6 +2,7 @@ package utils
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -10,35 +11,45 @@ import (
 
 // всегде возвращает результат в интерфейс + ошибка (полезно для внешних запросов с неизвестной структурой)
 // сериализуем в объект, при передаче ссылки на переменную типа
-func (u *utils) Curl(method, urlc, bodyJSON string, response interface{}) (result interface{}, err error) {
-
-	//fmt.Println("ДЕЛАЮ ЗАПРОС urlc: ", urlc)
-
+func (u *utils) Curl(method, urlc, bodyJSON string, response interface{}, headers map[string]string) (result interface{}, err error) {
 	var mapValues map[string]string
 	var req *http.Request
 	client := &http.Client{}
+
+	// дополняем переданными заголовками
+	if len(headers) > 0 {
+		for k, v := range headers {
+			req.Header.Add(k, v)
+		}
+	}
 
 	// приводим к единому формату (на конце без /)
 	urlapi := u.cfg.UrlApi
 	urlgui := u.cfg.UrlGui
 
-	if urlapi[len(urlapi)-1:] != "/" {
-		urlapi = urlapi + "/"
+	if len(urlapi) > 0 {
+		if urlapi[len(urlapi)-1:] != "/" {
+			urlapi = urlapi + "/"
+		}
 	}
-	if urlgui[len(urlgui)-1:] != "/" {
-		urlgui = urlgui + "/"
-	}
-
-	// дополняем путем до API если не передан вызов внешнего запроса через http://
-	if urlc[:4] != "http" {
-		if urlc[:1] != "/" {
-			urlc = urlapi + urlc
-		} else {
-			urlc = urlgui + urlc[1:]
+	if len(urlgui) > 0 {
+		if urlgui[len(urlgui)-1:] != "/" {
+			urlgui = urlgui + "/"
 		}
 	}
 
-	//fmt.Println("urlc: ", urlc)
+	// дополняем путем до API если не передан вызов внешнего запроса через http://
+	if urlc == "" {
+		urlc = urlapi
+	} else {
+		if urlc[:4] != "http" {
+			if urlc[:1] != "/" {
+				urlc = urlapi + urlc
+			} else {
+				urlc = urlgui + urlc[1:]
+			}
+		}
+	}
 
 	if method == "" {
 		method = "POST"
@@ -48,8 +59,9 @@ func (u *utils) Curl(method, urlc, bodyJSON string, response interface{}) (resul
 	values := url.Values{}
 	actionType := ""
 
-	//c.Logger.Warning("urlc " , urlc)
-	//fmt.Println("urlc1 " , urlc)
+	//fmt.Println("lib/http.go; (c *Lib) Curl; urlc " , urlc, "")
+	//fmt.Println("u.State", u.State)
+	//u.Logger.Info("lib/http.go; (c *Lib) Curl; urlc " , urlc, "; bodyJSON: ", bodyJSON, "; method: ", method)
 
 	// если в гете мы передали еще и json (его добавляем в строку запроса)
 	// только если в запросе не указаны передаваемые параметры
@@ -61,12 +73,12 @@ func (u *utils) Curl(method, urlc, bodyJSON string, response interface{}) (resul
 	if method == "JSONTOGET" && bodyJSON != "" && clearUrl {
 		actionType = "JSONTOGET"
 	}
-	if (method == "JSONTOPOST" && bodyJSON != "") {
+	if method == "JSONTOPOST" && bodyJSON != "" {
 		actionType = "JSONTOPOST"
 	}
 
 	switch actionType {
-	case "JSONTOGET":		// преобразуем параметры в json в строку запроса
+	case "JSONTOGET": // преобразуем параметры в json в строку запроса
 		if err == nil {
 			for k, v := range mapValues {
 				values.Set(k, v)
@@ -76,9 +88,9 @@ func (u *utils) Curl(method, urlc, bodyJSON string, response interface{}) (resul
 			urlc = uri.String()
 			req, err = http.NewRequest("GET", urlc, strings.NewReader(bodyJSON))
 		} else {
-			u.logger.Warning("Error! Fail parsed bodyJSON from GET Curl: ", err)
+			fmt.Println("Error! Fail parsed bodyJSON from GET Curl: ", err)
 		}
-	case "JSONTOPOST":		// преобразуем параметры в json в тело запроса
+	case "JSONTOPOST": // преобразуем параметры в json в тело запроса
 
 		if err == nil {
 			for k, v := range mapValues {
@@ -88,23 +100,20 @@ func (u *utils) Curl(method, urlc, bodyJSON string, response interface{}) (resul
 			req.PostForm = values
 			req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 		} else {
-			u.logger.Warning("Error! Fail parsed bodyJSON to POST: ", err)
+			fmt.Println("Error! Fail parsed bodyJSON to POST: ", err)
 		}
 	default:
 		req, err = http.NewRequest(method, urlc, strings.NewReader(bodyJSON))
 	}
 
-	//req.Header.Add("If-None-Match", `W/"wyzzy"`)
 	if err != nil {
 		return "", err
 	}
 
-
 	resp, err := client.Do(req)
-	//fmt.Println(resp.Body, " = ", err)
-
 	if err != nil {
-		u.logger.Warning("Error request: metod:", method, ", url:", urlc, ", bodyJSON:", bodyJSON)
+		u.logger.Error(err, "Error request: method:", method, ", url:", urlc, ", bodyJSON:", bodyJSON)
+		fmt.Println("Error request: method:", method, ", url:", urlc, ", bodyJSON:", bodyJSON)
 		return "", err
 	} else {
 		defer resp.Body.Close()
@@ -116,17 +125,13 @@ func (u *utils) Curl(method, urlc, bodyJSON string, response interface{}) (resul
 	}
 	responseString := string(responseData)
 
-	//c.Logger.Warning("Сделан: ", method, " на: ", urlc, " ответ: ",responseString)
-
 	// возвращаем объект ответа, если передано - в какой объект класть результат
 	if response != nil {
 		json.Unmarshal([]byte(responseString), &response)
 	}
 
 	// всегда отдаем в интерфейсе результат (полезно, когда внешние запросы или сериализация на клиенте)
-	json.Unmarshal([]byte(responseString), &result)
+	//json.Unmarshal([]byte(responseString), &result)
 
-	//fmt.Println("urlc result: ", result)
-
-	return result, err
+	return responseString, err
 }
