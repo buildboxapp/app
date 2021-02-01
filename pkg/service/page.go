@@ -155,7 +155,7 @@ func (s *service) BPage(in model.ServiceIn, objPage model.ResponseData, values m
 	// 4 запускаем сборку модулей (получаем сгенерированный template.HTML без JS и CSS
 	// шаблоны рендерятся в каждом модуле отдельно (можно далее хранить в кеше)
 
-	if s.cfg.BuildModuleParallel.Value {
+	if s.cfg.BuildModuleParallel.Value && 1 == 2 {
 		ctx := context.WithValue(context.Background(), "timeout", s.cfg.TimeoutBlockGenerate.Value)
 		ctx, cancel := context.WithCancel(ctx)
 
@@ -307,7 +307,7 @@ func (s *service) GetBlock(in model.ServiceIn, block, page model.Data, shemaJSON
 				result = string(moduleResult.Result)
 			}
 
-			moduleResult = model.ModuleResult{
+			moduleResult = model.ModuleResult {
 				Id:     block.Id,
 				Result: template.HTML(result),
 				Stat:   nil,

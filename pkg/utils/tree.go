@@ -3,26 +3,11 @@
 package utils
 
 import (
-	"encoding/json"
+	"fmt"
 	"github.com/buildboxapp/app/pkg/model"
 	"sort"
 	"strconv"
 )
-
-type DataTree struct {
-	Uid        		string               `json:"uid"`
-	Id         		string               `json:"id"`
-	Source     		string               `json:"source"`
-	Parent     		string               `json:"parent"`
-	Type       		string               `json:"type"`
-	Title      		string               `json:"title"`
-	Rev        		string               `json:"rev"`
-	Сopies			string 				 `json:"copies"`
-	Attributes 		map[string]model.Attribute `json:"attributes"`
-	Sub    			[]string 			 `json:"sub"`
-	Incl   			[]*DataTree 		 `json:"incl"`
-}
-
 
 ////////////////////////////////////////////////////////////////////////////////////////
 ///////////////  /////////////////////
@@ -31,9 +16,9 @@ type DataTree struct {
 func (u *utils) DataToIncl(objData []model.Data) []*model.DataTree {
 
 	// переводим slice в map, чтобы можно было удалять объект и обращаться по ключу при формировании подуровней навигатора
-	mapLevel := map[string]*DataTree{}
+	mapLevel := map[string]*model.DataTree{}
 	for _, v := range objData {
-		item := DataTree{}
+		item := model.DataTree{}
 
 		item.Uid = v.Uid
 		item.Source = v.Source
@@ -64,48 +49,32 @@ func (u *utils) DataToIncl(objData []model.Data) []*model.DataTree {
 
 	// пробегаем карту полигонов и переносим вложенные внутрь
 	for _, item := range mapLevel {
-		item.scanSub(&mapLevel)
+		item.ScanSub(&mapLevel)
 	}
 
 	// преобразуем карту в слайс
 	sliceNavigator := []*model.DataTree{}
 	for _, m := range mapLevel {
-		d := model.DataTree{}
-		n, _ := json.Marshal(m)
-		json.Unmarshal(n, d)
-		sliceNavigator = append(sliceNavigator, &d)
+		sliceNavigator = append(sliceNavigator, m)
+	}
+
+	for _, item := range sliceNavigator {
+		fmt.Println(item)
 	}
 
 	// сортируем по order как число
 	u.SortItems(sliceNavigator, "order", "int")
 
-
 	return sliceNavigator
 }
 
-// метод типа Items (перемещаем структуры в карте, исходя из заявленной вложенности элементов)
-// (переделать дубль фукнции)
-func (p *DataTree) scanSub(maps *map[string]*DataTree) {
-	if p.Sub != nil && len(p.Sub) != 0 {
-		for _, c := range p.Sub {
-			gg := *maps
-			fromP := gg[c]
-			if fromP != nil {
-				copyPolygon := *fromP
-				p.Incl = append(p.Incl, &copyPolygon)
-				delete(*maps, c)
-				copyPolygon.scanSub(maps)
-			}
-		}
-	}
-}
 
 // сортируем в слейсе полигонов по полю sort
 // typesort - тип сортировки (string/int) - если int то преобразуем в число перед сортировкой
 // fieldsort - поле для сортировки
-func (u *utils) SortItems(pd []*model.DataTree, fieldsort string, typesort string) {
+func (u *utils) SortItems(p []*model.DataTree, fieldsort string, typesort string) {
 
-	sort.Slice(u, func(i, j int) bool {
+	sort.Slice(p, func(i, j int) bool {
 
 		value1 := "0"
 		value2 := "0"
@@ -115,12 +84,12 @@ func (u *utils) SortItems(pd []*model.DataTree, fieldsort string, typesort strin
 		}
 
 
-		if oi, found := pd[i].Attributes[fieldsort]; found {
+		if oi, found := p[i].Attributes[fieldsort]; found {
 			if oi.Value != "" {
 				value1 = oi.Value
 			}
 		}
-		if oj, found := pd[j].Attributes[fieldsort]; found {
+		if oj, found := p[j].Attributes[fieldsort]; found {
 			if oj.Value != "" {
 				value2 = oj.Value
 			}
@@ -144,9 +113,9 @@ func (u *utils) SortItems(pd []*model.DataTree, fieldsort string, typesort strin
 
 	})
 
-	for i, _ := range pd {
-		if pd[i].Incl != nil && len(pd[i].Incl) != 0 {
-			f := pd[i].Incl
+	for i, _ := range p {
+		if p[i].Incl != nil && len(p[i].Incl) != 0 {
+			f := p[i].Incl
 			u.SortItems(f, fieldsort, typesort)
 		}
 	}
@@ -159,12 +128,10 @@ func (u *utils) TreeShowIncl(in []*model.DataTree, obj string) (out []*model.Dat
 	}
 
 	for _, v := range in {
-
 		if v.Source == obj {
 			out = append(out, v)
 			return out
 		} else {
-
 			out = u.TreeShowIncl(v.Incl, obj)
 			if len(out) != 0 {
 				return out

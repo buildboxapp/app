@@ -1,13 +1,11 @@
 package function
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/buildboxapp/app/pkg/config"
 	"github.com/buildboxapp/app/pkg/model"
 	"github.com/buildboxapp/lib/log"
 	uuid "github.com/satori/go.uuid"
-	"net/http"
 	"regexp"
 	"strconv"
 	"strings"
@@ -23,7 +21,7 @@ type function struct {
 }
 
 type Function interface {
-	Exec(p string, queryData *[]model.Data, values map[string]interface{}) (result string)
+	Exec(p string, queryData *[]model.Data, values map[string]interface{}, request model.ServiceIn) (result string)
 	TplFunc() TplFunc
 }
 
@@ -32,7 +30,7 @@ type Function interface {
 type formula struct {
 	value 		string `json:"value"`
 	document 	[]model.Data `json:"document"`
-	request		*http.Request
+	request		model.ServiceIn
 	inserts		[]*insert
 	values     	map[string]interface{}	//  параметры переданные в шаблон при генерации страницы (доступны в шаблоне как $.Value)
 	cfg 		config.Config
@@ -46,6 +44,7 @@ type Formula interface {
 	SetValue(value string)
 	SetValues(value map[string]interface{})
 	SetDocument(value []model.Data)
+	SetRequest(value model.ServiceIn)
 	SetInserts(value []*insert)
 }
 
@@ -74,12 +73,12 @@ type DogFunc interface {
 	SplitIndex(arg []string) (result string)
 	Time(arg []string) (result string)
 	TimeFormat(arg []string) (result string)
-	FuncURL(r *http.Request, arg []string) (result string)
+	FuncURL(r model.ServiceIn, arg []string) (result string)
 	Path(d []model.Data, arg []string) (result string)
 	DReplace(arg []string) (result string)
-	UserObj(r *http.Request, arg []string) (result string)
-	UserProfile(r *http.Request, arg []string) (result string)
-	UserRole(r *http.Request, arg []string) (result string)
+	UserObj(r model.ServiceIn, arg []string) (result string)
+	UserProfile(r model.ServiceIn, arg []string) (result string)
+	UserRole(r model.ServiceIn, arg []string) (result string)
 	Obj(data []model.Data, arg []string) (result string)
 	FieldValue(data []model.Data, arg []string) (result string)
 	FieldSrc(data []model.Data, arg []string) (result string)
@@ -250,6 +249,10 @@ func (f *formula) SetDocument(value []model.Data)  {
 	f.document = value
 }
 
+func (f *formula) SetRequest(value model.ServiceIn)  {
+	f.request = value
+}
+
 func (f *formula) SetInserts(value []*insert)  {
 	f.inserts = value
 }
@@ -258,6 +261,7 @@ func (f *formula) SetInserts(value []*insert)  {
 func NewFormula(cfg config.Config, dogfunc DogFunc) Formula {
 	return &formula{
 		cfg: cfg,
+		dogfunc: dogfunc,
 	}
 }
 
@@ -406,8 +410,7 @@ func (d *dogfunc) TimeFormat(arg []string) (result string) {
 	return result
 }
 
-func (d *dogfunc) FuncURL(r *http.Request, arg []string) (result string) {
-	r.ParseForm()
+func (d *dogfunc) FuncURL(r model.ServiceIn, arg []string) (result string) {
 	var valueDefault string
 
 	if len(arg) > 0 {
@@ -486,7 +489,7 @@ func (d *dogfunc) DReplace(arg []string) (result string) {
 }
 
 // Получение идентификатор User-а (для Cockpit-a)
-func (d *dogfunc) UserObj(r *http.Request, arg []string) (result string) {
+func (d *dogfunc) UserObj(r model.ServiceIn, arg []string) (result string) {
 
 	//fmt.Println("User")
 	//fmt.Println(arg)
@@ -500,12 +503,7 @@ func (d *dogfunc) UserObj(r *http.Request, arg []string) (result string) {
 		}
 
 		param := strings.ToUpper(arg[0])
-		ctxUser := r.Context().Value("User") // текущий профиль пользователя
-
-		var uu model.ProfileData
-
-		json.Unmarshal([]byte(d.tplfunc.Marshal(ctxUser)), &uu)
-
+		uu := r.Profile // текущий профиль пользователя
 
 		if &uu != nil {
 			switch param {
@@ -535,70 +533,57 @@ func (d *dogfunc) UserObj(r *http.Request, arg []string) (result string) {
 }
 
 // Получение UserProfile (для Cockpit-a)
-func (d *dogfunc) UserProfile(r *http.Request, arg []string) (result string) {
+func (d *dogfunc) UserProfile(r model.ServiceIn, arg []string) (result string) {
 	if len(arg) > 0 {
 
 		param := strings.ToUpper(arg[0])
-		ctxUser := r.Context().Value("User") // текущий профиль пользователя
 
-		var uu *model.ProfileData
-		if ctxUser != nil {
-			uu = ctxUser.(*model.ProfileData)
+		var uu = r.Profile
+		role := uu.CurrentRole
+
+		switch param {
+		case "UID","ID":
+			result = role.Uid
+		case "TITLE":
+			result = role.Title
+		case "DEFAULT":
+			result, _ = role.Attr("profile_default", "value")
+		default:
+			result = uu.Uid
 		}
 
-		if uu != nil {
-			role := uu.CurrentRole
-
-			switch param {
-			case "UID","ID":
-				result = role.Uid
-			case "TITLE":
-				result = role.Title
-			case "DEFAULT":
-				result, _ = role.Attr("profile_default", "value")
-			default:
-				result = uu.Uid
-			}
-		}
 
 	}
 	return result
 }
 
 // Получение текущей роли User-а
-func (d *dogfunc) UserRole(r *http.Request, arg []string) (result string) {
+func (d *dogfunc) UserRole(r model.ServiceIn, arg []string) (result string) {
 	if len(arg) > 0 {
 
 		param := strings.ToUpper(arg[0])
 		param2 := strings.ToUpper(arg[1])
-		ctxUser := r.Context().Value("User") // текущий профиль пользователя
 
-		var uu *model.ProfileData
-		if ctxUser != nil {
-			uu = ctxUser.(*model.ProfileData)
-		}
+		var uu = r.Profile
+		role := uu.CurrentRole
 
-		if uu != nil {
-			role := uu.CurrentRole
-
-			switch param {
-			case "UID","ID":
-				result = role.Uid
-			case "TITLE":
-				result = role.Title
-			case "ADMIN":
-				result, _ = role.Attr("role_default", "value")
-			case "HOMEPAGE":
-				if param2 == "SRC" {
-					result, _ = role.Attr("homepage", "src")
-				} else {
-					result, _ = role.Attr("homepage", "value")
-				}
-			case "DEFAULT":
-				result, _ = role.Attr("default", "value")
-			default:
-				result = uu.Uid
+		switch param {
+		case "UID","ID":
+			result = role.Uid
+		case "TITLE":
+			result = role.Title
+		case "ADMIN":
+			result, _ = role.Attr("role_default", "value")
+		case "HOMEPAGE":
+			if param2 == "SRC" {
+				result, _ = role.Attr("homepage", "src")
+			} else {
+				result, _ = role.Attr("homepage", "value")
 			}
+		case "DEFAULT":
+			result, _ = role.Attr("default", "value")
+		default:
+			result = uu.Uid
 		}
 
 	}
@@ -833,13 +818,14 @@ func NewDogFunc(cfg config.Config, tplfunc TplFunc) DogFunc {
 ///////////////////////////////////////////////////////////////
 // Собачья-обработка (поиск в строке @функций и их обработка)
 ///////////////////////////////////////////////////////////////
-func (d *function) Exec(p string, queryData *[]model.Data, values map[string]interface{}) (result string) {
+func (d *function) Exec(p string, queryData *[]model.Data, values map[string]interface{}, request model.ServiceIn) (result string) {
 
 	// прогоняем полученную строку такое кол-во раз, сколько вложенных уровней + 1 (для сравнения)
 	for {
 		d.formula.SetValue(p)
 		d.formula.SetValues(values)
 		d.formula.SetDocument(*queryData)
+		d.formula.SetRequest(request)
 		res_parse := d.formula.Replace()
 
 		if p == res_parse {

@@ -11,6 +11,7 @@ import (
 	"github.com/buildboxapp/app/pkg/model"
 	"github.com/buildboxapp/app/pkg/utils"
 	"github.com/buildboxapp/lib/log"
+	"github.com/gorilla/mux"
 	"github.com/satori/go.uuid"
 	"html/template"
 	"io/ioutil"
@@ -272,7 +273,7 @@ func (t *tplfunc) Confparse(configuration string, r *http.Request, queryData int
 		return "Error! Failed marshal queryData: " + fmt.Sprint(err)
 	}
 	dv := []model.Data{d}
-	confParse := frml.Exec(configuration, &dv, nil)
+	confParse := frml.Exec(configuration, &dv, nil, t.requestToIn(r))
 
 	// конфигурация с обработкой @-функции
 	var conf map[string]model.Element
@@ -290,13 +291,13 @@ func (t *tplfunc) Confparse(configuration string, r *http.Request, queryData int
 // обработка @-функций внутри шаблонизатора
 func (t *tplfunc) Dogparse(p string, r *http.Request, queryData interface{}, values map[string]interface{}) (result string)  {
 	var frml = New(t.cfg, t.logger)
-
 	var d model.Data
+
 	b, _ := json.Marshal(queryData)
 	json.Unmarshal(b, &d)
 
 	dv := []model.Data{d}
-	result = frml.Exec(p, &dv, values)
+	result = frml.Exec(p, &dv, values, t.requestToIn(r))
 
 	return result
 }
@@ -729,7 +730,7 @@ func (t *tplfunc) Totree(i interface{}, objstart string) (res interface{}) {
 
 	// наполняем дерево
 	for _, v := range resTree {
-		objRes = append(objRes, v)
+		objRes = append(objRes, *v)
 	}
 
 	b, _ := json.Marshal(objRes)
@@ -740,6 +741,8 @@ func (t *tplfunc) Totree(i interface{}, objstart string) (res interface{}) {
 
 	//c, _ := json.Marshal(objRes)
 	//res = string(c)
+
+	fmt.Println(objTree)
 
 	return objTree
 }
@@ -916,6 +919,32 @@ func (t *tplfunc) Output(element string, configuration, data interface{}, result
 
 	return result
 }
+
+
+// вспомогательная функция только для HTTP
+// преобразуем полученный через прямой параметр запрос в темплейте
+// в формат model.ServiceIn в котором его понимаеют обработчики функций
+func (t *tplfunc) requestToIn(r *http.Request) (result model.ServiceIn) {
+	vars := mux.Vars(r)
+	result.Page = vars["page"]
+
+	result.Url = r.URL.Query().Encode()
+	result.Referer = r.Referer()
+	result.RequestURI = r.RequestURI
+	result.Form = r.Form
+	result.Host = r.Host
+	result.Query = r.URL.Query()
+
+	// указатель на профиль текущего пользователя
+	var profile model.ProfileData
+	profileRaw := r.Context().Value("UserRaw")
+	json.Unmarshal([]byte(fmt.Sprint(profileRaw)), &profile)
+
+	result.Profile = profile
+
+	return
+}
+
 
 func NewTplFunc(cfg config.Config, logger log.Log) TplFunc {
 	r := &tplfunc{

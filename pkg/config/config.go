@@ -48,42 +48,6 @@ func (c *Config) Load(configfile string) (err error) {
 	return err
 }
 
-// формируем ClientPath из Domain
-func (c *Config) SetClientPath()  {
-	pp := strings.Split(c.Domain, "/")
-	name := "buildbox"
-	version := "gui"
-
-	if len(pp) == 1 {
-		name = pp[0]
-	}
-	if len(pp) == 2 {
-		name = pp[0]
-		version = pp[1]
-	}
-	c.ClientPath = "/" + name + "/" + version
-
-	return
-}
-
-// получаем название конфигурации по-умолчанию (стоит галочка=ON)
-func (c *Config) SetConfigName()  {
-	fileconfig, err := lib.DefaultConfig()
-	if err != nil {
-		return
-	}
-	c.ConfigName = fileconfig
-}
-
-// задаем директорию по-умолчанию
-func (c *Config) SetRootDir()  {
-	rootdir, err := lib.RootDir()
-	if err != nil {
-		return
-	}
-	c.RootDir = rootdir
-}
-
 // получаем значение из конфигурации по ключу
 func (c *Config) GetValue(key string) (result string, err error) {
 	var rr = map[string]interface{}{}
@@ -105,6 +69,42 @@ func (c *Config) GetValue(key string) (result string, err error) {
 	return
 }
 
+// формируем ClientPath из Domain
+func (c *Config) setClientPath()  {
+	pp := strings.Split(c.Domain, "/")
+	name := "buildbox"
+	version := "gui"
+
+	if len(pp) == 1 {
+		name = pp[0]
+	}
+	if len(pp) == 2 {
+		name = pp[0]
+		version = pp[1]
+	}
+	c.ClientPath = "/" + name + "/" + version
+
+	return
+}
+
+// получаем название конфигурации по-умолчанию (стоит галочка=ON)
+func (c *Config) setConfigName()  {
+	fileconfig, err := lib.DefaultConfig()
+	if err != nil {
+		return
+	}
+	c.ConfigName = fileconfig
+}
+
+// задаем директорию по-умолчанию
+func (c *Config) setRootDir()  {
+	rootdir, err := lib.RootDir()
+	if err != nil {
+		return
+	}
+	c.RootDir = rootdir
+}
+
 // инициируем переменную значениями по-умолчанию (из структуры с дефалтовыми значениями)
 func New(configfile string) Config {
 	var cfg Config
@@ -115,6 +115,9 @@ func New(configfile string) Config {
 
 	cfg.Load(configfile)
 	cfg.UidService = strings.Split(configfile, ".")[0]
+	cfg.setClientPath()
+	cfg.setRootDir()
+	cfg.setConfigName()
 
 	return cfg
 }

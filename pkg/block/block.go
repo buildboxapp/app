@@ -90,7 +90,7 @@ func (b *block) Generate(in model.ServiceIn, block model.Data, page model.Data, 
 	// дополняем параметры request-a, доп. параметрами, которые переданы через блок
 	extfilter, _ 	:= block.Attr("extfilter", "value") // дополнительный фильтр для блока
 	dv := []model.Data{block}
-	extfilter = b.function.Exec(extfilter, &dv, bl.Value)
+	extfilter = b.function.Exec(extfilter, &dv, bl.Value, in)
 	extfilter = strings.Replace(extfilter, "?", "", -1)
 
 	// парсим переденную строку фильтра
@@ -113,7 +113,6 @@ func (b *block) Generate(in model.ServiceIn, block model.Data, page model.Data, 
 
 	tconfiguration , _ := block.Attr("configuration", "value")
 	tconfiguration = strings.Replace(tconfiguration, "  ", "", -1)
-
 
 	uuid := uuid2.New()
 
@@ -139,8 +138,7 @@ func (b *block) Generate(in model.ServiceIn, block model.Data, page model.Data, 
 
 	// обработк @-функции в конфигурации
 	dv = []model.Data{block}
-	dogParseConfiguration := b.function.Exec(tconfiguration, &dv, bl.Value)
-
+	dogParseConfiguration := b.function.Exec(tconfiguration, &dv, bl.Value, in)
 
 	// конфигурация без обработки @-функции
 	var confRaw map[string]model.Element
@@ -156,7 +154,7 @@ func (b *block) Generate(in model.ServiceIn, block model.Data, page model.Data, 
 
 	if err != nil {
 		rm, _ := json.Marshal(tconfiguration)
-		result.Result = b.ModuleError("Error json-format configurations: " + string(rm))
+		result.Result = b.ModuleError("Error json-format configurations: ("+fmt.Sprint(err)+") " + string(rm))
 		result.Err = err
 		return result
 	}
@@ -200,7 +198,6 @@ func (b *block) Generate(in model.ServiceIn, block model.Data, page model.Data, 
 			ress := b.QueryWorker(queryUID, dataname, source, in.Token, in.QueryRaw, in.Method, in.PostForm)
 			dataSet[dataname] = ress
 		}
-
 	}
 
 	bl.Data = dataSet

@@ -31,12 +31,6 @@ func (h *httpserver) NewRouter() *mux.Router {
 		httpSwagger.URL("/swagger/doc.json"),
 	))
 
-	router.Use(h.Recover)
-	router.Use(h.metric.Middleware)
-
-	router.PathPrefix("/upload/").Handler(http.StripPrefix("/upload/", http.FileServer(http.Dir(h.cfg.Workingdir + "/upload"))))
-	router.PathPrefix("/templates/").Handler(http.StripPrefix("/templates/", http.FileServer(http.Dir(h.cfg.Workingdir + "/templates"))))
-
 	//apiRouter := rt.PathPrefix("/gui/v1").Subrouter()
 	//router.Use(h.JsonHeaders)
 
@@ -74,6 +68,13 @@ func (h *httpserver) NewRouter() *mux.Router {
 			Name(route.Name).
 			Handler(handler)
 	}
+
+	router.Use(h.Recover)
+	router.Use(h.metric.Middleware)
+
+	router.StrictSlash(true)
+	router.Path("/upload/").Handler(http.StripPrefix("/upload/", http.FileServer(http.Dir(h.cfg.Workingdir + "/upload"))))
+	router.Path("/templates/").Handler(http.StripPrefix("/templates/", http.FileServer(http.Dir(h.cfg.Workingdir + "/templates"))))
 
 	return router
 }
