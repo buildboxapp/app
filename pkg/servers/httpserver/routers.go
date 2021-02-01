@@ -41,7 +41,7 @@ func (h *httpserver) NewRouter() *mux.Router {
 	router.PathPrefix("/assets/gui/static/").Handler(http.StripPrefix("/assets/gui/static/", http.FileServer(http.Dir(h.cfg.Workingdir+"/upload/gui/static/"))))
 
 	//apiRouter := rt.PathPrefix("/gui/v1").Subrouter()
-	router.Use(h.JsonHeaders)
+	//router.Use(h.JsonHeaders)
 
 	var routes = Routes{
 		// запросы (настроенные)

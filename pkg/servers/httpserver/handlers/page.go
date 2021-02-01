@@ -67,13 +67,12 @@ func pageEncodeResponse(ctx context.Context, serviceResult *model.ServicePageOut
 	return response, err
 }
 
-func pageTransportResponse(w http.ResponseWriter, response interface{}) (err error)  {
-	d, err := json.Marshal(response)
+func pageTransportResponse(w http.ResponseWriter, response string) (err error)  {
 	w.WriteHeader(200)
 
 	if err != nil {
 		w.WriteHeader(403)
 	}
-	w.Write(d)
+	w.Write([]byte(response))
 	return err
 }

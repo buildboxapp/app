@@ -53,6 +53,7 @@ type TplFunc interface {
 	Rereplace(str, mask, new string) (res string)
 	Parseparam(str string, configuration, data interface{}, resulttype string) (result interface{})
 	Timefresh(str interface{}) string
+	TimeExpired(str interface{}) bool
 	Invert(str string) string
 	Join(slice []string, sep string) (result string)
 	Split(str, sep string) (result interface{})
@@ -116,6 +117,7 @@ func (t *tplfunc) GetFuncMap() template.FuncMap {
 		"tointerface":	 t.Tointerface,
 		"tohtml":		 t.Tohtml,
 		"timefresh":	 t.Timefresh,
+		"timeexpired":	 t.TimeExpired,
 		"timenow":		 t.Timenow,
 		"timeformat":	 t.Timeformat,
 		"timetostring":  t.Timetostring,
@@ -501,6 +503,24 @@ func (t *tplfunc) Timefresh(str interface{}) string {
 
 	return "false"
 }
+
+// функция указывает что указанное время истекло
+// относительно текущего времени
+func (t *tplfunc) TimeExpired(str interface{}) bool {
+
+	ss := fmt.Sprintf("%v", str)
+	start := time.Now().UTC()
+
+	timeFormat := "2006-01-02 15:04:05 +0000 UTC"
+	end, _ := time.Parse(timeFormat, ss)
+
+	if start.After(end) {
+		return true
+	}
+
+	return false
+}
+
 
 // инвертируем строку
 func (t *tplfunc) Invert(str string) string {

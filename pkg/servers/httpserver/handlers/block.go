@@ -2,13 +2,10 @@ package handlers
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"github.com/buildboxapp/app/pkg/model"
 	"github.com/gorilla/mux"
 	"html/template"
 	"net/http"
-	"strings"
 )
 
 // Block get user by login+pass pair
@@ -53,22 +50,22 @@ func blockDecodeRequest(ctx context.Context, r *http.Request) (in model.ServiceI
 	in.PostForm = r.PostForm
 	in.Method = r.Method
 
-	cookieCurrent, err := r.Cookie("sessionID")
-	token := ""
-	if err == nil {
-		tokenI := strings.Split(fmt.Sprint(cookieCurrent), "=")
-		if len(tokenI) > 1 {
-			token = tokenI[1]
-		}
-	}
-	in.Token = token
-
-	// указатель на профиль текущего пользователя
-	var profile model.ProfileData
-	profileRaw := r.Context().Value("UserRaw")
-	json.Unmarshal([]byte(fmt.Sprint(profileRaw)), &profile)
-
-	in.Profile = profile
+	//cookieCurrent, err := r.Cookie("sessionID")
+	//token := ""
+	//if err == nil {
+	//	tokenI := strings.Split(fmt.Sprint(cookieCurrent), "=")
+	//	if len(tokenI) > 1 {
+	//		token = tokenI[1]
+	//	}
+	//}
+	//in.Token = token
+	//
+	//// указатель на профиль текущего пользователя
+	//var profile model.ProfileData
+	//profileRaw := r.Context().Value("UserRaw")
+	//json.Unmarshal([]byte(fmt.Sprint(profileRaw)), &profile)
+	//
+	//in.Profile = profile
 
 	return in, err
 }
@@ -78,13 +75,13 @@ func blockEncodeResponse(ctx context.Context, serviceResult *model.ServiceBlockO
 	return response, err
 }
 
-func blockTransportResponse(w http.ResponseWriter, response interface{}) (err error)  {
-	d, err := json.Marshal(response)
+func blockTransportResponse(w http.ResponseWriter, response template.HTML) (err error)  {
 	w.WriteHeader(200)
 
 	if err != nil {
 		w.WriteHeader(403)
 	}
-	w.Write(d)
+	w.Write([]byte(response))
+
 	return err
 }

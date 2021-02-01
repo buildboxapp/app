@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/buildboxapp/app/pkg/model"
 	"html/template"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -21,14 +22,15 @@ func (s *service) Page(ctx context.Context, in model.ServiceIn) (out model.Servi
 	if in.Page == "" {
 		// получаем все страницы текущего приложения
 		s.utils.Curl("GET", "_link?obj="+s.cfg.DataSource+"&source="+s.cfg.TplAppPagesPointsrc+"&mode=out", "", &objPages, map[string]string{})
-
-		fmt.Println(objPages)
 		for _, v := range objPages.Data {
 			if def, _ := v.Attr("default", "value"); def == "checked" {
-				in.Page = v.Uid
+				if appUid, _ := v.Attr("app", "src"); appUid == s.cfg.UidService {
+					in.Page = v.Uid
+				}
 			}
 		}
 	}
+
 	if in.Page == "" {
 		ff, _ := json.Marshal(objPages)
 		err = fmt.Errorf("%s", "Error: not default page (" + fmt.Sprint(ff) + ")")
@@ -70,19 +72,19 @@ func (s *service) Page(ctx context.Context, in model.ServiceIn) (out model.Servi
 	values["RequestURI"] = in.RequestURI
 	values["Profile"] = in.Profile
 
-	out.Body = s.BPage(in, objPage, values)
+	out.Body, err = s.BPage(in, objPage, values)
 
 	return out, err
 }
 
 
 // Собираем страницу
-func (s *service) BPage(in model.ServiceIn, objPage model.ResponseData, values map[string]interface{}) string {
+func (s *service) BPage(in model.ServiceIn, objPage model.ResponseData, values map[string]interface{}) (result string, err error) {
 
 	var objMaket, objBlocks model.ResponseData
 	var t *template.Template
 	moduleResult := model.ModuleResult{}
-	statModule := map[string]interface{}{}
+	//statModule := map[string]interface{}{}
 
 	// флаг режима генерации модулей (последовательно/параллельно)
 	p := &model.Page{}
@@ -100,22 +102,18 @@ func (s *service) BPage(in model.ServiceIn, objPage model.ResponseData, values m
 	p.Blocks 	= map[string]interface{}{}
 
 	if len(objPage.Data) == 0 {
-		return "Error: Object page is null."
+		return "", fmt.Errorf("%s", "Error: Object page is null.")
 	}
 
 	pageUID := objPage.Data[0].Uid
 	maketUID, _ := objPage.Data[0].Attr("maket", "src")
-
+	page := objPage.Data[0]
 
 	// 1.0 проверка на принадлежность страницы текущему проекту
 	// ДОДЕЛАТЬ СРОЧНО!!!
 
 	// 2 запрос на объекты блоков страницы
 	s.utils.Curl("GET", "_link?obj="+pageUID+"&source="+s.cfg.TplAppBlocksPointsrc+"&mode=in", "", &objBlocks, map[string]string{})
-
-	//for _, v := range objBlocks.Data {
-	//	fmt.Println("objBlocks: ", v.Title, v.Id)
-	//}
 
 	// 3 запрос на объект макета
 	s.utils.Curl("GET", "_objs/"+maketUID, "", &objMaket, map[string]string{})
@@ -145,13 +143,12 @@ func (s *service) BPage(in model.ServiceIn, objPage model.ResponseData, values m
 		p.CSSC = append(p.CSSC, strings.TrimSpace(v))
 	}
 
-
 	// 3 сохраняем схему
 	var i interface{}
 	shemaJSON, _ := objPage.Data[0].Attr("shema", "value")
 	json.Unmarshal([]byte(shemaJSON), &i)
 	if i == nil {
-		return "Error! Fail json shema!"
+		return "", fmt.Errorf("%s", "Error! Fail json shema!")
 	}
 	p.Shema = i
 
@@ -169,9 +166,11 @@ func (s *service) BPage(in model.ServiceIn, objPage model.ResponseData, values m
 		for _, v := range objBlocks.Data {
 			idBlock, _ := v.Attr("id", "value") 	// название блока
 
+			fmt.Println(idBlock)
+
 			if strings.Contains(shemaJSON, idBlock) {		// наличие этого блока в схеме
 				wg.Add(1)
-				go s.block.ModuleBuildParallel(in, ctx, v, objPage.Data[0], values, true,  buildChan, wg)
+				go s.GetBlockToChannel(ctx, in, v, page, shemaJSON, values, buildChan, wg)
 			}
 		}
 
@@ -203,6 +202,8 @@ func (s *service) BPage(in model.ServiceIn, objPage model.ResponseData, values m
 		close(buildChan)
 
 		for k := range buildChan {
+			fmt.Println("- ", k.Id)
+
 			p.Blocks[k.Id] = k.Result
 			p.Stat = append(p.Stat, k.Stat)
 		}
@@ -211,20 +212,14 @@ func (s *service) BPage(in model.ServiceIn, objPage model.ResponseData, values m
 
 		// ПОСЛЕДОВАТЕЛЬНО
 		for _, v := range objBlocks.Data {
-
-			idBlock, _ := v.Attr("id", "value") 	// название блока
-			if strings.Contains(shemaJSON, idBlock) {		// наличие этого блока в схеме
-				moduleResult = s.block.Generate(in, v, objPage.Data[0], values, true)
-
-				p.Blocks[v.Id] = moduleResult.Result
-				statModule = moduleResult.Stat
-
-				statModule["id"] = v.Id
-				statModule["title"] = v.Title
-				p.Stat = append(p.Stat, statModule)
+			moduleResult, err = s.GetBlock(in, v, page, shemaJSON, values)
+			if err != nil {
+				s.logger.Error(err, "[BPage] Error generate page ", page.Title + "(" + page.Id + ")")
 			}
-		}
 
+			p.Blocks[v.Id] = moduleResult.Result
+			p.Stat = append(p.Stat, moduleResult.Stat)
+		}
 	}
 
 	//fmt.Println("Statistic generate page: ", p.Stat)
@@ -247,18 +242,93 @@ func (s *service) BPage(in model.ServiceIn, objPage model.ResponseData, values m
 	maketFile = strings.Join(sliceMake[3:], "/")
 
 	maketFile = s.cfg.Workingdir + "/"+ maketFile
+	//fmt.Println(maketFile)
 
 	// в режиме отладки пересборка шаблонов происходит при каждом запросе
-	if s.cfg.CompileTemplates.Value {
+	//if !s.cfg.CompileTemplates.Value {
 		//t = template.Must(template.New(maketFile).Funcs(funcMap).ParseFiles(maketFile))
 		t = template.Must(template.ParseFiles(maketFile))
 		t.Execute(&c, p)
+	//} else {
+		//t.ExecuteTemplate(&c, maketFile, p)
+	//}
+
+	result = c.String()
+	return
+}
+
+func (s *service) GetBlockToChannel(ctx context.Context, in model.ServiceIn, block, page model.Data, shemaJSON string, values map[string]interface{}, buildChan chan model.ModuleResult, wg *sync.WaitGroup) (err error) {
+		defer wg.Done()
+
+		// проверка на выход по сигналу
+		select {
+		case <- ctx.Done():
+			return
+		default:
+		}
+
+		moduleResult, err := s.GetBlock(in, block, page, shemaJSON, values)
+		buildChan <- moduleResult
+
+	return
+}
+
+// получение содержимого блока (с учетом операций с кешем)
+func (s *service) GetBlock(in model.ServiceIn, block, page model.Data, shemaJSON string, values map[string]interface{}) (moduleResult model.ModuleResult, err error) {
+	idBlock, _ 			:= block.Attr("id", "value") 				// название блока
+	cacheInt, _ 		:= block.Attr("cache", "value")			// включен ли режим кеширования
+	ignorePath, _ 		:= block.Attr("cache_nokey2", "value")
+	ignoreURL, _ 		:= block.Attr("cache_nokey3", "value")
+
+	if strings.Contains(shemaJSON, idBlock) { // наличие этого блока в схеме
+
+		// если интервал не задан, то не кешируем
+		cacheInterval, err := strconv.Atoi(cacheInt)
+		if err != nil {
+			cacheInterval = 0
+		}
+
+		if cacheInterval != 0 {
+			key, _ := s.cache.GenKey(block.Uid, in.Path, in.QueryRaw, ignorePath, ignoreURL)
+			result, _, flagExpired, err := s.cache.Read(key)
+
+			// 1 кеш пустой или ошибка - первый вызов
+			// ИЛИ
+			// 2 время закончилось (не обращаем внимание на статус "обновляется" потому, что при изменеии статуса на "обновляемя"
+			// мы увеличиваем время на предельно время проведения обновления
+			if (result == "" || err != nil) || flagExpired {
+				err = s.cache.SetStatus(key, "updated")
+				if err != nil {
+					result = fmt.Sprint(err)
+					fmt.Println("err ", idBlock, err)
+				}
+				moduleResult = s.block.Generate(in, block, page, values)
+				err = s.cache.Write(key, cacheInterval, block.Uid, page.Uid, string(moduleResult.Result), in.Url)
+				if err != nil {
+					result = fmt.Sprint(err)
+					fmt.Println("err ", idBlock, err)
+				}
+
+				result = string(moduleResult.Result)
+			}
+
+			moduleResult = model.ModuleResult{
+				Id:     block.Id,
+				Result: template.HTML(result),
+				Stat:   nil,
+				Err:    nil,
+			}
+
+		} else {
+			moduleResult = s.block.Generate(in, block, page, values)
+		}
+
 	} else {
-		t.ExecuteTemplate(&c, maketFile, p)
+		s.logger.Error(nil, "Error. Block" + block.Id + " from page " + page.Id + " in not used.")
+		fmt.Println("fail: ", idBlock)
 	}
 
-
-	return c.String()
+	return
 }
 
 

@@ -4,6 +4,9 @@ type Config struct {
 
 	ProjectKey         				string         	`envconfig:"PROJECT_KEY" default:"LKHlhb899Y09olUi"`
 
+	// Cache
+	TimeoutCacheGenerate         	Duration  		`envconfig:"TIMEOUT_CACHE_GENERATE" default:"3m" description:"интервал после которого будет реинициализировано обновление кеша для статуса updated"`
+
 	// Config
 	ConfigName         				string         	`envconfig:"CONFIG_NAME" default:""`
 	RootDir         				string         	`envconfig:"ROOT_DIR" default:""`

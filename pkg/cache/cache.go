@@ -11,7 +11,6 @@ import (
 
 	"encoding/json"
 	"github.com/restream/reindexer"
-	"strconv"
 	"time"
 )
 
@@ -23,53 +22,81 @@ type cache struct {
 }
 
 type Cache interface {
-	SetCahceKey(p model.Data, path, query string) (key, keyParam string)
-	СacheGet(key string, block model.Data, page model.Data, values map[string]interface{}, url string) (string, bool)
-	CacheSet(key string, block model.Data, page model.Data, value, url string) bool
-	CacheUpdate(key string, block model.Data, page model.Data, values map[string]interface{}, url string)
-	RefreshTime(options model.Data) int
+	GenKey(uid, path, query, ignorePath, ignoreQuery string) (key, keyParam string)
+	SetStatus(key, status string) (err error)
+	Read(key string) (result, status string, fresh bool, err error)
+	Write(key string, cacheInterval int, blockUid, pageUid string, value, url string) (err error)
 }
 
 // формируем ключ кеша
-func (c *cache) SetCahceKey(p model.Data, path, query string) (key, keyParam string)  {
+// ignorePath, ignoreQuery - признаки игнорирования пути или запроса в ключе (указываются в кеше блока)
+func (c *cache) GenKey(uid, path, query, ignorePath, ignoreQuery string) (key, keyParam string)  {
 	key2 := ""
 	key3 := ""
 
 	// формируем сложный ключ-хеш
-	key1, _ := json.Marshal(p.Uid)
+	key1, _ := json.Marshal(uid)
 	key2 = path // переводим в текст параметры пути запроса (/nedra/user)
 	key3 = fmt.Sprintf("%v", query) // переводим в текст параметры строки запроса (?sdf=df&df=df)
 
-	cache_nokey2, _ := p.Attr("cache_nokey2", "value")
-	cache_nokey3, _ := p.Attr("cache_nokey3", "value")
-
 	// учитываем путь и параметры
-	if cache_nokey2 == "" && cache_nokey3 == "" {
+	if ignorePath == "" && ignoreQuery == "" {
 		key = c.function.TplFunc().Hash(string(key1)) + "_" + c.function.TplFunc().Hash(string(key2)) + "_" + c.function.TplFunc().Hash(string(key3))
 	}
 
 	// учитываем только путь
-	if cache_nokey2 != "" && cache_nokey3 == "" {
+	if ignorePath != "" && ignoreQuery == "" {
 		key = c.function.TplFunc().Hash(string(key1)) + "_" + c.function.TplFunc().Hash(string(key2)) + "_"
 	}
 
 	// учитываем только параметры
-	if cache_nokey2 == "" && cache_nokey3 != "" {
+	if ignorePath == "" && ignoreQuery != "" {
 		key = c.function.TplFunc().Hash(string(key1)) + "_" + "_" + c.function.TplFunc().Hash(string(key3))
 	}
 
 	// учитываем путь и параметры
-	if cache_nokey2 != "" && cache_nokey3 != "" {
+	if ignorePath != "" && ignoreQuery != "" {
 		key = c.function.TplFunc().Hash(string(key1)) + "_" + "_"
 	}
 
 	return key, "url:"+key2+"; params:"+key3
 }
 
+// меняем статус по ключу
+// для решения проблему дублированного обновления кеша первый, кто инициирует обновление кеша меняет статус на updated
+// и меняет время в поле Deadtime на время изменения статуса + 2 минуты = максимальное время ожидания обновления кеша
+// это сделано для того, чтобы не залипал кеш, у которых воркер который решил его обновить Отвалился, или был передернут сервис
+// таким образом, запрос, который получает старый кеш у которого статут updated проверяем время старта обновления и если оно просрочено
+// то сам инициирует обновление кеша (меняя время на свое)
+func (c *cache) SetStatus(key, status string) (err error) {
+	var rows *reindexer.Iterator
+	var deadTime = time.Now().UTC().Add(c.cfg.TimeoutCacheGenerate.Value)	// время, когда статус updated перестанет быть валидным
+
+	rows = c.DB.Query(c.cfg.Namespace).
+		Where("Uid", reindexer.EQ, key).
+		ReqTotal().
+		Exec()
+
+	// если есть значение, то обязательно отдаем его, но поменяем
+	for rows.Next() {
+		elem := rows.Object().(*model.ValueCache)
+
+		// меняем статус
+		elem.Status = status
+		if status == "updated" {
+			elem.Deadtime = deadTime.String()
+		}
+		err = c.DB.Upsert(c.cfg.Namespace, elem)
+	}
+
+	return
+}
+
 // key - ключ, который будет указан в кеше
-// option - объект блока (запроса и тд) то, где хранится время кеширования
-func (c *cache) СacheGet(key string, block model.Data, page model.Data, values map[string]interface{}, url string) (string, bool)  {
-	var res string
+// получаем:
+// result, status - результат и статус (текст)
+// fresh - признак того, что данные актуальны (свежие)
+func (c *cache) Read(key string) (result, status string, flagExpired bool, err error)  {
 	var rows *reindexer.Iterator
 
 	rows = c.DB.Query(c.cfg.Namespace).
@@ -77,111 +104,56 @@ func (c *cache) СacheGet(key string, block model.Data, page model.Data, values 
 		ReqTotal().
 		Exec()
 
-
 	// если есть значение, то обязательно отдаем его, но поменяем
 	for rows.Next() {
 		elem := rows.Object().(*model.ValueCache)
-		res = elem.Value
+		result = elem.Value
 
-		flagFresh := c.function.TplFunc().Timefresh(elem.Deadtime)
-
-		if flagFresh == "true" {
-
-			// блокируем запись, чтобы другие процессы не стали ее обновлять также
-			if elem.Status != "updating" {
-
-				if 	f := c.RefreshTime(block); f == 0 {
-					return "", false
-				}
-
-				// меняем статус
-				elem.Status = "updating"
-				c.DB.Upsert(c.cfg.Namespace, elem)
-
-				// запускаем обновение кеша фоном
-				go c.CacheUpdate(key, block, page, values, url)
-			}
-		}
-
-		//fmt.Println("Отдали из кеша")
-
-		return res, true
+		// функция Timefresh показывает пора ли обновить время (не признак свежести, а наоборот)
+		// оставил для совместимости со сторыми версиями
+		flagExpired = c.function.TplFunc().TimeExpired(elem.Deadtime)
 	}
 
-	//fmt.Println("Нет в кеша")
-
-	return "", false
+	return
 }
 
 
 // key - ключ, который будет указан в кеше
-// option - объект блока (запроса и тд) то, где хранится время кеширования
+// cacheInterval - время хранени кеша
+// blockUid, pageUid - ид-ы блока и страницы (для формирования возможности выборочного сброса кеша)
 // data - то, что кладется в кеш
-func (c *cache) CacheSet(key string, block model.Data, page model.Data, value, url string) bool {
+func (c *cache) Write(key string, cacheInterval int, blockUid, pageUid string, value, url string) (err error) {
 	var valueCache = model.ValueCache{}
 	var deadTime time.Duration
 
-	// если интервал не задан, то не кешируем
-	f := c.RefreshTime(block)
-
-	//log.Warning("block: ", block)
-	if f == 0 {
-		return false
+	// интервал не указан - значит не кешируем (не пишем в кеш)
+	if cacheInterval == 0 {
+		return fmt.Errorf("%s", "Cache interval is empty")
 	}
 
 	valueCache.Uid = key
 	valueCache.Value = value
-
-	deadTime = time.Minute * time.Duration(f)
+	deadTime = time.Minute * time.Duration(cacheInterval)
 	dt := time.Now().UTC().Add(deadTime)
 
 	// дополнитлельные ключи для поиска кешей страницы и блока (отдельно)
 	var link []string
 
-	link = append(link, page.Uid)
-	link = append(link, block.Uid)
+	link = append(link, pageUid)
+	link = append(link, blockUid)
 
 	valueCache.Link = link
 	valueCache.Url = url
 	valueCache.Deadtime = dt.String()
 	valueCache.Status = ""
 
-	err := c.DB.Upsert(c.cfg.Namespace, valueCache)
+	err = c.DB.Upsert(c.cfg.Namespace, valueCache)
 	if err != nil {
-		c.logger.Error(err, "Error! Created cache from is failed! ")
-		return false
+		c.logger.Error(err, "Error! Created cache from is failed!")
+		return fmt.Errorf("%s", "Error! Created cache from is failed!")
 	}
-
-	//fmt.Println("Пишем в кеш")
-
-
-	return true
-}
-
-func (c *cache) CacheUpdate(key string, blk model.Data, page model.Data, values map[string]interface{}, url string) {
-	//var md = block.New()
-	//// получаем контент модуля
-	//value := md.Generate(blk, page, values, false)
-
-	// обновляем кеш
-	//c.CacheSet(key, blk, page, string(value.Result), url)
 
 	return
-}
-
-func (c *cache) RefreshTime(options model.Data) int {
-
-	refresh, _ := options.Attr("cache", "value")
-	if refresh == "" {
-		return 0
-	}
-
-	f, err := strconv.Atoi(refresh)
-	if err != nil {
-		return 0
-	}
-
-	return f
 }
 
 func New(cfg config.Config, logger log.Log, function function.Function) Cache {
@@ -203,7 +175,7 @@ func New(cfg config.Config, logger log.Log, function function.Function) Cache {
 			logger.Error(err, "Error connecting to database. Plaese check this parameter in the configuration: ", cfg.CachePointsrc)
 			return &cach
 		} else {
-			fmt.Printf("%s Cache-service is running", done)
+			fmt.Printf("%s Cache-service is running\n", done)
 			logger.Info("Cache-service is running")
 			cfg.BaseCache = "on"
 		}

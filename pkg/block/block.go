@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/buildboxapp/app/pkg/cache"
 	"github.com/buildboxapp/app/pkg/config"
 	"github.com/buildboxapp/app/pkg/function"
 	"github.com/buildboxapp/app/pkg/model"
@@ -24,15 +23,14 @@ import (
 type block struct {
 	cfg config.Config
 	logger log.Log
-	cache cache.Cache
 	utils utils.Utils
 	function function.Function
 	tplfunc function.TplFunc
 }
 
 type Block interface {
-	Generate(in model.ServiceIn, block model.Data, page model.Data, values map[string]interface{}, enableCache bool) (result model.ModuleResult)
-	ModuleBuildParallel(in model.ServiceIn, ctxM context.Context, p model.Data, page model.Data, values map[string]interface{}, enableCache bool, buildChan chan model.ModuleResult, wg *sync.WaitGroup)
+	Generate(in model.ServiceIn, block model.Data, page model.Data, values map[string]interface{}) (result model.ModuleResult)
+	GenerateParallel(in model.ServiceIn, ctxM context.Context, p model.Data, page model.Data, values map[string]interface{}, enableCache bool, buildChan chan model.ModuleResult, wg *sync.WaitGroup)
 	ErrorModuleBuild(stat map[string]interface{}, buildChan chan model.ModuleResult, timerRun interface{}, errT error)
 	QueryWorker(queryUID, dataname string, source[]map[string]string, token, queryRaw, metod string, postForm url.Values) interface{}
 	ErrorPage(err interface{}, w http.ResponseWriter, r *http.Request)
@@ -41,7 +39,7 @@ type Block interface {
 }
 
 
-func (b *block) Generate(in model.ServiceIn, block model.Data, page model.Data, values map[string]interface{}, enableCache bool) (result model.ModuleResult) 	{
+func (b *block) Generate(in model.ServiceIn, block model.Data, page model.Data, values map[string]interface{}) (result model.ModuleResult) 	{
 	var c bytes.Buffer
 	var err error
 	var t *template.Template
@@ -63,29 +61,6 @@ func (b *block) Generate(in model.ServiceIn, block model.Data, page model.Data, 
 	stat["status"] = "OK"
 	stat["title"] = block.Title
 	stat["id"] = block.Id
-
-
-	// Включаем режим кеширования
-	key := ""
-	keyParam := ""
-	cacheOn, _ := block.Attr("cache", "value")
-
-	ll := b.cfg.BaseCache
-	if  ll != "" && cacheOn != "" && enableCache {
-
-		key, keyParam = b.cache.SetCahceKey(page, in.Path, in.Url)
-
-		// ПРОВЕРКА КЕША (если есть, отдаем из кеша)
-		if res, found := b.cache.СacheGet(key, block, page, values, keyParam); found {
-			stat["cache"] = "true"
-			stat["time"] = time.Since(t1)
-
-			result.Result = template.HTML(res)
-			result.Stat = stat
-
-			return result
-		}
-	}
 
 	bl.Value = map[string]interface{}{}
 
@@ -109,7 +84,6 @@ func (b *block) Generate(in model.ServiceIn, block model.Data, page model.Data, 
 
 	tplName, _ 	:= block.Attr("module", "src")
 	tquery, _ 	:= block.Attr("tquery", "src")
-
 
 	// //////////////////////////////////////////////////////////////////////////////
 	// в блоке есть настройки поля расширенного фильтра, который можно добавить в самом блоке
@@ -136,7 +110,6 @@ func (b *block) Generate(in model.ServiceIn, block model.Data, page model.Data, 
 	}
 	// //////////////////////////////////////////////////////////////////////////////
 	// //////////////////////////////////////////////////////////////////////////////
-
 
 	tconfiguration , _ := block.Attr("configuration", "value")
 	tconfiguration = strings.Replace(tconfiguration, "  ", "", -1)
@@ -167,6 +140,7 @@ func (b *block) Generate(in model.ServiceIn, block model.Data, page model.Data, 
 	// обработк @-функции в конфигурации
 	dv = []model.Data{block}
 	dogParseConfiguration := b.function.Exec(tconfiguration, &dv, bl.Value)
+
 
 	// конфигурация без обработки @-функции
 	var confRaw map[string]model.Element
@@ -212,14 +186,12 @@ func (b *block) Generate(in model.ServiceIn, block model.Data, page model.Data, 
 
 			// подставляем название датасета из конфигурации
 			for _, v1 := range source {
-
 				if _, found := v1["name"]; found {
 					name = v1["name"]
 				}
 				if _, found := v1["uid"]; found {
 					uid = v1["uid"]
 				}
-
 				if uid == queryUID {
 					dataname = name
 				}
@@ -260,7 +232,7 @@ func (b *block) Generate(in model.ServiceIn, block model.Data, page model.Data, 
 
 	// в режиме отладки пересборка шаблонов происходит при каждом запросе
 	var tmpl *template.Template
-	if b.cfg.CompileTemplates.Value {
+	if !b.cfg.CompileTemplates.Value {
 		if len(tplName) > 0 {
 			name := path.Base(tplName)
 			if name == "" {
@@ -269,14 +241,12 @@ func (b *block) Generate(in model.ServiceIn, block model.Data, page model.Data, 
 			} else {
 				tmpl, _ = template.New(name).Funcs(b.tplfunc.GetFuncMap()).ParseFiles(tplName)
 			}
-
 		}
-
-		if &b != nil && &c != nil {
+		if &bl != nil && &c != nil {
 			if tmpl == nil {
 				err = fmt.Errorf("%s","Error: Parsing template file is fail!")
 			} else {
-				err = tmpl.Execute(&c, b)
+				err = tmpl.Execute(&c, bl)
 			}
 		} else {
 			err = fmt.Errorf("%s","Error: Generate data block is fail!")
@@ -299,26 +269,8 @@ func (b *block) Generate(in model.ServiceIn, block model.Data, page model.Data, 
 		result.Result = "<center><h3>Ошибка обработки файла шаблона (файл не найден) при генерации блока.</h3></center>"
 	}
 
-	stat["cache"] = "true"
-	stat["time"] = time.Since(t1)
-
-	result.Result = template.HTML(c.String())
 	result.Stat = stat
-
-	// Включаем режим кеширования
-	jj := b.cfg.BaseCache
-	if jj != "" && cacheOn != "" && enableCache {
-		key, keyParam = b.cache.SetCahceKey(block, in.Path, in.Url)
-
-		// КЕШИРОВАНИЕ данных
-		b.cache.CacheSet(key, block, page, c.String(), keyParam)
-		// log.Warning("CacheSet: ",fl)
-	}
-
-	stat["cache"] = "false"
-	stat["time"] = time.Since(t1)
-	result.Stat = stat
-
+	result.Id = block.Id
 
 	return result
 }
@@ -623,7 +575,7 @@ func (b *block) Generate(in model.ServiceIn, block model.Data, page model.Data, 
 //	return
 //}
 
-func (b *block) ModuleBuildParallel(in model.ServiceIn, ctxM context.Context, p model.Data, page model.Data, values map[string]interface{}, enableCache bool, buildChan chan model.ModuleResult, wg *sync.WaitGroup) {
+func (b *block) GenerateParallel(in model.ServiceIn, ctxM context.Context, p model.Data, page model.Data, values map[string]interface{}, enableCache bool, buildChan chan model.ModuleResult, wg *sync.WaitGroup) {
 	return
 }
 // вываливаем ошибку при генерации модуля
@@ -794,11 +746,9 @@ func (b *block) GUIQuery(tquery, token, queryRaw, method string, postForm url.Va
 }
 
 
-
 func New(
 	cfg config.Config,
 	logger log.Log,
-	cache cache.Cache,
 	utils utils.Utils,
 	function function.Function,
 	tplfunc function.TplFunc,
@@ -806,7 +756,6 @@ func New(
 	return &block {
 		cfg: cfg,
 		logger: logger,
-		cache: cache,
 		utils: utils,
 		function: function,
 		tplfunc: tplfunc,
