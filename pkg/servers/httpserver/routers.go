@@ -23,7 +23,7 @@ type Route struct {
 type Routes []Route
 
 func (h *httpserver) NewRouter() *mux.Router {
-	router := mux.NewRouter() //.StrictSlash(true)
+	router := mux.NewRouter().StrictSlash(true)
 	handler := handlers.New(h.src, h.logger, h.cfg)
 
 	router.HandleFunc("/alive", handler.Alive).Methods("GET")
