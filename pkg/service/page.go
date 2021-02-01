@@ -165,9 +165,6 @@ func (s *service) BPage(in model.ServiceIn, objPage model.ResponseData, values m
 
 		for _, v := range objBlocks.Data {
 			idBlock, _ := v.Attr("id", "value") 	// название блока
-
-			fmt.Println(idBlock)
-
 			if strings.Contains(shemaJSON, idBlock) {		// наличие этого блока в схеме
 				wg.Add(1)
 				go s.GetBlockToChannel(ctx, in, v, page, shemaJSON, values, buildChan, wg)
@@ -202,8 +199,6 @@ func (s *service) BPage(in model.ServiceIn, objPage model.ResponseData, values m
 		close(buildChan)
 
 		for k := range buildChan {
-			fmt.Println("- ", k.Id)
-
 			p.Blocks[k.Id] = k.Result
 			p.Stat = append(p.Stat, k.Stat)
 		}

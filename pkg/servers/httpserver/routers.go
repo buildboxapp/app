@@ -23,7 +23,7 @@ type Route struct {
 type Routes []Route
 
 func (h *httpserver) NewRouter() *mux.Router {
-	router := mux.NewRouter().StrictSlash(true)
+	router := mux.NewRouter() //.StrictSlash(true)
 	handler := handlers.New(h.src, h.logger, h.cfg)
 
 	router.HandleFunc("/alive", handler.Alive).Methods("GET")
@@ -34,11 +34,8 @@ func (h *httpserver) NewRouter() *mux.Router {
 	router.Use(h.Recover)
 	router.Use(h.metric.Middleware)
 
-	router.PathPrefix("/upload/").Handler(http.StripPrefix("/upload/", http.FileServer(http.Dir(h.cfg.Workingdir+"/upload/"))))
-	router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir(h.cfg.Workingdir+"/upload/gui/static/"))))
-	router.PathPrefix("/templates/").Handler(http.StripPrefix("/templates/", http.FileServer(http.Dir(h.cfg.Workingdir+"/templates/"))))
-	router.PathPrefix("/assets/gui/templates/").Handler(http.StripPrefix("/assets/gui/templates/", http.FileServer(http.Dir(h.cfg.Workingdir+"/templates/"))))
-	router.PathPrefix("/assets/gui/static/").Handler(http.StripPrefix("/assets/gui/static/", http.FileServer(http.Dir(h.cfg.Workingdir+"/upload/gui/static/"))))
+	router.PathPrefix("/upload/").Handler(http.StripPrefix("/upload/", http.FileServer(http.Dir(h.cfg.Workingdir + "/upload"))))
+	router.PathPrefix("/templates/").Handler(http.StripPrefix("/templates/", http.FileServer(http.Dir(h.cfg.Workingdir + "/templates"))))
 
 	//apiRouter := rt.PathPrefix("/gui/v1").Subrouter()
 	//router.Use(h.JsonHeaders)
