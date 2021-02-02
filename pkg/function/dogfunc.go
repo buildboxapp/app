@@ -21,7 +21,7 @@ type function struct {
 }
 
 type Function interface {
-	Exec(p string, queryData *[]model.Data, values map[string]interface{}, request model.ServiceIn) (result string)
+	Exec(p string, queryData *[]model.Data, values map[string]interface{}, request model.ServiceIn) (result string, err error)
 	TplFunc() TplFunc
 }
 
@@ -38,9 +38,10 @@ type formula struct {
 }
 
 type Formula interface {
-	Replace() (result string)
-	Parse() bool
-	Calculate()
+	Replace() (result string, err error)
+	Parse() (err error)
+	Calculate() (err error)
+
 	SetValue(value string)
 	SetValues(value map[string]interface{})
 	SetDocument(value []model.Data)
@@ -68,48 +69,53 @@ type dogfunc struct {
 }
 
 type DogFunc interface {
-	TplValue(v map[string]interface{}, arg []string) (result string)
-	ConfigValue(arg []string) (result string)
-	SplitIndex(arg []string) (result string)
-	Time(arg []string) (result string)
-	TimeFormat(arg []string) (result string)
-	FuncURL(r model.ServiceIn, arg []string) (result string)
-	Path(d []model.Data, arg []string) (result string)
-	DReplace(arg []string) (result string)
-	UserObj(r model.ServiceIn, arg []string) (result string)
-	UserProfile(r model.ServiceIn, arg []string) (result string)
-	UserRole(r model.ServiceIn, arg []string) (result string)
-	Obj(data []model.Data, arg []string) (result string)
-	FieldValue(data []model.Data, arg []string) (result string)
-	FieldSrc(data []model.Data, arg []string) (result string)
-	FieldSplit(data []model.Data, arg []string) (result string)
-	DateModify(arg []string) (result string)
-	DogSendmail(arg []string) (result string)
+	TplValue(v map[string]interface{}, arg []string) (result string, err error)
+	ConfigValue(arg []string) (result string, err error)
+	SplitIndex(arg []string) (result string, err error)
+	Time(arg []string) (result string, err error)
+	TimeFormat(arg []string) (result string, err error)
+	FuncURL(r model.ServiceIn, arg []string) (result string, err error)
+	Path(d []model.Data, arg []string) (result string, err error)
+	DReplace(arg []string) (result string, err error)
+	UserObj(r model.ServiceIn, arg []string) (result string, err error)
+	UserProfile(r model.ServiceIn, arg []string) (result string, err error)
+	UserRole(r model.ServiceIn, arg []string) (result string, err error)
+	Obj(data []model.Data, arg []string) (result string, err error)
+	FieldValue(data []model.Data, arg []string) (result string, err error)
+	FieldSrc(data []model.Data, arg []string) (result string, err error)
+	FieldSplit(data []model.Data, arg []string) (result string, err error)
+	DateModify(arg []string) (result string, err error)
+	DogSendmail(arg []string) (result string, err error)
 }
 
 ////////////////////////////////////////////////////////////
 // !!! ПОКА ТОЛЬКО ПОСЛЕДОВАТЕЛЬНАЯ ОБРАБОТКА (без сложений)
 ////////////////////////////////////////////////////////////
 
-func (p *formula) Replace() (result string) {
-	p.Parse()
-	p.Calculate()
+func (p *formula) Replace() (result string, err error) {
+	err = p.Parse()
+	if err != nil {
+		return "", err
+	}
+
+	err = p.Calculate()
+	if err != nil {
+		return "", err
+	}
 
 	for _, v := range p.inserts {
 		p.value = strings.Replace(p.value, v.text, v.result, -1)
 	}
 
-	return p.value
+	return p.value, err
 }
 
-func (p *formula) Parse() bool  {
+func (p *formula) Parse() (err error)  {
 
 	if p.value == "" {
-		return false
+		return fmt.Errorf("%s", "[Parse] Error. Value is empty.")
 	}
 
-	//content := []byte(p.value)
-	//pattern := regexp.MustCompile(`@(\w+)\(([\w]+)(?:,\s*([\w]+))*\)`)
 	value := p.value
 
 	pattern := regexp.MustCompile(`@(\w+)\(\s*('[^']*'|#[^#]*#|[^,()@]*?)\s*(?:,\s*('[^']*'|#[^#]*#|[^,()@]*?)\s*)?(?:,\s*('[^']*'|#[^#]*#|[^,()@]*?)\s*)?(?:,\s*('[^']*'|#[^#]*#|[^,()@]*?)\s*)?(?:,\s*('[^']*'|#[^#]*#|[^,()@]*?)\s*)?\)`)
@@ -129,7 +135,7 @@ func (p *formula) Parse() bool  {
 		f1 := strings.Split(strFunc1, "(")
 
 		if len(f1) == 1 {	// если не нашли ( значит неверно задана @-фукнций
-			return false
+			return fmt.Errorf("%s", "[Parse] Error. Len strFunc1 value is 1.")
 		}
 
 		i.text = strFunc
@@ -182,10 +188,11 @@ func (p *formula) Parse() bool  {
 		//}
 	}
 
-	return true
+	return err
 }
 
-func (p *formula) Calculate()  {
+func (p *formula) Calculate() (err error) {
+	var result string
 
 	for k, v := range p.inserts {
 		param := strings.ToUpper(v.dogfuncs.name)
@@ -193,48 +200,55 @@ func (p *formula) Calculate()  {
 		switch param {
 		case "RAND":
 			uuid := uuid.NewV4().String()
-			p.inserts[k].result = uuid[1:6]
+			result = uuid[1:6]
 		case "SENDMAIL":
-			p.inserts[k].result = p.dogfunc.DogSendmail(v.dogfuncs.arguments)
+			result, err = p.dogfunc.DogSendmail(v.dogfuncs.arguments)
 		case "PATH":
-			p.inserts[k].result = p.dogfunc.Path(p.document, v.dogfuncs.arguments)
+			result, err = p.dogfunc.Path(p.document, v.dogfuncs.arguments)
 		case "REPLACE":
-			p.inserts[k].result = p.dogfunc.DReplace(v.dogfuncs.arguments)
+			result, err = p.dogfunc.DReplace(v.dogfuncs.arguments)
 		case "TIME":
-			p.inserts[k].result = p.dogfunc.Time(v.dogfuncs.arguments)
+			result, err = p.dogfunc.Time(v.dogfuncs.arguments)
 		case "DATEMODIFY":
-			p.inserts[k].result = p.dogfunc.DateModify(v.dogfuncs.arguments)
+			result, err = p.dogfunc.DateModify(v.dogfuncs.arguments)
 
 		case "USER":
-			p.inserts[k].result = p.dogfunc.UserObj(p.request, v.dogfuncs.arguments)
+			result, err = p.dogfunc.UserObj(p.request, v.dogfuncs.arguments)
 		case "ROLE":
-			p.inserts[k].result = p.dogfunc.UserRole(p.request, v.dogfuncs.arguments)
+			result, err = p.dogfunc.UserRole(p.request, v.dogfuncs.arguments)
 		case "PROFILE":
-			p.inserts[k].result = p.dogfunc.UserProfile(p.request, v.dogfuncs.arguments)
+			result, err = p.dogfunc.UserProfile(p.request, v.dogfuncs.arguments)
 
 		case "OBJ":
-			p.inserts[k].result = p.dogfunc.Obj(p.document, v.dogfuncs.arguments)
+			result, err = p.dogfunc.Obj(p.document, v.dogfuncs.arguments)
 		case "URL":
-			p.inserts[k].result = p.dogfunc.FuncURL(p.request, v.dogfuncs.arguments)
+			result, err = p.dogfunc.FuncURL(p.request, v.dogfuncs.arguments)
 
 		case "SPLITINDEX":
-			p.inserts[k].result = p.dogfunc.SplitIndex(v.dogfuncs.arguments)
+			result, err = p.dogfunc.SplitIndex(v.dogfuncs.arguments)
 
 		case "TPLVALUE":
-			p.inserts[k].result = p.dogfunc.TplValue(p.values, v.dogfuncs.arguments)
+			result, err = p.dogfunc.TplValue(p.values, v.dogfuncs.arguments)
 		case "CONFIGVALUE":
-			p.inserts[k].result = p.dogfunc.ConfigValue(v.dogfuncs.arguments)
+			result, err = p.dogfunc.ConfigValue(v.dogfuncs.arguments)
 		case "FIELDVALUE":
-			p.inserts[k].result = p.dogfunc.FieldValue(p.document, v.dogfuncs.arguments)
+			result, err = p.dogfunc.FieldValue(p.document, v.dogfuncs.arguments)
 		case "FIELDSRC":
-			p.inserts[k].result = p.dogfunc.FieldSrc(p.document, v.dogfuncs.arguments)
+			result, err = p.dogfunc.FieldSrc(p.document, v.dogfuncs.arguments)
 		case "FIELDSPLIT":
-			p.inserts[k].result = p.dogfunc.FieldSplit(p.document, v.dogfuncs.arguments)
+			result, err = p.dogfunc.FieldSplit(p.document, v.dogfuncs.arguments)
 		default:
-			p.inserts[k].result = ""
+			result = ""
+		}
+
+		if err != nil {
+			p.inserts[k].result = fmt.Sprint(err)
+		} else {
+			p.inserts[k].result = result
 		}
 	}
 
+	return err
 }
 
 func (f *formula) SetValue(value string)  {
@@ -271,7 +285,7 @@ func NewFormula(cfg config.Config, dogfunc DogFunc) Formula {
 ///////////////////////////////////////////////////
 
 // Получение значений $.Value шаблона (работает со значением по-умолчанию)
-func (d *dogfunc) TplValue(v map[string]interface{}, arg []string) (result string) {
+func (d *dogfunc) TplValue(v map[string]interface{}, arg []string) (result string, err error) {
 	var valueDefault string
 
 	if len(arg) > 0 {
@@ -283,21 +297,21 @@ func (d *dogfunc) TplValue(v map[string]interface{}, arg []string) (result strin
 		result, found := v[strings.Trim(param, " ")]
 		if !found {
 			if valueDefault == "" {
-				return "Error parsing @-dogfunc TplValue (Value from this key is not found.)"
+				return "", fmt.Errorf("%s", "Error parsing @-dogfunc TplValue (Value from this key is not found.)")
 			}
-			return fmt.Sprint(valueDefault)
+			return fmt.Sprint(valueDefault), err
 		}
-		return fmt.Sprint(result)
+		return fmt.Sprint(result), err
 
 	} else {
-		return "Error parsing @-dogfunc TplValue (Arguments is null)"
+		return "", fmt.Errorf("%s", "Error parsing @-dogfunc TplValue (Arguments is null)")
 	}
 
-	return fmt.Sprint(result)
+	return fmt.Sprint(result), err
 }
 
 // Получение значений из конфигурации проекта (хранится State в объекте приложение App)
-func (d *dogfunc) ConfigValue(arg []string) (result string) {
+func (d *dogfunc) ConfigValue(arg []string) (result string, err error) {
 	var valueDefault string
 
 	if len(arg) > 0 {
@@ -309,17 +323,17 @@ func (d *dogfunc) ConfigValue(arg []string) (result string) {
 		result, err := d.cfg.GetValue(strings.Trim(param, " "))
 		if err != nil {
 			if valueDefault == "" {
-				return "Error parsing @-dogfunc ConfigValue (Value from this key is not found.)"
+				return "", fmt.Errorf("%s", "Error parsing @-dogfunc ConfigValue (Value from this key is not found.)")
 			}
-			return fmt.Sprint(valueDefault)
+			return fmt.Sprint(valueDefault), err
 		}
-		return fmt.Sprint(result)
+		return fmt.Sprint(result), err
 
 	} else {
-		return "Error parsing @-dogfunc ConfigValue (Arguments is null)"
+		return "", fmt.Errorf("%s", "Error parsing @-dogfunc ConfigValue (Arguments is null)")
 	}
 
-	return fmt.Sprint(result)
+	return fmt.Sprint(result), err
 }
 
 // Получаем значение из разделенной строки по номер
@@ -328,7 +342,7 @@ func (d *dogfunc) ConfigValue(arg []string) (result string) {
 // sep - разделитель (строка)
 // index - порядковый номер (число) (от 0) возвращаемого элемента
 // default - значение по-умолчанию (не обязательно)
-func (d *dogfunc) SplitIndex(arg []string) (result string) {
+func (d *dogfunc) SplitIndex(arg []string) (result string, err error) {
 	var valueDefault string
 
 	if len(arg) > 0 {
@@ -340,7 +354,7 @@ func (d *dogfunc) SplitIndex(arg []string) (result string) {
 
 		in, err := strconv.Atoi(index)
 		if err != nil {
-			result = "Error! Index must be a number."
+			return result, err
 		}
 		if len(arg) == 4 {
 			valueDefault = defaultV
@@ -348,24 +362,16 @@ func (d *dogfunc) SplitIndex(arg []string) (result string) {
 
 		slice_str := strings.Split(str, sep)
 		result = slice_str[in]
-
-		//fmt.Println(str)
-		//fmt.Println(sep)
-		//fmt.Println(in)
-		//fmt.Println(slice_str)
 	}
 	if result == "" {
 		result = valueDefault
 	}
 
-
-	//fmt.Println(result)
-
-	return result
+	return result, err
 }
 
 // Получение текущей даты
-func (d *dogfunc) Time(arg []string) (result string) {
+func (d *dogfunc) Time(arg []string) (result string, err error) {
 
 	if len(arg) > 0 {
 		param := strings.ToUpper(arg[0])
@@ -378,11 +384,11 @@ func (d *dogfunc) Time(arg []string) (result string) {
 		}
 	}
 
-	return result
+	return
 }
 
 // Получение идентификатор User-а
-func (d *dogfunc) TimeFormat(arg []string) (result string) {
+func (d *dogfunc) TimeFormat(arg []string) (result string, err error) {
 	var valueDefault string
 
 	if len(arg) > 0 {
@@ -407,10 +413,10 @@ func (d *dogfunc) TimeFormat(arg []string) (result string) {
 		result = valueDefault
 	}
 
-	return result
+	return
 }
 
-func (d *dogfunc) FuncURL(r model.ServiceIn, arg []string) (result string) {
+func (d *dogfunc) FuncURL(r model.ServiceIn, arg []string) (result string, err error) {
 	var valueDefault string
 
 	if len(arg) > 0 {
@@ -427,11 +433,11 @@ func (d *dogfunc) FuncURL(r model.ServiceIn, arg []string) (result string) {
 	}
 
 
-	return result
+	return
 }
 
 // Вставляем значения системных полей объекта
-func (d *dogfunc) Path(dm []model.Data, arg []string) (result string) {
+func (d *dogfunc) Path(dm []model.Data, arg []string) (result string, err error) {
 	var valueDefault string
 
 	if len(arg) > 0 {
@@ -461,14 +467,13 @@ func (d *dogfunc) Path(dm []model.Data, arg []string) (result string) {
 		result = valueDefault
 	}
 
-	return result
+	return
 }
 
 // Заменяем значение
-func (d *dogfunc) DReplace(arg []string) (result string) {
+func (d *dogfunc) DReplace(arg []string) (result string, err error) {
 	var count int
 	var str, oldS, newS string
-	var err error
 
 	if len(arg) > 0 {
 		str = arg[0]
@@ -485,15 +490,11 @@ func (d *dogfunc) DReplace(arg []string) (result string) {
 		result = strings.Replace(str, oldS, newS, count)
 	}
 
-	return result
+	return
 }
 
 // Получение идентификатор User-а (для Cockpit-a)
-func (d *dogfunc) UserObj(r model.ServiceIn, arg []string) (result string) {
-
-	//fmt.Println("User")
-	//fmt.Println(arg)
-
+func (d *dogfunc) UserObj(r model.ServiceIn, arg []string) (result string, err error) {
 	var valueDefault string
 
 	if len(arg) > 0 {
@@ -529,11 +530,11 @@ func (d *dogfunc) UserObj(r model.ServiceIn, arg []string) (result string) {
 		result = valueDefault
 	}
 
-	return result
+	return
 }
 
 // Получение UserProfile (для Cockpit-a)
-func (d *dogfunc) UserProfile(r model.ServiceIn, arg []string) (result string) {
+func (d *dogfunc) UserProfile(r model.ServiceIn, arg []string) (result string, err error) {
 	if len(arg) > 0 {
 
 		param := strings.ToUpper(arg[0])
@@ -554,11 +555,11 @@ func (d *dogfunc) UserProfile(r model.ServiceIn, arg []string) (result string) {
 
 
 	}
-	return result
+	return
 }
 
 // Получение текущей роли User-а
-func (d *dogfunc) UserRole(r model.ServiceIn, arg []string) (result string) {
+func (d *dogfunc) UserRole(r model.ServiceIn, arg []string) (result string, err error) {
 	if len(arg) > 0 {
 
 		param := strings.ToUpper(arg[0])
@@ -587,22 +588,24 @@ func (d *dogfunc) UserRole(r model.ServiceIn, arg []string) (result string) {
 		}
 
 	}
-	return result
+	return
 }
 
 // Вставляем значения системных полей объекта
-func (d *dogfunc) Obj(data []model.Data, arg []string) (result string) {
+func (d *dogfunc) Obj(data []model.Data, arg []string) (result string, err error) {
 	var valueDefault, r string
 	var res = []string{}
 	if len(arg) == 0 {
-		result = "Ошибка в переданных параметрах"
+		err = fmt.Errorf("%s",  "Ошибка в переданных параметрах")
+		return
 	}
 
 	param := strings.ToUpper(arg[0])
 	separator := ","	// значение разделителя по-умолчанию
 
 	if len(arg) == 0 {
-		return "Ошибка в переданных параметрах."
+		err = fmt.Errorf("%s", "Ошибка в переданных параметрах.")
+		return
 	}
 	if len(arg) == 2 {
 		valueDefault = arg[1]
@@ -634,19 +637,20 @@ func (d *dogfunc) Obj(data []model.Data, arg []string) (result string) {
 		result = valueDefault
 	}
 
-	return result
+	return
 }
 
 // Вставляем значения (Value) элементов из формы
 // Если поля нет, то выводит переданное значение (может быть любой символ)
-func (d *dogfunc) FieldValue(data []model.Data, arg []string) (result string) {
+func (d *dogfunc) FieldValue(data []model.Data, arg []string) (result string, err error) {
 	var valueDefault, separator string
 	var resSlice = []string{}
 
 	separator = ","	// значение разделителя по-умолчанию
 
 	if len(arg) == 0 {
-		return "Ошибка в переданных параметрах."
+		err = fmt.Errorf("%s",  "Ошибка в переданных параметрах.")
+		return
 	}
 
 	param := arg[0]
@@ -669,17 +673,18 @@ func (d *dogfunc) FieldValue(data []model.Data, arg []string) (result string) {
 		result = valueDefault
 	}
 
-	return result
+	return
 }
 
 // Вставляем ID-объекта (SRC) элементов из формы
 // Если поля нет, то выводит переданное значение (может быть любой символ)
-func (d *dogfunc) FieldSrc(data []model.Data, arg []string) (result string) {
+func (d *dogfunc) FieldSrc(data []model.Data, arg []string) (result string, err error) {
 	var valueDefault, separator string
 	var resSlice = []string{}
 
 	if len(arg) == 0 {
-		return "Ошибка в переданных параметрах."
+		err = fmt.Errorf("%s",  "Ошибка в переданных параметрах.")
+		return
 	}
 
 	param := arg[0]
@@ -702,23 +707,25 @@ func (d *dogfunc) FieldSrc(data []model.Data, arg []string) (result string) {
 		result = valueDefault
 	}
 
-	return result
+	return
 }
 
 // Разбиваем значения по элементу (Value(по-умолчанию)/Src) элементов из формы по разделителю и возвращаем
 // значение по указанному номеру (начала от 0)
 // Синтаксис: FieldValueSplit(поле, элемент, разделитель, номер_элемента)
 // для разделителя есть кодовые слова slash - / (нельзя вставить в фукнцию)
-func (d *dogfunc) FieldSplit(data []model.Data, arg []string) (result string) {
+func (d *dogfunc) FieldSplit(data []model.Data, arg []string) (result string, err error) {
 	var resSlice = []string{}
 	var r string
 
 	if len(arg) == 0 {
-		return "Ошибка в переданных параметрах."
+		err = fmt.Errorf("%s",  "Ошибка в переданных параметрах.")
+		return
 	}
 
 	if len(arg) < 4 {
-		return "Error! Count params must have 4 (field, element, separator, number)"
+		err = fmt.Errorf("%s",  "Error! Count params must have 4 (field, element, separator, number)")
+		return
 	}
 	field := arg[0]
 	element := arg[1]
@@ -732,7 +739,7 @@ func (d *dogfunc) FieldSplit(data []model.Data, arg []string) (result string) {
 	// 1. преобразовали в номер
 	num, err := strconv.Atoi(num_str)
 	if err != nil {
-		return fmt.Sprint(err)
+		return
 	}
 
 	for _, d := range data {
@@ -740,7 +747,8 @@ func (d *dogfunc) FieldSplit(data []model.Data, arg []string) (result string) {
 		val, found := d.Attr(field, element)
 
 		if !found {
-			return "Error! This field is not found."
+			err = fmt.Errorf("%s",   "Error! This field is not found.")
+			return
 		}
 		in := strings.Trim(val, " ")
 		if sep == "slash" {
@@ -750,7 +758,8 @@ func (d *dogfunc) FieldSplit(data []model.Data, arg []string) (result string) {
 		// 3. разделили и получили нужный элемент
 		split_v := strings.Split(in, sep)
 		if len(split_v) < num {
-			return "Error! Array size is less than the passed number"
+			err = fmt.Errorf("%s",   "Error! Array size is less than the passed number")
+			return
 		}
 
 		r = split_v[num]
@@ -759,17 +768,18 @@ func (d *dogfunc) FieldSplit(data []model.Data, arg []string) (result string) {
 
 	result = d.tplfunc.Join(resSlice, ",")
 
-	return result
+	return
 }
 
 // Добавление даты к переданной
 // date - дата, которую модифицируют (значение должно быть в формате времени)
 // modificator - модификатор (например "+24h")
 // format - формат переданного времени (по-умолчанию - 2006-01-02T15:04:05Z07:00 (формат: time.RFC3339)
-func (d *dogfunc) DateModify(arg []string) (result string) {
+func (d *dogfunc) DateModify(arg []string) (result string, err error) {
 
 	if len(arg) < 2 {
-		return "Error! Count params must have min 2 (date, modificator; option: format)"
+		err = fmt.Errorf("%s",   "Error! Count params must have min 2 (date, modificator; option: format)")
+		return
 	}
 	dateArg := arg[0]
 	modificator := arg[1]
@@ -782,29 +792,29 @@ func (d *dogfunc) DateModify(arg []string) (result string) {
 	// преобразуем полученную дату из строки в дату
 	date, err := time.Parse(format, dateArg)
 	if err != nil {
-		fmt.Println("err: ", err)
-		return dateArg
+		return
 	}
 
 	// преобразуем модификатор во время
 	p, err := time.ParseDuration(modificator)
 	if err != nil {
-		return dateArg
+		return
 	}
 
-	return fmt.Sprint(date.Add(p))
+	return fmt.Sprint(date.Add(p)), err
 }
 
 
 ///////////////////////////////////////////////////////////////
 // Отправляем почтового сообщения
-func (d *dogfunc) DogSendmail(arg []string) (result string) {
+func (d *dogfunc) DogSendmail(arg []string) (result string, err error) {
 	if len(arg) < 9 {
-		return "Error! Count params must have min 9 (server, port, user, pass, from, to, subject, message, turbo: string)"
+		err = fmt.Errorf("%s",    "Error! Count params must have min 9 (server, port, user, pass, from, to, subject, message, turbo: string)")
+		return
 	}
 	result = d.tplfunc.Sendmail(arg[0], arg[1], arg[2], arg[3], arg[4], arg[5], arg[6], arg[7], arg[8])
 
-	return result
+	return
 }
 
 func NewDogFunc(cfg config.Config, tplfunc TplFunc) DogFunc {
@@ -818,7 +828,11 @@ func NewDogFunc(cfg config.Config, tplfunc TplFunc) DogFunc {
 ///////////////////////////////////////////////////////////////
 // Собачья-обработка (поиск в строке @функций и их обработка)
 ///////////////////////////////////////////////////////////////
-func (d *function) Exec(p string, queryData *[]model.Data, values map[string]interface{}, request model.ServiceIn) (result string) {
+func (d *function) Exec(p string, queryData *[]model.Data, values map[string]interface{}, request model.ServiceIn) (result string, err error) {
+
+	if p == "" {
+		return
+	}
 
 	// прогоняем полученную строку такое кол-во раз, сколько вложенных уровней + 1 (для сравнения)
 	for {
@@ -826,7 +840,11 @@ func (d *function) Exec(p string, queryData *[]model.Data, values map[string]int
 		d.formula.SetValues(values)
 		d.formula.SetDocument(*queryData)
 		d.formula.SetRequest(request)
-		res_parse := d.formula.Replace()
+		res_parse, err := d.formula.Replace()
+
+		if err != nil {
+			return result, err
+		}
 
 		if p == res_parse {
 			result = res_parse

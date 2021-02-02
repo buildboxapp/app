@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 )
 
 
@@ -153,53 +154,54 @@ func (s *service) BPage(in model.ServiceIn, objPage model.ResponseData, values m
 	// 4 запускаем сборку модулей (получаем сгенерированный template.HTML без JS и CSS
 	// шаблоны рендерятся в каждом модуле отдельно (можно далее хранить в кеше)
 
-	if s.cfg.BuildModuleParallel.Value && 1 == 1 {
+	if s.cfg.BuildModuleParallel.Value && 1 == 2 {
 		ctx := context.WithValue(context.Background(), "timeout", s.cfg.TimeoutBlockGenerate.Value)
-		//ctx, cancel := context.WithCancel(ctx)
+		ctx, cancel := context.WithCancel(ctx)
 
 		// ПАРАЛЛЕЛЬНО
 		wg := sync.WaitGroup{}
 		var buildChan = make(chan model.ModuleResult, len(objBlocks.Data))
 
 		for _, v := range objBlocks.Data {
+			vv := v
 			idBlock, _ := v.Attr("id", "value") 	// название блока
 			if strings.Contains(shemaJSON, idBlock) {		// наличие этого блока в схеме
 				wg.Add(1)
-				go s.GetBlockToChannel(ctx, in, v, page, shemaJSON, values, buildChan, &wg)
+				go s.GetBlockToChannel(ctx, in, vv, page, shemaJSON, values, buildChan, &wg)
 			}
 		}
 
 		// ждем завершения интервала и вызываем завершение контекста для запущенных воркеров
-		//exitTimer := make(chan struct{})
-		//timerBlockGen := time.NewTimer(s.cfg.TimeoutBlockGenerate.Value)
-		//
-		//flagWG := true
-		//go func() {
-		//	select {
-		//	case <- timerBlockGen.C:
-		//		flagWG = false
-		//		cancel()
-		//		return
-		//	case <- exitTimer:
-		//		timerBlockGen.Stop()
-		//		return
-		//	}
-		//}()
+		exitTimer := make(chan struct{})
+		timerBlockGen := time.NewTimer(s.cfg.TimeoutBlockGenerate.Value)
+
+		flagWG := true
+		go func() {
+			select {
+			case <- timerBlockGen.C:
+				flagWG = false
+				cancel()
+				return
+			case <- exitTimer:
+				timerBlockGen.Stop()
+				return
+			}
+		}()
 
 		// отменяем ожидание wg при условии, что завершился таймаут и нам не нужны результаты недополученных ModuleBuildParallel
 		// wg завершатся сами через defer позже
-		//if flagWG {
+		if flagWG {
 			wg.Wait()
 
-		//}
-		//if timerBlockGen.Stop() {
-		//	exitTimer <- struct{}{}
-		//}
+		}
+		if timerBlockGen.Stop() {
+			exitTimer <- struct{}{}
+		}
 
 		close(buildChan)
 
 		for k := range buildChan {
-			fmt.Println(k.Id, k.Err, len(k.Result))
+			//fmt.Println(k.Id, k.Err, len(k.Result))
 			p.Blocks[k.Id] = k.Result
 			p.Stat = append(p.Stat, k.Stat)
 		}
@@ -258,15 +260,16 @@ func (s *service) GetBlockToChannel(ctx context.Context, in model.ServiceIn, blo
 	defer wg.Done()
 
 	// проверка на выход по сигналу
-	//select {
-	//case <- ctx.Done():
-	//	return
-	//default:
-	//}
+	select {
+	case <- ctx.Done():
+		return
+	default:
+	}
 
 	moduleResult, err := s.GetBlock(in, block, page, shemaJSON, values)
 	if err != nil {
 		moduleResult.Err = err
+		moduleResult.Result = template.HTML(fmt.Sprint(err))
 	}
 	buildChan <- moduleResult
 
@@ -287,7 +290,7 @@ func (s *service) GetBlock(in model.ServiceIn, block, page model.Data, shemaJSON
 			cacheInterval = 0
 		}
 
-		if cacheInterval != 0 {
+		if cacheInterval != 0 && 1 == 1 {
 			key, _ := s.cache.GenKey(block.Uid, in.Path, in.QueryRaw, ignorePath, ignoreURL)
 			result, _, flagExpired, err := s.cache.Read(key)
 
@@ -324,7 +327,7 @@ func (s *service) GetBlock(in model.ServiceIn, block, page model.Data, shemaJSON
 
 	} else {
 		s.logger.Error(nil, "Error. Block" + block.Id + " from page " + page.Id + " in not used.")
-		fmt.Println("fail: ", block.Id)
+		//fmt.Println("fail: ", block.Id)
 	}
 
 	return

@@ -2,7 +2,6 @@ package block
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/buildboxapp/app/pkg/config"
@@ -16,7 +15,6 @@ import (
 	"net/url"
 	"path"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -30,7 +28,6 @@ type block struct {
 
 type Block interface {
 	Generate(in model.ServiceIn, block model.Data, page model.Data, values map[string]interface{}) (result model.ModuleResult)
-	GenerateParallel(in model.ServiceIn, ctxM context.Context, p model.Data, page model.Data, values map[string]interface{}, enableCache bool, buildChan chan model.ModuleResult, wg *sync.WaitGroup)
 	ErrorModuleBuild(stat map[string]interface{}, buildChan chan model.ModuleResult, timerRun interface{}, errT error)
 	QueryWorker(queryUID, dataname string, source[]map[string]string, token, queryRaw, metod string, postForm url.Values) interface{}
 	ErrorPage(err interface{}, w http.ResponseWriter, r *http.Request)
@@ -38,13 +35,28 @@ type Block interface {
 	GUIQuery(tquery, token, queryRaw, method string, postForm url.Values) model.Response
 }
 
-
 func (b *block) Generate(in model.ServiceIn, block model.Data, page model.Data, values map[string]interface{}) (result model.ModuleResult) 	{
 	var c bytes.Buffer
 	var err error
 	var t *template.Template
 
 	result.Id = block.Id
+
+	// обработка всех странных ошибок
+	// ВКЛЮЧИТЬ ПОЗЖЕ!!!!
+	defer func() {
+		if er := recover(); er != nil {
+			//ft, err := template.ParseFiles("./upload/control/templates/errors/503.html")
+			//if err != nil {
+			//	l.Logger.Error(err)
+			//}
+			//t = template.Must(ft, nil)
+
+			result.Result = template.HTML(fmt.Sprint(er))
+			result.Err = fmt.Errorf("%s", er)
+			return
+		}
+	}()
 
 	// заменяем в State localhost на адрес домена (если это подпроцесс то все норм, но если это корневой сервис,
 	// то у него url_proxy - localhost и узнать реньше адрес мы не можем, ибо еще домен не инициировался
@@ -66,21 +78,6 @@ func (b *block) Generate(in model.ServiceIn, block model.Data, page model.Data, 
 
 	bl.Value = map[string]interface{}{}
 
-	// обработка всех странных ошибок
-	// ВКЛЮЧИТЬ ПОЗЖЕ!!!!
-	//defer func() {
-	//	if er := recover(); er != nil {
-	//		//ft, err := template.ParseFiles("./upload/control/templates/errors/503.html")
-	//		//if err != nil {
-	//		//	l.Logger.Error(err)
-	//		//}
-	//		//t = template.Must(ft, nil)
-	//
-	//		result.result = l.ModuleError(er, r)
-	//		result.err = err
-	//	}
-	//}()
-
 	dataSet		:= make(map[string]interface{})
 	dataname 	:= "default" // значение по-умолчанию (будет заменено в потоках)
 
@@ -92,30 +89,27 @@ func (b *block) Generate(in model.ServiceIn, block model.Data, page model.Data, 
 	// дополняем параметры request-a, доп. параметрами, которые переданы через блок
 	extfilter, _ 	:= block.Attr("extfilter", "value") // дополнительный фильтр для блока
 	dv := []model.Data{block}
-	extfilter = b.function.Exec(extfilter, &dv, bl.Value, in)
+	extfilter, err = b.function.Exec(extfilter, &dv, bl.Value, in)
+	if err != nil {
+		b.logger.Error(err, "[Generate] Error parsing Exec from block.")
+		fmt.Println("[Generate] Error parsing Exec from block: ", err)
+	}
+
 	extfilter = strings.Replace(extfilter, "?", "", -1)
 
 	// парсим переденную строку фильтра
 	m, err := url.ParseQuery(extfilter)
 	if err != nil {
-		b.logger.Error(err, "Error parsing extfilter from block.")
+		b.logger.Error(err, "[Generate] Error parsing extfilter from block.")
+		fmt.Println("[Generate] Error parsing extfilter from block.: ", err)
 	}
 
 	// добавляем в URL переданное значение из настроек модуля
 	//var q url.Values
 	var blockQuery = in.Query // Get a copy of the query values.
-
-	fmt.Println("----", in.Query)
-
 	for k, v := range m {
 		blockQuery.Add(k, strings.Join(v, ",")) // Add a new value to the set. Переводим обратно в строку из массива
 	}
-	//if len(m) != 0 {
-	//	in.Mx.Lock()
-	//	in.QueryRaw = q.Encode() // Encode and assign back to the original query.
-	//	in.Mx.Unlock()
-	//}
-	// //////////////////////////////////////////////////////////////////////////////
 	// //////////////////////////////////////////////////////////////////////////////
 
 	tconfiguration , _ := block.Attr("configuration", "value")
@@ -143,14 +137,33 @@ func (b *block) Generate(in model.ServiceIn, block model.Data, page model.Data, 
 	bl.Value["Referer"] = in.Referer
 	bl.Value["Profile"] = in.Profile
 
+
+	//fmt.Println("tconfiguration: block", block.Id, tconfiguration, "\n")
+
 	// обработк @-функции в конфигурации
 	dv = []model.Data{block}
-	dogParseConfiguration := b.function.Exec(tconfiguration, &dv, bl.Value, in)
+	dogParseConfiguration, err := b.function.Exec(tconfiguration, &dv, bl.Value, in)
+	if err != nil {
+		mes := "[Generate] Error DogParse configuration: ("+fmt.Sprint(err)+") " + tconfiguration
+		result.Result = b.ModuleError(mes)
+		result.Err = err
+		b.logger.Error(err, mes)
+		return
+	}
+
+	//fmt.Println("dogParseConfiguration: block", block.Id, dogParseConfiguration, "\n")
 
 	// конфигурация без обработки @-функции
 	var confRaw map[string]model.Element
 	if tconfiguration != "" {
 		err = json.Unmarshal([]byte(tconfiguration), &confRaw)
+	}
+	if err != nil {
+		mes := "[Generate] Error Unmarshal configuration: ("+fmt.Sprint(err)+") " + tconfiguration
+		result.Result = b.ModuleError("[Generate] Error Unmarshal configuration: ("+fmt.Sprint(err)+") " + tconfiguration)
+		result.Err = err
+		b.logger.Error(err, mes)
+		return
 	}
 
 	// конфигурация с обработкой @-функции
@@ -158,11 +171,11 @@ func (b *block) Generate(in model.ServiceIn, block model.Data, page model.Data, 
 	if dogParseConfiguration != "" {
 		err = json.Unmarshal([]byte(dogParseConfiguration), &conf)
 	}
-
 	if err != nil {
-		rm, _ := json.Marshal(tconfiguration)
-		result.Result = b.ModuleError("Error json-format configurations: ("+fmt.Sprint(err)+") " + string(rm))
+		mes := "[Generate] Error json-format configurations: ("+fmt.Sprint(err)+") " + dogParseConfiguration
+		result.Result = b.ModuleError("[Generate] Error json-format configurations: ("+fmt.Sprint(err)+") " + dogParseConfiguration)
 		result.Err = err
+		b.logger.Error(err, mes)
 		return
 	}
 
@@ -171,6 +184,7 @@ func (b *block) Generate(in model.ServiceIn, block model.Data, page model.Data, 
 	if d, found := conf["datasets"]; found {
 		rm, _ := json.Marshal(d.Source)
 		err := json.Unmarshal(rm, &source)
+
 		if err != nil {
 			stat["status"] = "error"
 			stat["description"] = fmt.Sprint(err)
@@ -178,9 +192,12 @@ func (b *block) Generate(in model.ServiceIn, block model.Data, page model.Data, 
 			result.Result = b.ModuleError(err)
 			result.Err = err
 			result.Stat = stat
+			mes := "[Generate] Error generate datasets."
+			b.logger.Error(err, mes)
 			return result
 		}
 	}
+
 
 	// ПЕРЕДЕЛАТЬ НА ПАРАЛЛЕЛЬНЫЕ ПОТОКИ
 	if tquery != "" {
@@ -202,12 +219,10 @@ func (b *block) Generate(in model.ServiceIn, block model.Data, page model.Data, 
 				}
 			}
 
-			ress := b.QueryWorker(queryUID, dataname, source, in.Token, blockQuery.Encode(), in.Method, in.PostForm)
+			ress := b.QueryWorker(queryUID, dataname, source, in.Token, blockQuery.Encode(), in.Method, in.PostForm) //in.QueryRaw
 			dataSet[dataname] = ress
 		}
 	}
-
-	fmt.Println(dataname, " = ", blockQuery.Encode())
 
 	bl.Data = dataSet
 	bl.Page = page
@@ -281,309 +296,6 @@ func (b *block) Generate(in model.ServiceIn, block model.Data, page model.Data, 
 	return result
 }
 
-// ДЛЯ ПАРАЛЛЕЛЬНОЙ сборки модуля
-// получаем объект модуля (отображения)
-//func (b *block) ModuleBuildParallel(in model.ServiceBlockIn, ctxM context.Context, p model.Data, page model.Data, values map[string]interface{}, enableCache bool, buildChan chan model.ModuleResult, wg *sync.WaitGroup) 	{
-//	defer wg.Done()
-//	t1 := time.Now()
-//
-//	result := model.ModuleResult{}
-//
-//	// проверка на выход по сигналу
-//	select {
-//	case <- ctxM.Done():
-//		return
-//	default:
-//	}
-//
-//	if strings.Contains(b.cfg.UrlProxy, "localhost") {
-//		b.cfg.UrlProxy = "//" + in.Host
-//	}
-//
-//	var c bytes.Buffer
-//	var bl model.Block
-//	var errT, err error
-//	var key, keyParam string
-//	var t *template.Template
-//	bl.Value = map[string]interface{}{}
-//	result.Id = p.Id
-//
-//	stat := map[string]interface{}{}
-//	stat["start"] = t1
-//	stat["status"] = "OK"
-//	stat["title"] = p.Title
-//	stat["id"] = p.Id
-//
-//	//////////////////////////////
-//	// Включаем режим кеширования
-//	//////////////////////////////
-//	cacheOn, _ := p.Attr("cache", "value")
-//
-//	if b.cfg.BaseCache != "" && cacheOn != "" && enableCache {
-//
-//		key, keyParam := b.cache.SetCahceKey(p, in.Path, in.Url)
-//
-//		// ПРОВЕРКА КЕША (если есть, отдаем из кеша)
-//		if res, found := b.cache.СacheGet(key, p, page, values, keyParam); found {
-//			stat["cache"] = "true"
-//			stat["time"] = time.Since(t1)
-//
-//			result.Result = template.HTML(res)
-//			result.Stat = stat
-//
-//			buildChan <- result
-//			return
-//		}
-//	}
-//	//////////////////////////////
-//	//////////////////////////////
-//
-//
-//	// проверка на выход по сигналу
-//	select {
-//	case <- ctxM.Done():
-//		return
-//	default:
-//	}
-//
-//	// обработка всех странных ошибок
-//	//defer func() {
-//	//	if er := recover(); er != nil {
-//	//		t = template.Must(template.ParseFiles("./upload/control/templates/errors/503.html"))
-//	//		result.result = ModuleError(er, r)
-//	//	}
-//	//}()
-//
-//	dataSet		:= make(map[string]interface{})
-//	dataname 	:= "default" // значение по-умолчанию (будет заменено в потоках)
-//
-//	tplName, _ := p.Attr("module", "src")
-//	tquery, _ := p.Attr("tquery", "src")
-//
-//
-//	// //////////////////////////////////////////////////////////////////////////////
-//	// в блоке есть настройки поля расширенного фильтра, который можно добавить в самом блоке
-//	// дополняем параметры request-a, доп. параметрами, которые переданы через блок
-//	extfilter, _ 	:= p.Attr("extfilter", "value") // дополнительный фильтр для блока
-//	dp := []model.Data{p}
-//	extfilter = b.function.Exec(extfilter, &dp, bl.Value)
-//	extfilter = strings.Replace(extfilter, "?", "", -1)
-//
-//	// парсим переденную строку фильтра
-//	m, err := url.ParseQuery(extfilter)
-//	if err != nil {
-//		b.logger.Error(err, "Error parsing extfilter from block.")
-//	}
-//
-//	// добавляем в URL переданное значение из настроек модуля
-//	var q url.Values
-//	for k, v := range m {
-//		q = in.Query // Get a copy of the query values.
-//		q.Add(k, strings.Join(v, ",")) // Add a new value to the set. Переводим обратно в строку из массива
-//	}
-//	if len(m) != 0 {
-//		r.URL.RawQuery = q.Encode() // Encode and assign back to the original query.
-//	}
-//	// //////////////////////////////////////////////////////////////////////////////
-//	// //////////////////////////////////////////////////////////////////////////////
-//
-//
-//	tconfiguration , _ := p.Attr("configuration", "value")
-//	tconfiguration = strings.Replace(tconfiguration, "  ", "", -1)
-//
-//	uuid := b.tplfunc.UUID()
-//
-//	if values != nil && len(values) != 0 {
-//		for k, v := range values {
-//			if _, found := bl.Value[k]; !found {
-//				bl.Value[k] = v
-//			}
-//		}
-//	}
-//
-//	bl.Value["Rand"] =  uuid[1:6]  // переопределяем отдельно для каждого модуля
-//	bl.Value["URL"] = in.Url
-//	bl.Value["Prefix"] = "/" + b.cfg.Domain + "/" + b.cfg.PathTemplates
-//	bl.Value["Domain"] = b.cfg.Domain
-//	bl.Value["CDN"] = b.cfg.UrlFs
-//	bl.Value["Path"] = b.cfg.ClientPath
-//	bl.Value["Form"] = in.Form
-//	bl.Value["Title"] = b.cfg.Title
-//	bl.Value["RequestURI"] = in.RequestURI
-//	bl.Value["Referer"] = in.Referer
-//	bl.Value["Profile"] = in.Profile
-//
-//
-//	// обработк @-функции в конфигурации
-//	dp = []model.Data{p}
-//	dogParseConfiguration := b.function.Exec(tconfiguration, &dp, bl.Value)
-//
-//	// конфигурация без обработки @-функции
-//	var confRaw map[string]model.Element
-//	if tconfiguration != "" {
-//		err = json.Unmarshal([]byte(tconfiguration), &confRaw)
-//	}
-//
-//	// конфигурация с обработкой @-функции
-//	var conf map[string]model.Element
-//	if dogParseConfiguration != "" {
-//		err = json.Unmarshal([]byte(dogParseConfiguration), &conf)
-//	}
-//
-//
-//	if err != nil {
-//		ff, _ := json.Marshal(tconfiguration)
-//		result.Result = b.ModuleError("Error json-format configurations: "+ string(ff))
-//		result.Err = err
-//		buildChan <- result
-//
-//		//dd := map[string]template.HTML{key:ModuleError("Error json-format configurations: "+marshal(tconfiguration), r)}
-//		return
-//	}
-//
-//	// сформировал структуру полученных описаний датасетов
-//	var source []map[string]string
-//	if _, found := conf["datasets"]; found {
-//		ff, _ := json.Marshal(tconfiguration)
-//		err := json.Unmarshal([]byte(string(ff)), &source)
-//		if err != nil {
-//			result.Result = b.ModuleError(err)
-//			buildChan <- result
-//			return
-//		}
-//	}
-//
-//	// ПЕРЕДЕЛАТЬ НА ПАРАЛЛЕЛЬНЫЕ ПОТОКИ
-//	if tquery != "" {
-//		slquery := strings.Split(tquery,",")
-//
-//		var name, uid string
-//
-//		for _, queryUID := range slquery {
-//
-//			// подставляем название датасета из конфигурации
-//			for _, v1 := range source {
-//
-//				if _, found := v1["name"]; found {
-//					name = v1["name"]
-//				}
-//				if _, found := v1["uid"]; found {
-//					uid = v1["uid"]
-//				}
-//
-//				if uid == queryUID {
-//					dataname = name
-//				}
-//			}
-//
-//			//fmt.Println("start quert: ")
-//
-//			ress := b.QueryWorker(queryUID, dataname, source)
-//			//fmt.Println("res query: ", ress)
-//
-//			dataSet[dataname] = ress
-//		}
-//
-//	}
-//
-//
-//
-//	bl.Data = dataSet
-//	bl.Page = page
-//	//bl.Metric = model.Metric
-//	bl.Configuration = conf
-//	//b.ConfigurationRaw = confRaw
-//	bl.ConfigurationRaw = tconfiguration
-//
-//	//bl.Request = r
-//
-//	// удаляем лишний путь к файлу, добавленную через консоль
-//	// СЕКЬЮРНО! Если мы вычитаем текущий путь пользователя, то сможем получить доступ к файлам только текущего проекта
-//	// иначе необходимо будет авторизоваться и правильный путь (например  /console/gui мы не вычтем)
-//	// НО ПРОБЛЕМА реиспользования ранее загруженных и настроенных путей к шаблонам.
-//	//tplName = strings.Replace(tplName, Application["client_path"], ".", -1)
-//
-//	// НЕ СЕКЬЮРНО!
-//	// вычитаем не текущий client_path а просто две первых секции из адреса к файлу
-//	// позволяем получить доступ к ранее загруженным путям шаблонов другим пользоватем с другим префиксом
-//	// ПО-УМОЛЧАНИЮ (для реиспользования модулей и схем)
-//	sliceMake := strings.Split(tplName, "/")
-//	if len(sliceMake) < 3 {
-//		errT = fmt.Errorf("%s", "Error: The path to the module file is incorrect or an error occurred while selecting the module in the block object!")
-//		b.ErrorModuleBuild(stat, buildChan, time.Since(t1), errT)
-//		return
-//	}
-//	tplName = strings.Join(sliceMake[3:], "/")
-//	tplName = b.cfg.Workingdir + "/"+ tplName
-//
-//
-//	// в режиме отладки пересборка шаблонов происходит при каждом запросе
-//	if b.cfg.CompileTemplates.Value {
-//		var tmpl *template.Template
-//		if len(tplName) > 0 {
-//			name := path.Base(tplName)
-//			if name == "" {
-//				errT = fmt.Errorf("%s","Error: Getting path.Base failed!")
-//				tmpl = nil
-//			} else {
-//				tmpl, _ = template.New(name).Funcs(b.tplfunc.GetFuncMap()).ParseFiles(tplName)
-//			}
-//
-//		}
-//
-//
-//		if &b != nil && &c != nil {
-//			if tmpl == nil {
-//				errT = fmt.Errorf("%s","Error: Parsing template file is fail!")
-//			} else {
-//				errT = tmpl.Execute(&c, b)
-//			}
-//		} else {
-//			errT = fmt.Errorf("%s","Error: Generate data block is fail!")
-//		}
-//
-//	} else {
-//		errT = t.ExecuteTemplate(&c, tplName, b)
-//	}
-//
-//	// ошибка при генерации страницы
-//	if errT != nil {
-//		b.ErrorModuleBuild(stat, buildChan, time.Since(t1), errT)
-//		b.logger.Error(errT, "Error generated module.")
-//		return
-//	}
-//
-//	stat["cache"] = "true"
-//	stat["time"] = time.Since(t1)
-//
-//	result.Result = template.HTML(c.String())
-//	result.Stat = stat
-//
-//
-//
-//	// Включаем режим кеширования
-//	if b.cfg.BaseCache != "" && cacheOn != "" && enableCache {
-//		key, keyParam = b.cache.SetCahceKey(p, path, query)
-//
-//		// КЕШИРОВАНИЕ данных
-//		b.cache.CacheSet(key, p, page, c.String(), keyParam)
-//	}
-//
-//	stat["cache"] = "false"
-//	stat["time"] = time.Since(t1)
-//	result.Stat = stat
-//
-//
-//	buildChan <- result
-//
-//	//log.Warning("Stop ", p.Title, "-", time.Since(t1))
-//
-//	return
-//}
-
-func (b *block) GenerateParallel(in model.ServiceIn, ctxM context.Context, p model.Data, page model.Data, values map[string]interface{}, enableCache bool, buildChan chan model.ModuleResult, wg *sync.WaitGroup) {
-	return
-}
 // вываливаем ошибку при генерации модуля
 func (b *block) ErrorModuleBuild(stat map[string]interface{}, buildChan chan model.ModuleResult, timerRun interface{}, errT error){
 	var result model.ModuleResult
@@ -610,7 +322,7 @@ func (b *block) QueryWorker(queryUID, dataname string, source[]map[string]string
 	//	resp = resp1.(Response)
 	//
 	//default:
-	//	resp.Data = resp1
+	//	resp.Data = resp1ч
 	//}
 
 
@@ -697,7 +409,7 @@ func (l *block) ModuleError(err interface{}) template.HTML  {
 	}
 
 	l.logger.Error(nil,err)
-	fmt.Println("ModuleError: ", err)
+	//fmt.Println("ModuleError: ", err)
 
 	wd := l.cfg.Workingdir
 	t := template.Must(template.ParseFiles(wd + "/upload/control/templates/errors/503.html"))

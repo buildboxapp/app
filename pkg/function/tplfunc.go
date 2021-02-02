@@ -273,7 +273,7 @@ func (t *tplfunc) Confparse(configuration string, r *http.Request, queryData int
 		return "Error! Failed marshal queryData: " + fmt.Sprint(err)
 	}
 	dv := []model.Data{d}
-	confParse := frml.Exec(configuration, &dv, nil, t.requestToIn(r))
+	confParse, _ := frml.Exec(configuration, &dv, nil, t.requestToIn(r))
 
 	// конфигурация с обработкой @-функции
 	var conf map[string]model.Element
@@ -297,7 +297,7 @@ func (t *tplfunc) Dogparse(p string, r *http.Request, queryData interface{}, val
 	json.Unmarshal(b, &d)
 
 	dv := []model.Data{d}
-	result = frml.Exec(p, &dv, values, t.requestToIn(r))
+	result, _ = frml.Exec(p, &dv, values, t.requestToIn(r))
 
 	return result
 }
