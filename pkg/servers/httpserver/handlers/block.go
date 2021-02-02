@@ -43,12 +43,17 @@ func (h *handlers) Block(w http.ResponseWriter, r *http.Request) {
 func blockDecodeRequest(ctx context.Context, r *http.Request) (in model.ServiceIn, err error)  {
 	vars := mux.Vars(r)
 	in.Block = vars["block"]
+
 	in.Url = r.URL.Query().Encode()
 	in.Referer = r.Referer()
 	in.RequestURI = r.RequestURI
 	in.QueryRaw = r.URL.RawQuery
+	in.Form = r.Form
 	in.PostForm = r.PostForm
+	in.Host = r.Host
 	in.Method = r.Method
+	in.Query = r.URL.Query()
+
 
 	//cookieCurrent, err := r.Cookie("sessionID")
 	//token := ""

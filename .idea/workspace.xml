@@ -28,12 +28,10 @@
     <list default="true" id="695e3ced-4e40-4126-a43d-f20a9b66d621" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pkg/block/block.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/block/block.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/config/config.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/config/config.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/function/dogfunc.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/function/dogfunc.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pkg/function/tplfunc.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/function/tplfunc.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/model/models.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/model/models.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/model/service.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/model/service.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/servers/httpserver/handlers/block.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/servers/httpserver/handlers/block.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pkg/servers/httpserver/handlers/page.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/servers/httpserver/handlers/page.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/servers/httpserver/routers.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/servers/httpserver/routers.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pkg/service/page.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/service/page.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pkg/utils/tree.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/utils/tree.go" afterDir="false" />
     </list>
@@ -180,10 +178,10 @@
     <proxy>direct</proxy>
   </component>
   <component name="WindowStateProjectService">
-    <state x="360" y="222" width="1071" height="707" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1611390929626">
+    <state x="360" y="222" width="1071" height="732" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1612217156380">
       <screen x="0" y="0" width="1792" height="1120" />
     </state>
-    <state x="360" y="222" width="1071" height="707" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.1792.1120@0.0.1792.1120" timestamp="1611390929626" />
+    <state x="360" y="222" width="1071" height="732" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.1792.1120@0.0.1792.1120" timestamp="1612217156380" />
     <state width="1750" height="318" key="GridCell.Tab.0.bottom" timestamp="1612204677380">
       <screen x="0" y="0" width="1792" height="1120" />
     </state>
@@ -232,9 +230,9 @@
       <screen x="0" y="0" width="1792" height="1120" />
     </state>
     <state x="0" y="25" width="895" height="1095" key="com.intellij.openapi.vcs.update.UpdateOrStatusOptionsDialogupdate-v2/0.0.1792.1120@0.0.1792.1120" timestamp="1611318783182" />
-    <state x="551" y="60" width="850" height="977" key="find.popup" timestamp="1612199591021">
+    <state x="551" y="60" width="850" height="977" key="find.popup" timestamp="1612263285811">
       <screen x="0" y="0" width="1792" height="1120" />
     </state>
-    <state x="551" y="60" width="850" height="977" key="find.popup/0.0.1792.1120@0.0.1792.1120" timestamp="1612199591021" />
+    <state x="551" y="60" width="850" height="977" key="find.popup/0.0.1792.1120@0.0.1792.1120" timestamp="1612263285811" />
   </component>
 </project>

@@ -739,11 +739,6 @@ func (t *tplfunc) Totree(i interface{}, objstart string) (res interface{}) {
 		return "Error convert to DataTree"
 	}
 
-	//c, _ := json.Marshal(objRes)
-	//res = string(c)
-
-	fmt.Println(objTree)
-
 	return objTree
 }
 

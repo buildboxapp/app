@@ -3,7 +3,6 @@
 package utils
 
 import (
-	"fmt"
 	"github.com/buildboxapp/app/pkg/model"
 	"sort"
 	"strconv"
@@ -56,10 +55,6 @@ func (u *utils) DataToIncl(objData []model.Data) []*model.DataTree {
 	sliceNavigator := []*model.DataTree{}
 	for _, m := range mapLevel {
 		sliceNavigator = append(sliceNavigator, m)
-	}
-
-	for _, item := range sliceNavigator {
-		fmt.Println(item)
 	}
 
 	// сортируем по order как число

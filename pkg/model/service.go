@@ -3,6 +3,7 @@ package model
 import (
 	"html/template"
 	"net/url"
+	"sync"
 )
 
 type ServiceIn struct {
@@ -20,6 +21,8 @@ type ServiceIn struct {
 	PostForm url.Values `json:"post_form"`
 	Token string `json:"token"`
 	Method string `json:"method"`
+
+	Mx sync.Mutex
 }
 
 type ServiceBlockOut struct {

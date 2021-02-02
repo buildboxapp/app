@@ -44,6 +44,8 @@ func (b *block) Generate(in model.ServiceIn, block model.Data, page model.Data, 
 	var err error
 	var t *template.Template
 
+	result.Id = block.Id
+
 	// заменяем в State localhost на адрес домена (если это подпроцесс то все норм, но если это корневой сервис,
 	// то у него url_proxy - localhost и узнать реньше адрес мы не можем, ибо еще домен не инициировался
 	// а значит подменяем localhost при каждом обращении к модулю
@@ -100,14 +102,19 @@ func (b *block) Generate(in model.ServiceIn, block model.Data, page model.Data, 
 	}
 
 	// добавляем в URL переданное значение из настроек модуля
-	var q url.Values
+	//var q url.Values
+	var blockQuery = in.Query // Get a copy of the query values.
+
+	fmt.Println("----", in.Query)
+
 	for k, v := range m {
-		q = in.Query // Get a copy of the query values.
-		q.Add(k, strings.Join(v, ",")) // Add a new value to the set. Переводим обратно в строку из массива
+		blockQuery.Add(k, strings.Join(v, ",")) // Add a new value to the set. Переводим обратно в строку из массива
 	}
-	if len(m) != 0 {
-		in.QueryRaw = q.Encode() // Encode and assign back to the original query.
-	}
+	//if len(m) != 0 {
+	//	in.Mx.Lock()
+	//	in.QueryRaw = q.Encode() // Encode and assign back to the original query.
+	//	in.Mx.Unlock()
+	//}
 	// //////////////////////////////////////////////////////////////////////////////
 	// //////////////////////////////////////////////////////////////////////////////
 
@@ -156,7 +163,7 @@ func (b *block) Generate(in model.ServiceIn, block model.Data, page model.Data, 
 		rm, _ := json.Marshal(tconfiguration)
 		result.Result = b.ModuleError("Error json-format configurations: ("+fmt.Sprint(err)+") " + string(rm))
 		result.Err = err
-		return result
+		return
 	}
 
 	// сформировал структуру полученных описаний датасетов
@@ -195,10 +202,12 @@ func (b *block) Generate(in model.ServiceIn, block model.Data, page model.Data, 
 				}
 			}
 
-			ress := b.QueryWorker(queryUID, dataname, source, in.Token, in.QueryRaw, in.Method, in.PostForm)
+			ress := b.QueryWorker(queryUID, dataname, source, in.Token, blockQuery.Encode(), in.Method, in.PostForm)
 			dataSet[dataname] = ress
 		}
 	}
+
+	fmt.Println(dataname, " = ", blockQuery.Encode())
 
 	bl.Data = dataSet
 	bl.Page = page
