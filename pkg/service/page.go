@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/buildboxapp/app/pkg/model"
 	"html/template"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -252,6 +253,11 @@ func (s *service) BPage(in model.ServiceIn, objPage model.ResponseData, values m
 	//}
 
 	result = c.String()
+
+	// чистим от лишних пробелов
+	re := regexp.MustCompile("(?m)^\\s+")
+	result = re.ReplaceAllString(result, "")
+
 	return
 }
 

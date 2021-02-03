@@ -284,8 +284,10 @@ func (b *block) Generate(in model.ServiceIn, block model.Data, page model.Data, 
 		return
 	}
 
+	blockBody := c.String()
+
 	if tmpl != nil {
-		result.Result = template.HTML(c.String())
+		result.Result = template.HTML(blockBody)
 	} else {
 		result.Result = "<center><h3>Ошибка обработки файла шаблона (файл не найден) при генерации блока.</h3></center>"
 	}
