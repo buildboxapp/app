@@ -22,7 +22,7 @@ func (s *service) Page(ctx context.Context, in model.ServiceIn) (out model.Servi
 	// ПЕРЕДЕЛАТЬ или на кеширование страниц и на доп.проверку
 	if in.Page == "" {
 		// получаем все страницы текущего приложения
-		s.utils.Curl("GET", "_link?obj="+s.cfg.DataSource+"&source="+s.cfg.TplAppPagesPointsrc+"&mode=out", "", &objPages, map[string]string{})
+		s.utils.Curl("GET", "_link?obj="+s.cfg.DataUid+"&source="+s.cfg.TplAppPagesPointsrc+"&mode=in", "", &objPages, map[string]string{})
 		for _, v := range objPages.Data {
 			if def, _ := v.Attr("default", "value"); def == "checked" {
 				if appUid, _ := v.Attr("app", "src"); appUid == s.cfg.UidService {
@@ -45,8 +45,6 @@ func (s *service) Page(ctx context.Context, in model.ServiceIn) (out model.Servi
 		return out, err
 	}
 
-	//fmt.Println("objPage: ", objPage)
-
 	// ФИКС! иногда в разных приложениях называют одинаково страницы.
 	// удаляем из объекта objPage значения не текущего приложения
 	if len(objPage.Data) > 1 {
@@ -58,10 +56,8 @@ func (s *service) Page(ctx context.Context, in model.ServiceIn) (out model.Servi
 		}
 	}
 
-
 	// формируем значение переменных, переданных в страницу
 	values := map[string]interface{}{}
-
 
 	values["Prefix"] = s.cfg.ClientPath + s.cfg.PathTemplates
 	values["Domain"] = s.cfg.Domain
