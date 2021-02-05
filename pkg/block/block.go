@@ -14,6 +14,7 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -285,6 +286,9 @@ func (b *block) Generate(in model.ServiceIn, block model.Data, page model.Data, 
 	}
 
 	blockBody := c.String()
+	// чистим от лишних пробелов
+	re := regexp.MustCompile("(?m)^\\s+")
+	blockBody = re.ReplaceAllString(blockBody, "")
 
 	if tmpl != nil {
 		result.Result = template.HTML(blockBody)
