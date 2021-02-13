@@ -37,6 +37,7 @@ type TplFunc interface {
 	Separator() string
 	Sendmail(server, port, user, pass, from, to, subject, message, turbo string) (result string)
 	Divfloat(a, b interface{}) interface{}
+	Mulfloat(a float64, v ...float64) float64
 	Confparse(configuration string, r *http.Request, queryData interface{}) (result interface{})
 	Dogparse(p string, r *http.Request, queryData interface{}, values map[string]interface{}) (result string)
 	Attr(name, element string, data interface{}) (result interface{})
@@ -135,6 +136,7 @@ func (t *tplfunc) GetFuncMap() template.FuncMap {
 		"varparse":	 	 t.Parseparam,
 		"parseparam":	 t.Parseparam,
 		"divfloat":		 t.Divfloat,
+		"mulfloat":		 t.Mulfloat,
 		"sendmail":		 t.Sendmail,
 
 	}
@@ -259,6 +261,15 @@ func (t *tplfunc) Divfloat(a, b interface{}) interface{} {
 	}
 
 	return fa / fb
+}
+
+// умножение с запятой
+func (t *tplfunc) Mulfloat(a float64, v ...float64) float64 {
+	for _, b := range v {
+		a = a * b
+	}
+
+	return a
 }
 
 // обработка @-функций внутри конфигурации (в шаблонизаторе)

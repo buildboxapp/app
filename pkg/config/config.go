@@ -16,30 +16,24 @@ var warning = color.Red("[Fail]")
 
 // читаем конфигурации
 func (c *Config) Load(configfile string) (err error) {
-	fileName := ""
 	cfgfile := ""
 
 	rootDir, err := lib.RootDir()
 	startDir := rootDir + sep + "upload"
 
-	// временно, пока не перешли полностью на cfg (позже удалить)
-	if len(configfile) > 5 {
-		if configfile[len(configfile)-5:] != ".json" {
-			configfile = configfile + ".json"
-		}
+	configfileSplit := strings.Split(configfile, ".")
+	if len(configfile) == 0 {
+		return fmt.Errorf("%s", "Error. Configfile is empty.")
+	}
+	if len(configfileSplit) == 1 {
+		configfile = configfile + ".cfg"
 	}
 
-	if fileName, err = lib.ReadConfAction(startDir, configfile, false); err != nil {
+	if cfgfile, err = lib.ReadConfAction(startDir, configfile, false); err != nil {
 		fmt.Printf("%s Error load enviroment: %s (configfile: %s)\n", warning, err, configfile)
 		os.Exit(1)
 	}
 
-	if len(fileName) > 5 {
-		if fileName[len(fileName)-5:] == ".json" {
-			cfgfile = fileName[:len(fileName)-5]
-		}
-		cfgfile = cfgfile + ".cfg"
-	}
 	if _, err = toml.DecodeFile(cfgfile, &c); err != nil {
 		fmt.Printf("%s Error: %s (configfile: %s)\n", warning, err, cfgfile)
 		os.Exit(1)

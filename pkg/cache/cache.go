@@ -89,6 +89,7 @@ func (c *cache) SetStatus(key, status string) (err error) {
 		err = c.DB.Upsert(c.cfg.Namespace, elem)
 	}
 
+	rows.Close()
 	return
 }
 
@@ -114,6 +115,7 @@ func (c *cache) Read(key string) (result, status string, flagExpired bool, err e
 		flagExpired = c.function.TplFunc().TimeExpired(elem.Deadtime)
 	}
 
+	rows.Close()
 	return
 }
 

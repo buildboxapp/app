@@ -43,6 +43,7 @@ func (h *handlers) Block(w http.ResponseWriter, r *http.Request) {
 func blockDecodeRequest(ctx context.Context, r *http.Request) (in model.ServiceIn, err error)  {
 	vars := mux.Vars(r)
 	in.Block = vars["block"]
+	r.ParseForm()
 
 	in.Url = r.URL.Query().Encode()
 	in.Referer = r.Referer()

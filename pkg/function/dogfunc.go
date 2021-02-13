@@ -418,7 +418,6 @@ func (d *dogfunc) TimeFormat(arg []string) (result string, err error) {
 
 func (d *dogfunc) FuncURL(r model.ServiceIn, arg []string) (result string, err error) {
 	var valueDefault string
-
 	if len(arg) > 0 {
 		param := arg[0]
 		result = strings.Join(r.Form[param], ",")
@@ -427,11 +426,9 @@ func (d *dogfunc) FuncURL(r model.ServiceIn, arg []string) (result string, err e
 			valueDefault = arg[1]
 		}
 	}
-
 	if result == "" {
 		result = valueDefault
 	}
-
 
 	return
 }
