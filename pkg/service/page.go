@@ -76,7 +76,6 @@ func (s *service) Page(ctx context.Context, in model.ServiceIn) (out model.Servi
 
 // Собираем страницу
 func (s *service) BPage(in model.ServiceIn, objPage model.ResponseData, values map[string]interface{}) (result string, err error) {
-
 	var objMaket, objBlocks model.ResponseData
 	var t *template.Template
 	moduleResult := model.ModuleResult{}
@@ -151,7 +150,7 @@ func (s *service) BPage(in model.ServiceIn, objPage model.ResponseData, values m
 	// 4 запускаем сборку модулей (получаем сгенерированный template.HTML без JS и CSS
 	// шаблоны рендерятся в каждом модуле отдельно (можно далее хранить в кеше)
 
-	if s.cfg.BuildModuleParallel.Value && 1 == 2 {
+	if s.cfg.BuildModuleParallel.Value && 1 == 1 {
 		ctx := context.WithValue(context.Background(), "timeout", s.cfg.TimeoutBlockGenerate.Value)
 		ctx, cancel := context.WithCancel(ctx)
 
@@ -202,9 +201,7 @@ func (s *service) BPage(in model.ServiceIn, objPage model.ResponseData, values m
 			p.Blocks[k.Id] = k.Result
 			p.Stat = append(p.Stat, k.Stat)
 		}
-
 	} else {
-
 		// ПОСЛЕДОВАТЕЛЬНО
 		for _, v := range objBlocks.Data {
 			moduleResult, err = s.GetBlock(in, v, page, shemaJSON, values)
@@ -292,7 +289,8 @@ func (s *service) GetBlock(in model.ServiceIn, block, page model.Data, shemaJSON
 			cacheInterval = 0
 		}
 
-		if cacheInterval != 0 && 1 == 1 {
+		// если включен кеш и есть интервал кеширования
+		if s.cache.Active() && cacheInterval != 0 && 1 == 1 {
 			key, _ := s.cache.GenKey(block.Uid, in.Path, in.QueryRaw, ignorePath, ignoreURL)
 			result, _, flagExpired, err := s.cache.Read(key)
 

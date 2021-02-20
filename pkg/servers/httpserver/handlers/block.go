@@ -18,22 +18,22 @@ import (
 func (h *handlers) Block(w http.ResponseWriter, r *http.Request) {
 	in, err := blockDecodeRequest(r.Context(), r)
 	if err != nil {
-		h.logger.Error(err, "[Block] Error function execution (BlockDecodeRequest).")
+		h.transportError(w, 500, err, "[Block] Error function execution (BlockDecodeRequest)")
 		return
 	}
 	serviceResult, err := h.service.Block(r.Context(), in)
 	if err != nil {
-		h.logger.Error(err, "[Block] Error service execution (Block).")
+		h.transportError(w, 500, err, "[Block] Error function execution (Block)")
 		return
 	}
 	response, _ := blockEncodeResponse(r.Context(), &serviceResult)
 	if err != nil {
-		h.logger.Error(err, "[Block] Error function execution (BlockEncodeResponse).")
+		h.transportError(w, 500, err, "[Block] Error function execution (BlockEncodeResponse)")
 		return
 	}
-	err = blockTransportResponse(w, response)
+	err = h.transportResponse(w, response)
 	if err != nil {
-		h.logger.Error(err, "[Block] Error function execution (BlockTransportResponse).")
+		h.transportError(w, 500, err, "[Page] Error function execution (transportResponse)")
 		return
 	}
 
@@ -79,15 +79,4 @@ func blockDecodeRequest(ctx context.Context, r *http.Request) (in model.ServiceI
 func blockEncodeResponse(ctx context.Context, serviceResult *model.ServiceBlockOut) (response template.HTML, err error)  {
 	response = serviceResult.Result
 	return response, err
-}
-
-func blockTransportResponse(w http.ResponseWriter, response template.HTML) (err error)  {
-	w.WriteHeader(200)
-
-	if err != nil {
-		w.WriteHeader(403)
-	}
-	w.Write([]byte(response))
-
-	return err
 }

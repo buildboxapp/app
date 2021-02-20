@@ -19,13 +19,23 @@ type cache struct {
 	cfg config.Config
 	logger log.Log
 	function function.Function
+	active bool `json:"active"`
 }
 
 type Cache interface {
+	Active() bool
 	GenKey(uid, path, query, ignorePath, ignoreQuery string) (key, keyParam string)
 	SetStatus(key, status string) (err error)
 	Read(key string) (result, status string, fresh bool, err error)
 	Write(key string, cacheInterval int, blockUid, pageUid string, value, url string) (err error)
+}
+
+// проверяем статус соединения с базой
+func (c *cache) Active() bool {
+	if c.active {
+		return true
+	}
+	return false
 }
 
 // формируем ключ кеша
@@ -179,7 +189,7 @@ func New(cfg config.Config, logger log.Log, function function.Function) Cache {
 		} else {
 			fmt.Printf("%s Cache-service is running\n", done)
 			logger.Info("Cache-service is running")
-			cfg.BaseCache = "on"
+			cach.active = true
 		}
 	}
 

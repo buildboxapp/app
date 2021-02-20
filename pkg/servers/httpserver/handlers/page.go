@@ -19,22 +19,25 @@ import (
 func (h *handlers) Page(w http.ResponseWriter, r *http.Request) {
 	in, err := pageDecodeRequest(r.Context(), r)
 	if err != nil {
-		h.logger.Error(err, "[Page] Error function execution (PageDecodeRequest).")
+		h.transportError(w, 500, err, "[Page] Error function execution (PageDecodeRequest)")
 		return
 	}
+
+	fmt.Println(r.Referer()+r.RequestURI)
+
 	serviceResult, err := h.service.Page(r.Context(), in)
 	if err != nil {
-		h.logger.Error(err, "[Page] Error service execution (Page).")
+		h.transportError(w, 500, err, "[Page] Error function execution (Page)")
 		return
 	}
 	response, _ := pageEncodeResponse(r.Context(), &serviceResult)
 	if err != nil {
-		h.logger.Error(err, "[Page] Error function execution (PageEncodeResponse).")
+		h.transportError(w, 500, err, "[Page] Error function execution (PageEncodeResponse)")
 		return
 	}
-	err = pageTransportResponse(w, response)
+	err = h.transportResponseHTTP(w, response)
 	if err != nil {
-		h.logger.Error(err, "[Page] Error function execution (PageTransportResponse).")
+		h.transportError(w, 500, err, "[Page] Error function execution (transportResponse)")
 		return
 	}
 
@@ -69,14 +72,4 @@ func pageDecodeRequest(ctx context.Context, r *http.Request) (in model.ServiceIn
 func pageEncodeResponse(ctx context.Context, serviceResult *model.ServicePageOut) (response string, err error)  {
 	response = serviceResult.Body
 	return response, err
-}
-
-func pageTransportResponse(w http.ResponseWriter, response string) (err error)  {
-	w.WriteHeader(200)
-
-	if err != nil {
-		w.WriteHeader(403)
-	}
-	w.Write([]byte(response))
-	return err
 }

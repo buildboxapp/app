@@ -103,8 +103,6 @@ type Config struct {
 	PortApp	string `envconfig:"PORT_APP" default:""`
 	PortAutoInterval	string `envconfig:"PORT_AUTO_INTERVAL" default:""`
 	Projectuid	string `envconfig:"PROJECTUID" default:""`
-	ProxyLevelLogsPointsrc	string `envconfig:"PROXY_LEVEL_LOGS_POINTSRC" default:""`
-	ProxyLevelLogsPointvalue	string `envconfig:"PROXY_LEVEL_LOGS_POINTVALUE" default:""`
 
 	ReplicasApp	Int `envconfig:"REPLICAS_APP" default:""`
 	Robot	string `envconfig:"ROBOT" default:""`

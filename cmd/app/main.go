@@ -107,7 +107,6 @@ func Start(configfile, dir, port string) {
 	cfg.Namespace	= strings.ReplaceAll(cfg.Domain, "/", "_")
 	cfg.UrlProxy	= cfg.AddressProxyPointsrc
 
-
 	// инициализировать лог и его ротацию
 	var logger = log.New(
 		cfg.LogsDir,
