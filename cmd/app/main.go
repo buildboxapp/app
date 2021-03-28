@@ -158,6 +158,7 @@ func Start(configfile, dir, port string) {
 		cfg,
 		*logger,
 		fnc,
+		ult,
 	)
 
 	// собираем сервис

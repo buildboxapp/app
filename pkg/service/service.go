@@ -27,6 +27,7 @@ type Service interface {
 	Ping(ctx context.Context) (result []model.Pong, err error)
 	Page(ctx context.Context, in model.ServiceIn) (out model.ServicePageOut, err error)
 	Block(ctx context.Context, in model.ServiceIn) (out model.ServiceBlockOut, err error)
+	Cache(ctx context.Context, in model.ServiceCacheIn) (out model.RestStatus, err error)
 }
 
 func New(

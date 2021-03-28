@@ -26,15 +26,24 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="695e3ced-4e40-4126-a43d-f20a9b66d621" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/pkg/servers/httpserver/handlers/cache.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkg/service/cache.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cmd/app/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/cmd/app/main.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/block/block.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/block/block.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pkg/cache/cache.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/cache/cache.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/config/model.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/config/model.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/model/models.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/model/models.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/config/utils.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/config/utils.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/function/dogfunc.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/function/dogfunc.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/function/tplfunc.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/function/tplfunc.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/model/contracts.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/model/service.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/model/service.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pkg/servers/httpserver/handlers/block.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/servers/httpserver/handlers/block.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pkg/servers/httpserver/handlers/handlers.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/servers/httpserver/handlers/handlers.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pkg/servers/httpserver/handlers/page.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/servers/httpserver/handlers/page.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/servers/httpserver/routers.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/servers/httpserver/routers.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pkg/service/page.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/service/page.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/service/service.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/service/service.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/utils/utils.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/utils/utils.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -151,7 +160,7 @@
                   <entry key="branch">
                     <value>
                       <list>
-                        <option value="v1.1_new_carcas" />
+                        <option value="v1.1" />
                       </list>
                     </value>
                   </entry>
@@ -179,61 +188,37 @@
     <proxy>direct</proxy>
   </component>
   <component name="WindowStateProjectService">
-    <state x="360" y="222" width="1071" height="732" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1612217156380">
+    <state x="360" y="222" width="1071" height="782" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1615972295227">
       <screen x="0" y="0" width="1792" height="1120" />
     </state>
-    <state x="360" y="222" width="1071" height="732" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.1792.1120@0.0.1792.1120" timestamp="1612217156380" />
-    <state width="1750" height="318" key="GridCell.Tab.0.bottom" timestamp="1612204677380">
+    <state x="360" y="222" width="1071" height="782" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.1792.1120@0.0.1792.1120" timestamp="1615972295227" />
+    <state width="1750" height="318" key="GridCell.Tab.0.bottom" timestamp="1614339384842">
       <screen x="0" y="0" width="1792" height="1120" />
     </state>
-    <state width="1750" height="318" key="GridCell.Tab.0.bottom/0.0.1792.1120@0.0.1792.1120" timestamp="1612204677380" />
-    <state width="1750" height="318" key="GridCell.Tab.0.bottom/0.23.1737.1097@0.23.1737.1097" timestamp="1604826823016" />
-    <state width="1750" height="318" key="GridCell.Tab.0.center" timestamp="1612204677376">
+    <state width="1750" height="318" key="GridCell.Tab.0.bottom/0.0.1792.1120@0.0.1792.1120" timestamp="1614339384841" />
+    <state width="1750" height="318" key="GridCell.Tab.0.center" timestamp="1614339384838">
       <screen x="0" y="0" width="1792" height="1120" />
     </state>
-    <state width="1750" height="318" key="GridCell.Tab.0.center/0.0.1792.1120@0.0.1792.1120" timestamp="1612204677376" />
-    <state width="1750" height="318" key="GridCell.Tab.0.center/0.23.1737.1097@0.23.1737.1097" timestamp="1604826822976" />
-    <state width="1750" height="318" key="GridCell.Tab.0.left" timestamp="1612204677374">
+    <state width="1750" height="318" key="GridCell.Tab.0.center/0.0.1792.1120@0.0.1792.1120" timestamp="1614339384838" />
+    <state width="1750" height="318" key="GridCell.Tab.0.left" timestamp="1614339384828">
       <screen x="0" y="0" width="1792" height="1120" />
     </state>
-    <state width="1750" height="318" key="GridCell.Tab.0.left/0.0.1792.1120@0.0.1792.1120" timestamp="1612204677374" />
-    <state width="1750" height="318" key="GridCell.Tab.0.left/0.23.1737.1097@0.23.1737.1097" timestamp="1604826822974" />
-    <state width="1750" height="318" key="GridCell.Tab.0.right" timestamp="1612204677378">
+    <state width="1750" height="318" key="GridCell.Tab.0.left/0.0.1792.1120@0.0.1792.1120" timestamp="1614339384828" />
+    <state width="1750" height="318" key="GridCell.Tab.0.right" timestamp="1614339384839">
       <screen x="0" y="0" width="1792" height="1120" />
     </state>
-    <state width="1750" height="318" key="GridCell.Tab.0.right/0.0.1792.1120@0.0.1792.1120" timestamp="1612204677378" />
-    <state width="1750" height="318" key="GridCell.Tab.0.right/0.23.1737.1097@0.23.1737.1097" timestamp="1604826822977" />
-    <state width="1750" height="392" key="GridCell.Tab.1.bottom" timestamp="1607609052003">
-      <screen x="0" y="0" width="1792" height="1120" />
-    </state>
-    <state width="1750" height="392" key="GridCell.Tab.1.bottom/0.0.1792.1120@0.0.1792.1120" timestamp="1607609052003" />
-    <state width="1750" height="392" key="GridCell.Tab.1.center" timestamp="1607609052002">
-      <screen x="0" y="0" width="1792" height="1120" />
-    </state>
-    <state width="1750" height="392" key="GridCell.Tab.1.center/0.0.1792.1120@0.0.1792.1120" timestamp="1607609052002" />
-    <state width="1750" height="392" key="GridCell.Tab.1.left" timestamp="1607609052001">
-      <screen x="0" y="0" width="1792" height="1120" />
-    </state>
-    <state width="1750" height="392" key="GridCell.Tab.1.left/0.0.1792.1120@0.0.1792.1120" timestamp="1607609052001" />
-    <state width="1750" height="392" key="GridCell.Tab.1.right" timestamp="1607609052002">
-      <screen x="0" y="0" width="1792" height="1120" />
-    </state>
-    <state width="1750" height="392" key="GridCell.Tab.1.right/0.0.1792.1120@0.0.1792.1120" timestamp="1607609052002" />
+    <state width="1750" height="318" key="GridCell.Tab.0.right/0.0.1792.1120@0.0.1792.1120" timestamp="1614339384839" />
     <state x="0" y="25" width="895" height="1095" key="IDE.errors.dialog" timestamp="1611319607369">
       <screen x="0" y="0" width="1792" height="1120" />
     </state>
     <state x="0" y="25" width="895" height="1095" key="IDE.errors.dialog/0.0.1792.1120@0.0.1792.1120" timestamp="1611319607369" />
-    <state width="896" height="560" key="XDebugger.FullValuePopup" timestamp="1607285172923">
-      <screen x="0" y="0" width="1792" height="1120" />
-    </state>
-    <state width="896" height="560" key="XDebugger.FullValuePopup/0.0.1792.1120@0.0.1792.1120" timestamp="1607285172923" />
     <state x="0" y="25" width="895" height="1095" key="com.intellij.openapi.vcs.update.UpdateOrStatusOptionsDialogupdate-v2" timestamp="1611318783182">
       <screen x="0" y="0" width="1792" height="1120" />
     </state>
     <state x="0" y="25" width="895" height="1095" key="com.intellij.openapi.vcs.update.UpdateOrStatusOptionsDialogupdate-v2/0.0.1792.1120@0.0.1792.1120" timestamp="1611318783182" />
-    <state x="551" y="60" width="850" height="977" key="find.popup" timestamp="1613567375291">
+    <state x="551" y="60" width="850" height="977" key="find.popup" timestamp="1616882629995">
       <screen x="0" y="0" width="1792" height="1120" />
     </state>
-    <state x="551" y="60" width="850" height="977" key="find.popup/0.0.1792.1120@0.0.1792.1120" timestamp="1613567375291" />
+    <state x="551" y="60" width="850" height="977" key="find.popup/0.0.1792.1120@0.0.1792.1120" timestamp="1616882629995" />
   </component>
 </project>

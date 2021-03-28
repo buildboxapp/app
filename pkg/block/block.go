@@ -14,10 +14,13 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
 )
+
+const sep = string(filepath.Separator)
 
 type block struct {
 	cfg config.Config
@@ -39,7 +42,6 @@ type Block interface {
 func (b *block) Generate(in model.ServiceIn, block model.Data, page model.Data, values map[string]interface{}) (result model.ModuleResult) 	{
 	var c bytes.Buffer
 	var err error
-	var t *template.Template
 
 	result.Id = block.Id
 
@@ -90,7 +92,7 @@ func (b *block) Generate(in model.ServiceIn, block model.Data, page model.Data, 
 	// дополняем параметры request-a, доп. параметрами, которые переданы через блок
 	extfilter, _ 	:= block.Attr("extfilter", "value") // дополнительный фильтр для блока
 	dv := []model.Data{block}
-	extfilter, err = b.function.Exec(extfilter, &dv, bl.Value, in)
+	extfilter, err = b.function.Exec(extfilter, dv, bl.Value, in, block.Id+"_extfilter")
 	if err != nil {
 		b.logger.Error(err, "[Generate] Error parsing Exec from block.")
 		fmt.Println("[Generate] Error parsing Exec from block: ", err)
@@ -143,7 +145,7 @@ func (b *block) Generate(in model.ServiceIn, block model.Data, page model.Data, 
 
 	// обработк @-функции в конфигурации
 	dv = []model.Data{block}
-	dogParseConfiguration, err := b.function.Exec(tconfiguration, &dv, bl.Value, in)
+	dogParseConfiguration, err := b.function.Exec(tconfiguration, dv, bl.Value, in, block.Id)
 	if err != nil {
 		mes := "[Generate] Error DogParse configuration: ("+fmt.Sprint(err)+") " + tconfiguration
 		result.Result = b.ModuleError(mes)
@@ -152,7 +154,7 @@ func (b *block) Generate(in model.ServiceIn, block model.Data, page model.Data, 
 		return
 	}
 
-	//fmt.Println("dogParseConfiguration: block", block.Id, dogParseConfiguration, "\n")
+	//fmt.Println("block", block.Id, tconfiguration, "\ndogParseConfiguration: ", dogParseConfiguration, "\n\n\n")
 
 	// конфигурация без обработки @-функции
 	var confRaw map[string]model.Element
@@ -232,16 +234,77 @@ func (b *block) Generate(in model.ServiceIn, block model.Data, page model.Data, 
 	bl.ConfigurationRaw = tconfiguration
 	//bl.Request = r
 
-	// удаляем лишний путь к файлу, добавленную через консоль
-	// СЕКЬЮРНО! Если мы вычитаем текущий путь пользователя, то сможем получить доступ к файлам только текущего проекта
-	// иначе необходимо будет авторизоваться и правильный путь (например  /console/gui мы не вычтем)
-	// НО ПРОБЛЕМА реиспользования ранее загруженных и настроенных путей к шаблонам.
-	//tplName = strings.Replace(tplName, Application["client_path"], ".", -1)
+	result.Id = block.Id
 
-	// НЕ СЕКЬЮРНО!
-	// вычитаем не текущий client_path а просто две первых секции из адреса к файлу
-	// позволяем получить доступ к ранее загруженным путям шаблонов другим пользоватем с другим префиксом
-	// ПО-УМОЛЧАНИЮ (для реиспользования модулей и схем)
+	// если содержится разделитель - значит передан путь к файлу (старая версия) и генерируем из файла
+	// иначе берем значение из поля codetpl (новая версия), если пусто, то из поля _filecontent_url
+	// (для случаем, когда блок выбрали, но содержимое файла не перенесли в новое поле и оно хрантся в поле автосохранения файла)
+	if strings.Contains(tplName, sep) {
+		//tplName = b.cfg.Workingdir + "/" + tplName
+
+		c, err = b.GenerateBlockFromFile(tplName, bl)
+		if err != nil {
+			err = fmt.Errorf("%s file:'%s' (%s)","Error: Generate Module from file is failed!",tplName, err)
+			result.Result = template.HTML(fmt.Sprint(err))
+			return
+		}
+	} else {
+		uidModule, _ 	:= block.Attr("module", "src")
+		var objModule model.ResponseData
+
+		// запрос на объект HTML
+		_, err = b.utils.Curl("GET", "_objs/"+uidModule, "", &objModule, map[string]string{})
+		if err != nil {
+			err = fmt.Errorf("%s (%s)","Error: Get object Module is failed!", err)
+			result.Result = template.HTML(fmt.Sprint(err))
+			return
+		}
+		if len(objModule.Data) == 0 {
+			err = fmt.Errorf("%s","Error: Object Module is null!")
+			result.Result = template.HTML(fmt.Sprint(err))
+			return
+		}
+
+		// если выбрано несколько блоков, их все объединяем в один (очередность случайная)
+		htmlCode := ""
+		for _, v := range objModule.Data {
+			codetpl, _ 	:= v.Attr("codetpl", "value")
+			if codetpl == "" {
+				codetpl, _ = v.Attr("_filecontent_module", "value")
+				if codetpl == "" {
+					codetpl, _ = v.Attr("_filecontent_url", "value")
+				}
+			}
+			htmlCode = htmlCode + codetpl
+		}
+
+		c, err = b.GenerateBlockFromField(htmlCode, bl)
+	}
+
+	// ошибка при генерации страницы
+	if err != nil {
+		b.logger.Error(err, "Error generated module.")
+		result.Result = "Error. Generate module is failed."
+		result.Id = block.Id
+		return
+	}
+
+	blockBody := c.String()
+
+	// чистим от лишних пробелов
+	re := regexp.MustCompile("(?m)^\\s+")
+	blockBody = re.ReplaceAllString(blockBody, "")
+
+	result.Result = template.HTML(blockBody)
+	result.Stat = stat
+
+	return result
+}
+
+// генерируем блок из файла (для совместимости со старыми модулями)
+func (b *block) GenerateBlockFromFile(tplName string, bl model.Block) (c bytes.Buffer, err error) {
+	var tmpl *template.Template
+
 	sliceMake := strings.Split(tplName, "/")
 	if len(sliceMake) < 3 {
 		errT := fmt.Errorf("%s", "Error: The path to the module file is incorrect or an error occurred while selecting the module in the block object!")
@@ -252,54 +315,38 @@ func (b *block) Generate(in model.ServiceIn, block model.Data, page model.Data, 
 	tplName = strings.Join(sliceMake[3:], "/")
 	tplName = b.cfg.Workingdir + "/" + tplName
 
-	// в режиме отладки пересборка шаблонов происходит при каждом запросе
-	var tmpl *template.Template
-	if !b.cfg.CompileTemplates.Value {
-		if len(tplName) > 0 {
-			name := path.Base(tplName)
-			if name == "" {
-				err = fmt.Errorf("%s","Error: Getting path.Base failed!")
-				tmpl = nil
-			} else {
-				tmpl, _ = template.New(name).Funcs(b.tplfunc.GetFuncMap()).ParseFiles(tplName)
-			}
-		}
-		if &bl != nil && &c != nil {
-			if tmpl == nil {
-				err = fmt.Errorf("%s","Error: Parsing template file is fail!")
-			} else {
-				err = tmpl.Execute(&c, bl)
-			}
+	if len(tplName) > 0 {
+		name := path.Base(tplName)
+		if name == "" {
+			err = fmt.Errorf("%s","Error: Getting path.Base failed!")
+			tmpl = nil
 		} else {
-			err = fmt.Errorf("%s","Error: Generate data block is fail!")
+			tmpl, _ = template.New(name).Funcs(b.tplfunc.GetFuncMap()).ParseFiles(tplName)
 		}
-
+	}
+	if &bl != nil && &c != nil {
+		if tmpl == nil {
+			err = fmt.Errorf("%s","Error: Parsing template file is fail!")
+		} else {
+			err = tmpl.Execute(&c, bl)
+		}
 	} else {
-		t.ExecuteTemplate(&c, tplName, b)
+		err = fmt.Errorf("%s","Error: Generate data block is fail!")
 	}
 
-	// ошибка при генерации страницы
+	return c, err
+}
+
+// генерируем блок из переданного текста
+func (b *block) GenerateBlockFromField(value string, bl model.Block) (c bytes.Buffer, err error) {
+	tmpl, err := template.New("name").Funcs(b.tplfunc.GetFuncMap()).Parse(value)
 	if err != nil {
-		//b.ErrorModuleBuild(stat, buildChan, time.Since(t1), errT)
-		b.logger.Error(err, "Error generated module.")
 		return
 	}
 
-	blockBody := c.String()
-	// чистим от лишних пробелов
-	re := regexp.MustCompile("(?m)^\\s+")
-	blockBody = re.ReplaceAllString(blockBody, "")
+	err = tmpl.Execute(&c, bl)
 
-	if tmpl != nil {
-		result.Result = template.HTML(blockBody)
-	} else {
-		result.Result = "<center><h3>Ошибка обработки файла шаблона (файл не найден) при генерации блока.</h3></center>"
-	}
-
-	result.Stat = stat
-	result.Id = block.Id
-
-	return result
+	return c, err
 }
 
 // вываливаем ошибку при генерации модуля

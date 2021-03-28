@@ -68,7 +68,12 @@ type Int struct {
 //UnmarshalText method satisfying toml unmarshal interface
 func (d *Int) UnmarshalText(text []byte) error {
 	var err error
-	i, err := strconv.Atoi(string(text))
+	tt := string(text)
+	if tt == "" {
+		d.Value = 0
+		return nil
+	}
+	i, err := strconv.Atoi(tt)
 	d.Value = i
 	return err
 }

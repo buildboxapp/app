@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"crypto/sha1"
+	"encoding/hex"
 	"github.com/buildboxapp/app/pkg/config"
 	"github.com/buildboxapp/app/pkg/model"
 	"github.com/buildboxapp/lib/log"
@@ -18,6 +20,7 @@ type Utils interface {
 	DataToIncl(objData []model.Data) []*model.DataTree
 	TreeShowIncl(in []*model.DataTree, obj string) (out []*model.DataTree)
 	SortItems(p []*model.DataTree, fieldsort string, typesort string)
+	Hash(str string) string
 }
 
 
@@ -43,6 +46,17 @@ func (u *utils) RemoveElementFromData(p *model.ResponseData, i int) bool {
 	}
 
 	return true
+}
+
+func (u *utils) Hash(str string) string {
+	if str == "" {
+		return ""
+	}
+	h := sha1.New()
+	h.Write([]byte(str))
+	sha1_hash := hex.EncodeToString(h.Sum(nil))
+
+	return sha1_hash
 }
 
 

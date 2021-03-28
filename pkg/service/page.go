@@ -34,7 +34,7 @@ func (s *service) Page(ctx context.Context, in model.ServiceIn) (out model.Servi
 
 	if in.Page == "" {
 		ff, _ := json.Marshal(objPages)
-		err = fmt.Errorf("%s", "Error: not default page (" + fmt.Sprint(ff) + ")")
+		err = fmt.Errorf("%s", "Error: not default page (" + string(ff) + ")")
 		return out, err
 	}
 
@@ -159,7 +159,16 @@ func (s *service) BPage(in model.ServiceIn, objPage model.ResponseData, values m
 		var buildChan = make(chan model.ModuleResult, len(objBlocks.Data))
 
 		for _, v := range objBlocks.Data {
-			vv := v
+			var vv = model.Data{}
+			vv.Id = v.Id
+			vv.Uid = v.Uid
+			vv.Attributes = v.Attributes
+			vv.Title = v.Title
+			vv.Source = v.Source
+			vv.Rev = v.Rev
+			vv.Type = v.Type
+			vv.Сopies = v.Сopies
+			vv.Parent = v.Parent
 			idBlock, _ := v.Attr("id", "value") 	// название блока
 			if strings.Contains(shemaJSON, idBlock) {		// наличие этого блока в схеме
 				wg.Add(1)
@@ -277,9 +286,21 @@ func (s *service) GetBlockToChannel(ctx context.Context, in model.ServiceIn, blo
 
 // получение содержимого блока (с учетом операций с кешем)
 func (s *service) GetBlock(in model.ServiceIn, block, page model.Data, shemaJSON string, values map[string]interface{}) (moduleResult model.ModuleResult, err error) {
+	var addСonditionPath bool
+	var addСonditionURL bool
+
 	cacheInt, _ 		:= block.Attr("cache", "value")			// включен ли режим кеширования
-	ignorePath, _ 		:= block.Attr("cache_nokey2", "value")
-	ignoreURL, _ 		:= block.Attr("cache_nokey3", "value")
+	cache_nokey2, _ 	:= block.Attr("cache_keyAddPath", "value")
+	cache_nokey3, _ 	:= block.Attr("cache_keyAddURL", "value")
+
+	if cache_nokey2 == "checked" {
+		addСonditionPath = true
+	}
+	if cache_nokey3 == "checked" {
+		addСonditionURL = true
+	}
+
+	//t1 := time.Now()
 
 	if strings.Contains(shemaJSON, block.Id) { // наличие этого блока в схеме
 
@@ -290,29 +311,30 @@ func (s *service) GetBlock(in model.ServiceIn, block, page model.Data, shemaJSON
 		}
 
 		// если включен кеш и есть интервал кеширования
-		if s.cache.Active() && cacheInterval != 0 && 1 == 1 {
-			key, _ := s.cache.GenKey(block.Uid, in.Path, in.QueryRaw, ignorePath, ignoreURL)
+		if s.cache.Active() && cacheInterval != 0 {
+
+			// читаем из кеша и отдаем (ВСЕГДА сразу)
+			key, cacheParams := s.cache.GenKey(block.Uid, in.CachePath, in.CacheQuery, addСonditionPath, addСonditionURL)
 			result, _, flagExpired, err := s.cache.Read(key)
 
-			// 1 кеш пустой или ошибка - первый вызов
-			// ИЛИ
-			// 2 время закончилось (не обращаем внимание на статус "обновляется" потому, что при изменеии статуса на "обновляемя"
-			// мы увеличиваем время на предельно время проведения обновления
-			if (result == "" || err != nil) || flagExpired {
-				err = s.cache.SetStatus(key, "updated")
-				if err != nil {
-					result = fmt.Sprint(err)
-					fmt.Println("err ", block.Id, err)
-				}
-				moduleResult = s.block.Generate(in, block, page, values)
-				err = s.cache.Write(key, cacheInterval, block.Uid, page.Uid, string(moduleResult.Result), in.Url)
-				if err != nil {
-					result = fmt.Sprint(err)
-					fmt.Println("err ", block.Id, err)
-				}
+			//fmt.Println("read:", time.Since(t1), block.Id, key)
 
-				result = string(moduleResult.Result)
+			// 1 кеша нет (срабатывает только при первом формировании)
+			if err != nil {
+				//fmt.Println("genr NULL:", time.Since(t1), block.Id, key, err, result)
+
+				result, err = s.updateCache(key, cacheParams, cacheInterval, in, block, page, values)
+			} else {
+				// 2 время закончилось (не обращаем внимание на статус "обновляется" потому, что при изменении статуса на "обновляем"
+				// мы увеличиваем время на предельно время проведения обновления
+				// требуется обновить фоном (отдали текущие данные из кеша)
+				if flagExpired {
+					//fmt.Println("genr flagExpired:", time.Since(t1), block.Id, key, flagExpired)
+
+					go s.updateCache(key, cacheParams, cacheInterval, in, block, page, values)
+				}
 			}
+
 
 			moduleResult = model.ModuleResult {
 				Id:     block.Id,
@@ -329,6 +351,34 @@ func (s *service) GetBlock(in model.ServiceIn, block, page model.Data, shemaJSON
 		s.logger.Error(nil, "Error. Block" + block.Id + " from page " + page.Id + " in not used.")
 		//fmt.Println("fail: ", block.Id)
 	}
+
+	//fmt.Println("Time:", time.Since(t1), "Cache:", s.cache.Active(), "Block:", block.Id)
+
+	return
+}
+
+// внутренняя фунция сервиса.
+// не вынесена в пакет Cache потому-что требуется генерировать блок
+func (s *service) updateCache(key, cacheParams string, cacheInterval int, in model.ServiceIn, block model.Data, page model.Data, values map[string]interface{}) (result string, err error) {
+	t1 := time.Now()
+
+	err = s.cache.SetStatus(key, "updated")
+	if err != nil {
+		result = fmt.Sprint(err)
+		fmt.Println("err ", block.Id, err)
+	}
+
+	moduleResult := s.block.Generate(in, block, page, values)
+
+	err = s.cache.Write(key, cacheParams, cacheInterval, block.Uid, page.Uid, string(moduleResult.Result))
+	if err != nil {
+		result = fmt.Sprint(err)
+		fmt.Println("err ", block.Id, time.Since(t1) ,err)
+	}
+
+	fmt.Println("save:", time.Since(t1), block.Id, key, err)
+
+	result = string(moduleResult.Result)
 
 	return
 }

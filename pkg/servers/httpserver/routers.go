@@ -38,6 +38,8 @@ func (h *httpserver) NewRouter() *mux.Router {
 		// запросы (настроенные)
 		Route{"ProxyPing", "GET", "/ping",  handler.Ping},
 
+		Route{"Cache", "GET", "/tools/cacheclear", handler.Cache},
+
 		Route{"Page", "GET", "/", handler.Page},
 		Route{"Page", "GET", "/{page}", handler.Page},
 		Route{"Page", "POST", "/{page}", handler.Page},
@@ -48,6 +50,7 @@ func (h *httpserver) NewRouter() *mux.Router {
 		Route{"Block", "POST", "/block/{block}", handler.Block},
 		Route{"Block", "GET", "/block/{block}/", handler.Block},
 		Route{"Block", "POST", "/block/{block}/", handler.Block},
+
 
 		// Регистрация pprof-обработчиков
 		Route{"pprofIndex", "GET", "/debug/pprof/", pprof.Index},

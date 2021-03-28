@@ -7,6 +7,7 @@ import (
 	"github.com/buildboxapp/app/pkg/model"
 	"github.com/gorilla/mux"
 	"net/http"
+	"strings"
 )
 
 // Page get user by login+pass pair
@@ -22,9 +23,6 @@ func (h *handlers) Page(w http.ResponseWriter, r *http.Request) {
 		h.transportError(w, 500, err, "[Page] Error function execution (PageDecodeRequest)")
 		return
 	}
-
-	fmt.Println(r.Referer()+r.RequestURI)
-
 	serviceResult, err := h.service.Page(r.Context(), in)
 	if err != nil {
 		h.transportError(w, 500, err, "[Page] Error function execution (Page)")
@@ -58,6 +56,12 @@ func pageDecodeRequest(ctx context.Context, r *http.Request) (in model.ServiceIn
 	in.Host = r.Host
 	in.Method = r.Method
 	in.Query = r.URL.Query()
+
+	slURI := strings.Split(in.RequestURI, "?")
+	in.CachePath = slURI[0]
+	if len(slURI) > 1 {
+		in.CacheQuery = slURI[1]
+	}
 
 	// указатель на профиль текущего пользователя
 	var profile model.ProfileData

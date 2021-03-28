@@ -55,7 +55,6 @@ func blockDecodeRequest(ctx context.Context, r *http.Request) (in model.ServiceI
 	in.Method = r.Method
 	in.Query = r.URL.Query()
 
-
 	//cookieCurrent, err := r.Cookie("sessionID")
 	//token := ""
 	//if err == nil {

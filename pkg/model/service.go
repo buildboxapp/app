@@ -3,8 +3,11 @@ package model
 import (
 	"html/template"
 	"net/url"
-	"sync"
 )
+
+type ServiceCacheIn struct {
+	Link string `json:"link"`
+}
 
 type ServiceIn struct {
 	Page string `json:"page"`
@@ -22,7 +25,8 @@ type ServiceIn struct {
 	Token string `json:"token"`
 	Method string `json:"method"`
 
-	Mx sync.Mutex
+	CachePath string `json:"cache_path"`
+	CacheQuery string `json:"cache_url"`
 }
 
 type ServiceBlockOut struct {

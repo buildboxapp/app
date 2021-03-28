@@ -6,8 +6,10 @@ import (
 	"github.com/buildboxapp/app/pkg/config"
 	"github.com/buildboxapp/app/pkg/function"
 	"github.com/buildboxapp/app/pkg/model"
+	"github.com/buildboxapp/app/pkg/utils"
 	"github.com/buildboxapp/lib/log"
 	"github.com/labstack/gommon/color"
+	"strings"
 
 	"encoding/json"
 	"github.com/restream/reindexer"
@@ -20,14 +22,16 @@ type cache struct {
 	logger log.Log
 	function function.Function
 	active bool `json:"active"`
+	utl utils.Utils
 }
 
 type Cache interface {
 	Active() bool
-	GenKey(uid, path, query, ignorePath, ignoreQuery string) (key, keyParam string)
+	GenKey(uid, path, query string, addСonditionPath, addСonditionURL bool) (key, cacheParams string)
 	SetStatus(key, status string) (err error)
 	Read(key string) (result, status string, fresh bool, err error)
-	Write(key string, cacheInterval int, blockUid, pageUid string, value, url string) (err error)
+	Write(key, cacheParams string, cacheInterval int, blockUid, pageUid string, value string) (err error)
+	Clear(links string) (count int, err error)
 }
 
 // проверяем статус соединения с базой
@@ -39,8 +43,8 @@ func (c *cache) Active() bool {
 }
 
 // формируем ключ кеша
-// ignorePath, ignoreQuery - признаки игнорирования пути или запроса в ключе (указываются в кеше блока)
-func (c *cache) GenKey(uid, path, query, ignorePath, ignoreQuery string) (key, keyParam string)  {
+// addСonditionPath, addСonditionURL - признаки добавления хеша пути и/или запроса в ключе (указываются в кеше блока)
+func (c *cache) GenKey(uid, path, query string, addСonditionPath, addСonditionURL bool) (key, cacheParams string)  {
 	key2 := ""
 	key3 := ""
 
@@ -48,28 +52,34 @@ func (c *cache) GenKey(uid, path, query, ignorePath, ignoreQuery string) (key, k
 	key1, _ := json.Marshal(uid)
 	key2 = path // переводим в текст параметры пути запроса (/nedra/user)
 	key3 = fmt.Sprintf("%v", query) // переводим в текст параметры строки запроса (?sdf=df&df=df)
+	keyParams := ""
 
 	// учитываем путь и параметры
-	if ignorePath == "" && ignoreQuery == "" {
-		key = c.function.TplFunc().Hash(string(key1)) + "_" + c.function.TplFunc().Hash(string(key2)) + "_" + c.function.TplFunc().Hash(string(key3))
+	if addСonditionPath && addСonditionURL {
+		key = c.utl.Hash(string(key1)) + "_" + c.utl.Hash(key2) + "_" + c.utl.Hash(key3)
+		keyParams = "url:"+key2+"; params:"+key3
 	}
 
 	// учитываем только путь
-	if ignorePath != "" && ignoreQuery == "" {
-		key = c.function.TplFunc().Hash(string(key1)) + "_" + c.function.TplFunc().Hash(string(key2)) + "_"
+	if !addСonditionPath && addСonditionURL {
+		key = c.utl.Hash(string(key1)) + "_" + c.utl.Hash(key2) + "_"
+		keyParams = "url:"+key2+"; params:"
 	}
 
 	// учитываем только параметры
-	if ignorePath == "" && ignoreQuery != "" {
-		key = c.function.TplFunc().Hash(string(key1)) + "_" + "_" + c.function.TplFunc().Hash(string(key3))
+	if addСonditionPath && !addСonditionURL {
+		key = c.utl.Hash(string(key1)) + "_" + "_" + c.utl.Hash(key3)
+		keyParams = "url: ; params:"+key3
+
 	}
 
 	// учитываем путь и параметры
-	if ignorePath != "" && ignoreQuery != "" {
-		key = c.function.TplFunc().Hash(string(key1)) + "_" + "_"
+	if !addСonditionPath && !addСonditionURL {
+		key = c.utl.Hash(string(key1)) + "_" + "_"
+		keyParams = "url: ; params:"
 	}
 
-	return key, "url:"+key2+"; params:"+key3
+	return key, keyParams
 }
 
 // меняем статус по ключу
@@ -125,16 +135,20 @@ func (c *cache) Read(key string) (result, status string, flagExpired bool, err e
 		flagExpired = c.function.TplFunc().TimeExpired(elem.Deadtime)
 	}
 
+	// если ничего не нашли, то выдаем ошибку, чтобы сгенерировать кеш
+	if rows.TotalCount() == 0 {
+		err = fmt.Errorf("%s", "Error. Result is null")
+	}
+
 	rows.Close()
 	return
 }
-
 
 // key - ключ, который будет указан в кеше
 // cacheInterval - время хранени кеша
 // blockUid, pageUid - ид-ы блока и страницы (для формирования возможности выборочного сброса кеша)
 // data - то, что кладется в кеш
-func (c *cache) Write(key string, cacheInterval int, blockUid, pageUid string, value, url string) (err error) {
+func (c *cache) Write(key, cacheParams string, cacheInterval int, blockUid, pageUid string, value string) (err error) {
 	var valueCache = model.ValueCache{}
 	var deadTime time.Duration
 
@@ -155,7 +169,7 @@ func (c *cache) Write(key string, cacheInterval int, blockUid, pageUid string, v
 	link = append(link, blockUid)
 
 	valueCache.Link = link
-	valueCache.Url = url
+	valueCache.Url = cacheParams
 	valueCache.Deadtime = dt.String()
 	valueCache.Status = ""
 
@@ -168,13 +182,34 @@ func (c *cache) Write(key string, cacheInterval int, blockUid, pageUid string, v
 	return
 }
 
-func New(cfg config.Config, logger log.Log, function function.Function) Cache {
+// очищаем кеш приложения по заданному критерия (наличия значения в массиве линков)
+func (c *cache) Clear(links string) (count int, err error)  {
+	if links == "all" {
+		// паременты не переданы - удаляем все объекты в заданном неймспейсе
+		c.DB.Query(c.cfg.Namespace).Not().WhereString("Uid", reindexer.EQ, "").Delete()
+	} else {
+		// паременты не переданы - удаляем согласно шаблону
+		for _, v := range strings.Split(links, ",") {
+			int, err := c.DB.Query(c.cfg.Namespace).Where("Link", reindexer.SET, v).Delete()
+			if err != nil {
+				err = fmt.Errorf("Error cleaning cache. Now deleted %s objects. Error: ", count, err)
+				return count, err
+			}
+			count = count + int
+		}
+	}
+
+	return
+}
+
+func New(cfg config.Config, logger log.Log, function function.Function, utl utils.Utils) Cache {
 	done := color.Green("[OK]")
 	fail := color.Red("[Fail]")
 	var cach = cache{
 		cfg: cfg,
 		logger: logger,
 		function: function,
+		utl: utl,
 	}
 
 	// включено кеширование

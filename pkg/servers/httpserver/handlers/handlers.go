@@ -20,6 +20,7 @@ type Handlers interface {
 	Ping(w http.ResponseWriter, r *http.Request)
 	Page(w http.ResponseWriter, r *http.Request)
 	Block(w http.ResponseWriter, r *http.Request)
+	Cache(w http.ResponseWriter, r *http.Request)
 }
 
 func (h *handlers) transportResponse(w http.ResponseWriter, response interface{}) (err error)  {

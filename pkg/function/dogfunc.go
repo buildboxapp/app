@@ -21,7 +21,7 @@ type function struct {
 }
 
 type Function interface {
-	Exec(p string, queryData *[]model.Data, values map[string]interface{}, request model.ServiceIn) (result string, err error)
+	Exec(p string, queryData []model.Data, values map[string]interface{}, request model.ServiceIn, blockname string) (result string, err error)
 	TplFunc() TplFunc
 }
 
@@ -825,19 +825,20 @@ func NewDogFunc(cfg config.Config, tplfunc TplFunc) DogFunc {
 ///////////////////////////////////////////////////////////////
 // Собачья-обработка (поиск в строке @функций и их обработка)
 ///////////////////////////////////////////////////////////////
-func (d *function) Exec(p string, queryData *[]model.Data, values map[string]interface{}, request model.ServiceIn) (result string, err error) {
+func (d *function) Exec(p string, queryData []model.Data, values map[string]interface{}, request model.ServiceIn, blockname string) (result string, err error) {
 
+	var fml = NewFormula(d.cfg, d.dogfunc)
 	if p == "" {
 		return
 	}
 
 	// прогоняем полученную строку такое кол-во раз, сколько вложенных уровней + 1 (для сравнения)
 	for {
-		d.formula.SetValue(p)
-		d.formula.SetValues(values)
-		d.formula.SetDocument(*queryData)
-		d.formula.SetRequest(request)
-		res_parse, err := d.formula.Replace()
+		fml.SetValue(p)
+		fml.SetValues(values)
+		fml.SetDocument(queryData)
+		fml.SetRequest(request)
+		res_parse, err := fml.Replace()
 
 		if err != nil {
 			return result, err
@@ -850,7 +851,7 @@ func (d *function) Exec(p string, queryData *[]model.Data, values map[string]int
 		p = res_parse
 	}
 
-	return
+	return result, err
 }
 
 func (d *function) TplFunc() TplFunc {
