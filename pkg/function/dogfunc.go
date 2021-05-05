@@ -1,11 +1,13 @@
 package function
 
 import (
+	"encoding/json"
 	"fmt"
-	"github.com/buildboxapp/app/pkg/config"
 	"github.com/buildboxapp/app/pkg/model"
+	"github.com/buildboxapp/app/pkg/utils"
 	"github.com/buildboxapp/lib/log"
 	uuid "github.com/satori/go.uuid"
+	"net/http"
 	"regexp"
 	"strconv"
 	"strings"
@@ -14,7 +16,8 @@ import (
 
 
 type function struct {
-	cfg config.Config
+	cfg     model.Config
+	utl     utils.Utils
 	formula Formula
 	dogfunc DogFunc
 	tplfunc TplFunc
@@ -28,13 +31,13 @@ type Function interface {
 ////////////////////////////////////////////////////////////
 
 type formula struct {
-	value 		string `json:"value"`
-	document 	[]model.Data `json:"document"`
-	request		model.ServiceIn
-	inserts		[]*insert
-	values     	map[string]interface{}	//  параметры переданные в шаблон при генерации страницы (доступны в шаблоне как $.Value)
-	cfg 		config.Config
-	dogfunc		DogFunc
+	value    string `json:"value"`
+	document []model.Data `json:"document"`
+	request  model.ServiceIn
+	inserts  []*insert
+	values   map[string]interface{}	//  параметры переданные в шаблон при генерации страницы (доступны в шаблоне как $.Value)
+	cfg      model.Config
+	dogfunc  DogFunc
 }
 
 type Formula interface {
@@ -54,21 +57,23 @@ type Formula interface {
 type insert struct {
 	text 		string 		`json:"text"`
 	arguments 	[]string 	`json:"arguments"`
-	result		string 		`json:"result"`
+	result		interface{} `json:"result"`
 	dogfuncs	dogfunc
 }
 
 // Исчисляемая фукнция с аргументами и параметрами
 // может иметь вложения
 type dogfunc struct {
-	name 		string 		`json:"name"`
-	arguments 	[]string 	`json:"arguments"`
-	result 		string 		`json:"result"`
-	cfg 		config.Config `json:"cfg"`
-	tplfunc		TplFunc
+	name      string       `json:"name"`
+	arguments []string     `json:"arguments"`
+	result    interface{}  `json:"result"`
+	cfg       model.Config `json:"cfg"`
+	utl       utils.Utils
+	tplfunc   TplFunc
 }
 
 type DogFunc interface {
+	Query(r *http.Request, arg []string) (result interface{}, err error)
 	TplValue(v map[string]interface{}, arg []string) (result string, err error)
 	ConfigValue(arg []string) (result string, err error)
 	SplitIndex(arg []string) (result string, err error)
@@ -104,7 +109,7 @@ func (p *formula) Replace() (result string, err error) {
 	}
 
 	for _, v := range p.inserts {
-		p.value = strings.Replace(p.value, v.text, v.result, -1)
+		p.value = strings.Replace(p.value, v.text, fmt.Sprint(v.result), -1)
 	}
 
 	return p.value, err
@@ -192,12 +197,14 @@ func (p *formula) Parse() (err error)  {
 }
 
 func (p *formula) Calculate() (err error) {
-	var result string
+	var result interface{}
 
 	for k, v := range p.inserts {
 		param := strings.ToUpper(v.dogfuncs.name)
 
 		switch param {
+		case "QUERY":
+			result, err = p.dogfunc.Query(p.request.RequestRaw, v.dogfuncs.arguments)
 		case "RAND":
 			uuid := uuid.NewV4().String()
 			result = uuid[1:6]
@@ -272,7 +279,7 @@ func (f *formula) SetInserts(value []*insert)  {
 }
 
 
-func NewFormula(cfg config.Config, dogfunc DogFunc) Formula {
+func NewFormula(cfg model.Config, dogfunc DogFunc) Formula {
 	return &formula{
 		cfg: cfg,
 		dogfunc: dogfunc,
@@ -283,6 +290,58 @@ func NewFormula(cfg config.Config, dogfunc DogFunc) Formula {
 ///////////////////////////////////////////////////
 // Фукнции @ обработки
 ///////////////////////////////////////////////////
+
+// Делаем вложенный запрос
+// аргументы:
+// queryName - первый параметр - имя запрсоа;
+// mode - тип ответа
+// 		id (по-умолчанию) 	- список UID-ов
+// 		data 				- []Data
+//		response			- полный ответ формате Response
+func (d *dogfunc) Query(r *http.Request, arg []string) (result interface{}, err error) {
+	var objs model.Response
+	var mode = "id"
+	if len(arg) == 0 {
+		return nil,fmt.Errorf("%s", "Ошибка в переданных параметрах.")
+	}
+	if len(arg) == 2 {
+		mode = arg[1]
+	}
+
+	formValues := r.PostForm
+	bodyJSON, _ := json.Marshal(formValues)
+
+	// добавляем к пути в запросе переданные в блок параметры ULR-а (возможно там есть параметры для фильтров)
+	filters := r.URL.RawQuery
+	if filters != "" {
+		filters = "?" + filters
+	}
+
+	d.utl.Curl("GET", "query/"+arg[0]+filters, string(bodyJSON), &objs, map[string]string{})
+
+	switch mode {
+	case "data":
+		return objs.Data, err
+	case "response":
+		return objs, err
+	default:
+		var resUIDs []string
+		var respData []model.Data
+
+		// если можно привести, значит формат внутреннего запроса и возвращаем список uid
+		r, _ := json.Marshal(objs.Data)
+		err := json.Unmarshal(r, &respData)
+		if err != nil {
+			return "Error execute dogfunc Query", err
+		}
+		for _, v := range respData {
+			resUIDs = append(resUIDs, v.Uid)
+		}
+		return strings.Join(resUIDs, ","), err
+	}
+
+	return "", err
+}
 
 // Получение значений $.Value шаблона (работает со значением по-умолчанию)
 func (d *dogfunc) TplValue(v map[string]interface{}, arg []string) (result string, err error) {
@@ -801,7 +860,6 @@ func (d *dogfunc) DateModify(arg []string) (result string, err error) {
 	return fmt.Sprint(date.Add(p)), err
 }
 
-
 ///////////////////////////////////////////////////////////////
 // Отправляем почтового сообщения
 func (d *dogfunc) DogSendmail(arg []string) (result string, err error) {
@@ -814,9 +872,10 @@ func (d *dogfunc) DogSendmail(arg []string) (result string, err error) {
 	return
 }
 
-func NewDogFunc(cfg config.Config, tplfunc TplFunc) DogFunc {
+func NewDogFunc(cfg model.Config, utl utils.Utils, tplfunc TplFunc) DogFunc {
 	return &dogfunc{
 		cfg: cfg,
+		utl: utl,
 		tplfunc: tplfunc,
 	}
 }
@@ -858,9 +917,9 @@ func (d *function) TplFunc() TplFunc {
 	return d.tplfunc
 }
 
-func New(cfg config.Config, logger log.Log) Function {
-	tplfunc := NewTplFunc(cfg, logger)
-	dogfunc := NewDogFunc(cfg, tplfunc)
+func New(cfg model.Config, utl utils.Utils, logger log.Log) Function {
+	tplfunc := NewTplFunc(cfg, utl, logger)
+	dogfunc := NewDogFunc(cfg, utl, tplfunc)
 	formula := NewFormula(cfg, dogfunc)
 
 	return &function{

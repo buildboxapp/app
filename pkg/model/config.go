@@ -1,19 +1,19 @@
-package config
+package model
 
 type Config struct {
 
 	ProjectKey         				string         	`envconfig:"PROJECT_KEY" default:"LKHlhb899Y09olUi"`
 
 	// Cache
-	TimeoutCacheGenerate         	Duration  		`envconfig:"TIMEOUT_CACHE_GENERATE" default:"3m" description:"интервал после которого будет реинициализировано обновление кеша для статуса updated"`
+	TimeoutCacheGenerate Duration `envconfig:"TIMEOUT_CACHE_GENERATE" default:"3m" description:"интервал после которого будет реинициализировано обновление кеша для статуса updated"`
 
 	// Config
-	ConfigName         				string         	`envconfig:"CONFIG_NAME" default:""`
-	RootDir         				string         	`envconfig:"ROOT_DIR" default:""`
-	BuildModuleParallel         	Bool         	`envconfig:"BUILD_MODULE_PARALLEL" default:"true"`
-	CompileTemplates         		Bool         	`envconfig:"COMPILE_TEMPLATES" default:"false"`
+	ConfigName          string `envconfig:"CONFIG_NAME" default:""`
+	RootDir             string `envconfig:"ROOT_DIR" default:""`
+	BuildModuleParallel Bool   `envconfig:"BUILD_MODULE_PARALLEL" default:"true"`
+	CompileTemplates    Bool   `envconfig:"COMPILE_TEMPLATES" default:"false"`
 
-	TimeoutBlockGenerate         	Duration  		`envconfig:"TIMEOUT_BLOCK_GENERATE" default:"10s" description:"интервал после которого будет завершена работа по генерации блока"`
+	TimeoutBlockGenerate Duration `envconfig:"TIMEOUT_BLOCK_GENERATE" default:"10s" description:"интервал после которого будет завершена работа по генерации блока"`
 
 	// Pay
 	PayShopid         				string         	`envconfig:"PAY_SHOPID" default:""`
@@ -30,28 +30,28 @@ type Config struct {
 	UidService         				string         	`envconfig:"UID_SERVICE" default:""`
 
 	// Logger
-	LogsDir         				string         	`envconfig:"LOGS_DIR" default:"logs"`
-	LogsLevel         				string         	`envconfig:"LOGS_LEVEL" default:""`
-	LogIntervalReload         		Duration  		`envconfig:"LOG_INTERVAL_RELOAD" default:"10m" description:"интервал проверки необходимости пересозданния нового файла"`
-	LogIntervalClearFiles         	Duration  		`envconfig:"LOG_INTERVAL_CLEAR_FILES" default:"30m" description:"интервал проверка на необходимость очистки старых логов"`
-	LogPeriodSaveFiles         		string  		`envconfig:"LOG_PERION_SAVE_FILES" default:"0-1-0" description:"период хранения логов"`
-	LogIntervalMetric         		Duration  		`envconfig:"LOG_INTERVAL_METRIC" default:"10s" description:"период сохранения метрик в файл логирования"`
+	LogsDir               string   `envconfig:"LOGS_DIR" default:"logs"`
+	LogsLevel             string   `envconfig:"LOGS_LEVEL" default:""`
+	LogIntervalReload     Duration `envconfig:"LOG_INTERVAL_RELOAD" default:"10m" description:"интервал проверки необходимости пересозданния нового файла"`
+	LogIntervalClearFiles Duration `envconfig:"LOG_INTERVAL_CLEAR_FILES" default:"30m" description:"интервал проверка на необходимость очистки старых логов"`
+	LogPeriodSaveFiles    string   `envconfig:"LOG_PERION_SAVE_FILES" default:"0-1-0" description:"период хранения логов"`
+	LogIntervalMetric     Duration `envconfig:"LOG_INTERVAL_METRIC" default:"10s" description:"период сохранения метрик в файл логирования"`
 
-	TplUsers         				Duration  		`envconfig:"TPL_USERS" default:""`
-	TplRoles         				Duration  		`envconfig:"TPL_ROLES" default:""`
-	TplProfiles         			string         	`envconfig:"TPL_PROFILES" default:""`
-	TplDatasource         			Duration  		`envconfig:"TPL_DATASOURCE" default:""`
+	TplUsers      Duration `envconfig:"TPL_USERS" default:""`
+	TplRoles      Duration `envconfig:"TPL_ROLES" default:""`
+	TplProfiles   string   `envconfig:"TPL_PROFILES" default:""`
+	TplDatasource Duration `envconfig:"TPL_DATASOURCE" default:""`
 
-	PK         						string         	`envconfig:"PK" default:""`
-	ProcToleranceExcessLimitSession	Float     		`envconfig:"PROC_TOLERANCE_EXCESS_LIMIT_SESSION" default:"1.1"`
-	Lang         					string         	`envconfig:"LANG" default:"RU"`
-	Redirect_error         			string         	`envconfig:"REDIRECT_ERROR" default:"list/page/error"`
-	Redirect_errorpay         		string         	`envconfig:"REDIRECT_ERRORPAY" default:"list/page/errorpay"`
+	PK                              string `envconfig:"PK" default:""`
+	ProcToleranceExcessLimitSession Float  `envconfig:"PROC_TOLERANCE_EXCESS_LIMIT_SESSION" default:"1.1"`
+	Lang                            string `envconfig:"LANG" default:"RU"`
+	Redirect_error                  string `envconfig:"REDIRECT_ERROR" default:"list/page/error"`
+	Redirect_errorpay               string `envconfig:"REDIRECT_ERRORPAY" default:"list/page/errorpay"`
 
-	MaxRequestBodySize 				Int       		`envconfig:"MAX_REQUEST_BODY_SIZE" default:"10485760"`
-	ReadTimeout        				Duration 		`envconnfig:"READ_TIMEOUT" default:"10s"`
-	WriteTimeout        			Duration 		`envconnfig:"WRITE_TIMEOUT" default:"10s"`
-	ReadBufferSize     				Int    			`envconfig:"READ_BUFFER_SIZE" default:"16384"`
+	MaxRequestBodySize Int      `envconfig:"MAX_REQUEST_BODY_SIZE" default:"10485760"`
+	ReadTimeout        Duration `envconnfig:"READ_TIMEOUT" default:"10s"`
+	WriteTimeout       Duration `envconnfig:"WRITE_TIMEOUT" default:"10s"`
+	ReadBufferSize     Int      `envconfig:"READ_BUFFER_SIZE" default:"16384"`
 
 
 
@@ -104,8 +104,8 @@ type Config struct {
 	PortAutoInterval	string `envconfig:"PORT_AUTO_INTERVAL" default:""`
 	Projectuid	string `envconfig:"PROJECTUID" default:""`
 
-	ReplicasApp	Int `envconfig:"REPLICAS_APP" default:""`
-	Robot	string `envconfig:"ROBOT" default:""`
+	ReplicasApp Int    `envconfig:"REPLICAS_APP" default:""`
+	Robot       string `envconfig:"ROBOT" default:""`
 
 	Title	string `envconfig:"TITLE" default:""`
 	ToBuild	string `envconfig:"TO_BUILD" default:""`

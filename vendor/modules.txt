@@ -24,9 +24,10 @@ github.com/alecthomas/template
 github.com/alecthomas/template/parse
 # github.com/buildboxapp/api v1.0.6
 ## explicit
-# github.com/buildboxapp/lib v1.1.2
+# github.com/buildboxapp/lib v1.1.26
 ## explicit
 github.com/buildboxapp/lib
+github.com/buildboxapp/lib/config
 github.com/buildboxapp/lib/log
 github.com/buildboxapp/lib/metric
 # github.com/buildboxapp/logger v0.1.0
@@ -36,7 +37,6 @@ github.com/buildboxapp/lib/metric
 github.com/cpuguy83/go-md2man/v2/md2man
 # github.com/fatih/structs v1.1.0
 ## explicit
-github.com/fatih/structs
 # github.com/getlantern/context v0.0.0-20190109183933-c447772a6520
 ## explicit
 # github.com/getlantern/errors v1.0.1
@@ -167,7 +167,7 @@ golang.org/x/crypto/scrypt
 golang.org/x/net/idna
 golang.org/x/net/webdav
 golang.org/x/net/webdav/internal/xml
-# golang.org/x/sys v0.0.0-20210119212857-b64e53b001e4
+# golang.org/x/sys v0.0.0-20210503173754-0981d6026fa6
 ## explicit
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix

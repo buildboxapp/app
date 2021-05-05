@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/buildboxapp/app/pkg/cache"
-	"github.com/buildboxapp/app/pkg/config"
 	"github.com/buildboxapp/app/pkg/function"
+	"github.com/buildboxapp/app/pkg/model"
 	"github.com/buildboxapp/app/pkg/servers"
 	"github.com/buildboxapp/app/pkg/servers/httpserver"
 	"github.com/buildboxapp/app/pkg/service"
@@ -18,9 +18,8 @@ import (
 
 	"github.com/buildboxapp/lib"
 	"github.com/buildboxapp/lib/log"
+	"github.com/buildboxapp/lib/config"
 	"github.com/buildboxapp/lib/metric"
-
-	"github.com/urfave/cli"
 
 	"io"
 )
@@ -30,68 +29,34 @@ const sep = string(os.PathSeparator)
 var fileLog *os.File
 var outpurLog io.Writer
 
-
 func main()  {
+	lib.RunServiceFuncCLI(Start)
+
 	// закрываем файл с логами
 	defer fileLog.Close()
-
-	defaultConfig, err := lib.DefaultConfig()
-	if err != nil {
-		return
-	}
-	rootDir, err := lib.RootDir()
-	if err != nil {
-		return
-	}
-
-	appCLI := cli.NewApp()
-	appCLI.Usage = "Demon Buildbox Proxy started"
-	appCLI.Commands = []cli.Command{
-		{
-			Name:"start", ShortName: "",
-			Usage: "Start single Buildbox APP process",
-			Flags: []cli.Flag{
-				cli.StringFlag{
-					Name:	"config, c",
-					Usage:	"Название файла конфигурации, с которым будет запущен сервис",
-					Value:	defaultConfig,
-				},
-				cli.StringFlag{
-					Name:	"dir, d",
-					Usage:	"Путь к шаблонам",
-					Value:	rootDir,
-				},
-				cli.StringFlag{
-					Name:	"port, p",
-					Usage:	"Порт, на котором запустить процесс",
-					Value:	"",
-				},
-			},
-			Action: func(c *cli.Context) error {
-				configfile := c.String("config")
-				port := c.String("port")
-				dir := c.String("dir")
-
-				Start(configfile, dir, port)
-
-				return nil
-			},
-		},
-	}
-
-	appCLI.Run(os.Args)
-
-	return
 }
 
 // стартуем сервис приложения
 func Start(configfile, dir, port string) {
+	var cfg model.Config
 	done := color.Green("[OK]")
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	// инициируем пакеты
-	var cfg = config.New(configfile)
+	err := config.Load(configfile, &cfg)
+	if err != nil {
+		fmt.Printf("%s (%s)", "Error. Load config is failed.", err)
+		return
+	}
+
+	cfg.UidService = strings.Split(configfile, ".")[0]
+
+	// формируем значение переменных по-умолчанию или исходя из требований сервиса
+	cfg.SetClientPath()
+	cfg.SetRootDir()
+	cfg.SetConfigName()
+
 
 	///////////////// ЛОГИРОВАНИЕ //////////////////
 	// формирование пути к лог-файлам и метрикам
@@ -141,29 +106,31 @@ func Start(configfile, dir, port string) {
 		}
 	}()
 
-	fnc := function.New(
-		cfg,
-		*logger,
-	)
-
 	ult := utils.New(
 		cfg,
-		*logger,
+		logger,
 	)
+
+	fnc := function.New(
+		cfg,
+		ult,
+		logger,
+	)
+
 
 	port = ult.AddressProxy()
 	cfg.PortApp = port
 
 	cach := cache.New(
 		cfg,
-		*logger,
+		logger,
 		fnc,
 		ult,
 	)
 
 	// собираем сервис
 	src := service.New(
-		*logger,
+		logger,
 		cfg,
 		metrics,
 		ult,
@@ -176,7 +143,7 @@ func Start(configfile, dir, port string) {
 		cfg,
 		src,
 		metrics,
-		*logger,
+		logger,
 	)
 
 	// для завершения сервиса ждем сигнал в процесс
@@ -194,8 +161,6 @@ func Start(configfile, dir, port string) {
 	srv.Run()
 
 }
-
-
 
 func ListenForShutdown(ch <- chan os.Signal)  {
 	<- ch

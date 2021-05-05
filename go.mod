@@ -9,10 +9,10 @@ require (
 	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
 	github.com/buildboxapp/api v1.0.6 // indirect
-	github.com/buildboxapp/lib v1.1.2
+	github.com/buildboxapp/lib v1.1.26
 	github.com/buildboxapp/logger v0.1.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.0 // indirect
-	github.com/fatih/structs v1.1.0
+	github.com/fatih/structs v1.1.0 // indirect
 	github.com/getlantern/context v0.0.0-20190109183933-c447772a6520 // indirect
 	github.com/getlantern/errors v1.0.1 // indirect
 	github.com/getlantern/hex v0.0.0-20190417191902-c6586a6fe0b7 // indirect
@@ -37,8 +37,8 @@ require (
 	github.com/sirupsen/logrus v1.7.0 // indirect
 	github.com/swaggo/http-swagger v1.0.0
 	github.com/swaggo/swag v1.7.0
-	github.com/urfave/cli v1.22.5
+	github.com/urfave/cli v1.22.5 // indirect
 	github.com/valyala/fasttemplate v1.2.1 // indirect
 	go.uber.org/zap v1.16.0
-	golang.org/x/sys v0.0.0-20210119212857-b64e53b001e4 // indirect
+	golang.org/x/sys v0.0.0-20210503173754-0981d6026fa6 // indirect
 )

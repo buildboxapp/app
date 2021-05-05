@@ -3,7 +3,6 @@ package cache
 import "C"
 import (
 	"fmt"
-	"github.com/buildboxapp/app/pkg/config"
 	"github.com/buildboxapp/app/pkg/function"
 	"github.com/buildboxapp/app/pkg/model"
 	"github.com/buildboxapp/app/pkg/utils"
@@ -17,12 +16,12 @@ import (
 )
 
 type cache struct {
-	DB *reindexer.Reindexer
-	cfg config.Config
-	logger log.Log
+	DB       *reindexer.Reindexer
+	cfg      model.Config
+	logger   log.Log
 	function function.Function
-	active bool `json:"active"`
-	utl utils.Utils
+	active   bool `json:"active"`
+	utl      utils.Utils
 }
 
 type Cache interface {
@@ -202,7 +201,7 @@ func (c *cache) Clear(links string) (count int, err error)  {
 	return
 }
 
-func New(cfg config.Config, logger log.Log, function function.Function, utl utils.Utils) Cache {
+func New(cfg model.Config, logger log.Log, function function.Function, utl utils.Utils) Cache {
 	done := color.Green("[OK]")
 	fail := color.Red("[Fail]")
 	var cach = cache{

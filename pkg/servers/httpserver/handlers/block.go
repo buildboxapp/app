@@ -31,7 +31,7 @@ func (h *handlers) Block(w http.ResponseWriter, r *http.Request) {
 		h.transportError(w, 500, err, "[Block] Error function execution (BlockEncodeResponse)")
 		return
 	}
-	err = h.transportResponse(w, response)
+	err = h.transportResponseHTTP(w, string(response))
 	if err != nil {
 		h.transportError(w, 500, err, "[Page] Error function execution (transportResponse)")
 		return
@@ -54,6 +54,8 @@ func blockDecodeRequest(ctx context.Context, r *http.Request) (in model.ServiceI
 	in.Host = r.Host
 	in.Method = r.Method
 	in.Query = r.URL.Query()
+
+	in.RequestRaw = r
 
 	//cookieCurrent, err := r.Cookie("sessionID")
 	//token := ""

@@ -16,13 +16,6 @@ func Curl(method, urlc, bodyJSON string, response interface{}, headers map[strin
 	var req *http.Request
 	client := &http.Client{}
 
-	// дополняем переданными заголовками
-	if len(headers) > 0 {
-		for k, v := range headers {
-			req.Header.Add(k, v)
-		}
-	}
-
 	if len(urlapi) > 0 {
 		if urlapi[len(urlapi)-1:] != "/" {
 			urlapi = urlapi + "/"
@@ -104,6 +97,13 @@ func Curl(method, urlc, bodyJSON string, response interface{}, headers map[strin
 
 	if err != nil {
 		return "", err
+	}
+
+	// дополняем переданными заголовками
+	if len(headers) > 0 {
+		for k, v := range headers {
+			req.Header.Add(k, v)
+		}
 	}
 
 	resp, err := client.Do(req)

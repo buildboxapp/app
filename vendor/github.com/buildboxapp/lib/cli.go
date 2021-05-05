@@ -10,9 +10,10 @@ import (
 
 	"github.com/labstack/gommon/color"
 
+	"github.com/urfave/cli"
+
 	"log"
 )
-
 
 const sep = string(os.PathSeparator)
 
@@ -240,74 +241,6 @@ func PidsByConfig(config, portProxy string) (result []string, err error) {
 	return
 }
 
-// возвращаем путь для запуска сервиса исходя из данных конфигруации и переданных параметров
-// читаем конфигурацию и смотрим - что это?
-// если конфигурация сервера - то обращаем внимание на алиас (gui/api/proxy) и возвращаем путь для алиаса (сервиса)
-// если алиас не соотверствует или пустой - значит возвращаем путь к запуску сервера (/buildbox)
-// если конфигурация сервиса/приложения - возвращаем путь файла запуска
-func PathByConfig(config, domain, alias string) (result string, err error) {
-
-	defer func() {
-		// убираем префикс доступа к файлу через http - /buildbox/gui или если загружено через подпроект то /проект/gui
-		result = strings.ReplaceAll(result, "/buildbox/gui", "")
-		result = strings.ReplaceAll(result, domain+"/gui", "")
-	}()
-
-	cfg, _, err := ReadConf(config)
-	if err != nil {
-		mes := "Error reading confg config:" + config
-		fmt.Println(mes)
-		return
-	}
-
-	// если это сервис
-	if cfg["service_exec"] != "" {
-		result = cfg["service_exec"]
-		return result, nil
-	}
-
-	// если это приложение
-	if cfg["app_version_pointsrc"] != "" {
-		result = cfg["app_version_pointsrc"]
-		return result, nil
-	}
-
-	// если передано - запустить API для сервера
-	if alias == "api" {
-		if cfg["api_version_pointsrc"] != "" {
-			result = cfg["api_version_pointsrc"]
-		} else {
-			err = fmt.Errorf("%s", "Error. Start API-service failed. Field from path is empty")
-		}
-		return result, err
-	}
-
-	// если передано - запустить GUI для сервера
-	if alias == "gui" {
-		if cfg["gui_version_pointsrc"] != "" {
-			result = cfg["gui_version_pointsrc"]
-		} else {
-			err = fmt.Errorf("%s", "Error. Start GUI-service failed. Field from path is empty")
-		}
-		return result, err
-	}
-
-	// если передано - запустить PROXY для сервера
-	if alias == "proxy" {
-		if cfg["proxy_version_pointsrc"] != "" {
-			result = cfg["proxy_version_pointsrc"]
-		} else {
-			err = fmt.Errorf("%s", "Error. Start PROXY-service failed. Field from path is empty")
-		}
-		return result, err
-	}
-
-	// если ничего до этого не выбралось - значит запускаем сервер
-	result = "buildbox"
-
-	return result, err
-}
-
 // получаем строки пидов подходящих под условия, в котором:
 // domain - название проекта (домен)
 // alias - название алиас-сервиса (gui/api/proxy и тд - то, что в мап-прокси идет второй частью адреса)
@@ -377,42 +310,89 @@ func Destroy(portProxy string) (err error) {
 }
 
 // инициализация приложения
-func Install() (err error) {
+//func Install() (err error) {
+//
+//	// 1. задание переменных окружения
+//	currentDir, err := CurrentDir()
+//	if err != nil {
+//		return
+//	}
+//	os.Setenv("BBPATH", currentDir)
+//
+//	//var rootPath = os.Getenv("BBPATH")
+//
+//	//fmt.Println(rootPath)
+//	//path, _ := os.LookupEnv("BBPATH")
+//	//fmt.Print("BBPATH: ", path)
+//
+//	// 2. копирование файла запуска в /etc/bin
+//	//src := "./buildbox"
+//	//dst := "/usr/bin/buildbox"
+//	//
+//	//in, err := os.Open(src)
+//	//if err != nil {
+//	//	return err
+//	//}
+//	//defer in.Close()
+//	//
+//	//out, err := os.Create(dst)
+//	//if err != nil {
+//	//	return err
+//	//}
+//	//defer out.Close()
+//	//
+//	//_, err = io.Copy(out, in)
+//	//if err != nil {
+//	//	return err
+//	//}
+//	//return out.Close()
+//
+//	return err
+//}
 
-	// 1. задание переменных окружения
-	currentDir, err := CurrentDir()
-	if err != nil {
-		return
+// обраатываем параметры с консоли и вызываем переданую функцию
+func RunServiceFuncCLI(funcStart func(configfile, dir, port string))  {
+	var err error
+
+	appCLI := cli.NewApp()
+	appCLI.Usage = "Demon Buildbox Proxy started"
+	appCLI.Commands = []cli.Command{
+		{
+			Name:"start", ShortName: "",
+			Usage: "Start single Buildbox-service process",
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:	"config, c",
+					Usage:	"Название файла конфигурации, с которым будет запущен сервис",
+					Value:	"default",
+				},
+				cli.StringFlag{
+					Name:	"dir, d",
+					Usage:	"Путь к шаблонам",
+					Value:	"default",
+				},
+				cli.StringFlag{
+					Name:	"port, p",
+					Usage:	"Порт, на котором запустить процесс",
+					Value:	"",
+				},
+			},
+			Action: func(c *cli.Context) error {
+				configfile := c.String("config")
+				port := c.String("port")
+				dir := c.String("dir")
+
+				if dir == "default" {
+					dir, err = RootDir()
+				}
+
+				funcStart(configfile, dir, port)
+				return nil
+			},
+		},
 	}
-	os.Setenv("BBPATH", currentDir)
+	appCLI.Run(os.Args)
 
-	//var rootPath = os.Getenv("BBPATH")
-
-	//fmt.Println(rootPath)
-	//path, _ := os.LookupEnv("BBPATH")
-	//fmt.Print("BBPATH: ", path)
-
-	// 2. копирование файла запуска в /etc/bin
-	//src := "./buildbox"
-	//dst := "/usr/bin/buildbox"
-	//
-	//in, err := os.Open(src)
-	//if err != nil {
-	//	return err
-	//}
-	//defer in.Close()
-	//
-	//out, err := os.Create(dst)
-	//if err != nil {
-	//	return err
-	//}
-	//defer out.Close()
-	//
-	//_, err = io.Copy(out, in)
-	//if err != nil {
-	//	return err
-	//}
-	//return out.Close()
-
-	return err
+	return
 }
+

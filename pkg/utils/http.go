@@ -133,5 +133,7 @@ func (u *utils) Curl(method, urlc, bodyJSON string, response interface{}, header
 	// всегда отдаем в интерфейсе результат (полезно, когда внешние запросы или сериализация на клиенте)
 	//json.Unmarshal([]byte(responseString), &result)
 
+	//fmt.Println(responseString)
+
 	return responseString, err
 }

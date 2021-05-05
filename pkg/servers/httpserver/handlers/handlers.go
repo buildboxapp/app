@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"github.com/buildboxapp/app/pkg/config"
 	"github.com/buildboxapp/app/pkg/model"
 	"github.com/buildboxapp/app/pkg/service"
 	bblog "github.com/buildboxapp/lib/log"
@@ -11,8 +10,8 @@ import (
 
 type handlers struct {
 	service service.Service
-	logger bblog.Log
-	cfg config.Config
+	logger  bblog.Log
+	cfg     model.Config
 }
 
 type Handlers interface {
@@ -61,7 +60,7 @@ func (h *handlers) transportResponseHTTP(w http.ResponseWriter, response string)
 func New(
 	service service.Service,
 	logger bblog.Log,
-	cfg config.Config,
+	cfg model.Config,
 ) Handlers {
 	return &handlers{
 		service,

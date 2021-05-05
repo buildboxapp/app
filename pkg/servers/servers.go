@@ -2,7 +2,7 @@
 package servers
 
 import (
-	"github.com/buildboxapp/app/pkg/config"
+	"github.com/buildboxapp/app/pkg/model"
 	"github.com/buildboxapp/app/pkg/servers/httpserver"
 	"github.com/buildboxapp/app/pkg/service"
 	bbmetric "github.com/buildboxapp/lib/metric"
@@ -10,11 +10,11 @@ import (
 )
 
 type servers struct {
-	mode string
-	service service.Service
+	mode       string
+	service    service.Service
 	httpserver httpserver.Server
-	metrics bbmetric.ServiceMetric
-	cfg config.Config
+	metrics    bbmetric.ServiceMetric
+	cfg        model.Config
 }
 
 type Servers interface {
@@ -33,7 +33,7 @@ func New(
 	service service.Service,
 	httpserver httpserver.Server,
 	metrics bbmetric.ServiceMetric,
-	cfg config.Config,
+	cfg model.Config,
 ) Servers {
 	return &servers{
 		mode,

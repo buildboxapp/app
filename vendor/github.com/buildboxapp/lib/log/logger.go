@@ -30,7 +30,7 @@ type LogLine struct {
 	Uid string `json:"uid"`
 }
 
-type Log struct {
+type log struct {
 
 	// куда логируем? stdout/;*os.File на файл, в который будем писать логи
 	Output io.Writer `json:"output"`
@@ -85,124 +85,136 @@ type Log struct {
 	PeriodSaveFiles string `json:"period_save_files"`
 }
 
-func (c *Log) Trace(args ...interface{}) {
-	if strings.Contains(c.Levels, "Trace") {
-		logrusB.SetOutput(c.Output)
+type Log interface {
+	Trace(args ...interface{})
+	Debug(args ...interface{})
+	Info(args ...interface{})
+	Warning(args ...interface{})
+	Error(err error, args ...interface{})
+	Panic(err error, args ...interface{})
+	Exit(err error, args ...interface{})
+	RotateInit(ctx context.Context)
+	GetOutput() io.Writer
+}
+
+func (l *log) Trace(args ...interface{}) {
+	if strings.Contains(l.Levels, "Trace") {
+		logrusB.SetOutput(l.Output)
 		logrusB.SetFormatter(&logrus.JSONFormatter{})
 		logrusB.SetLevel(logrus.TraceLevel)
 
 		logrusB.WithFields(logrus.Fields{
-			"name":   c.Name,
-			"uid":    c.UID,
-			"srv":    c.Service,
-			"config": c.Config,
+			"name":   l.Name,
+			"uid":    l.UID,
+			"srv":    l.Service,
+			"config": l.Config,
 		}).Trace(args...)
 	}
 }
 
-func (c *Log) Debug(args ...interface{}) {
-	if strings.Contains(c.Levels, "Debug") {
-		logrusB.SetOutput(c.Output)
+func (l *log) Debug(args ...interface{}) {
+	if strings.Contains(l.Levels, "Debug") {
+		logrusB.SetOutput(l.Output)
 		logrusB.SetFormatter(&logrus.JSONFormatter{})
 
 		// Only log the warning severity or above.
 		logrusB.SetLevel(logrus.DebugLevel)
 
 		logrusB.WithFields(logrus.Fields{
-			"name":   c.Name,
-			"uid":    c.UID,
-			"srv":    c.Service,
-			"config": c.Config,
+			"name":   l.Name,
+			"uid":    l.UID,
+			"srv":    l.Service,
+			"config": l.Config,
 		}).Debug(args...)
 	}
 }
 
-func (c *Log) Info(args ...interface{}) {
-	if strings.Contains(c.Levels, "Info") {
-		logrusB.SetOutput(c.Output)
+func (l *log) Info(args ...interface{}) {
+	if strings.Contains(l.Levels, "Info") {
+		logrusB.SetOutput(l.Output)
 		logrusB.SetFormatter(&logrus.JSONFormatter{})
 
 		logrusB.SetLevel(logrus.InfoLevel)
 
 		logrusB.WithFields(logrus.Fields{
-			"name":   c.Name,
-			"uid":    c.UID,
-			"srv":    c.Service,
-			"config": c.Config,
+			"name":   l.Name,
+			"uid":    l.UID,
+			"srv":    l.Service,
+			"config": l.Config,
 		}).Info(args...)
 	}
 }
 
-func (c *Log) Warning(args ...interface{}) {
-	if strings.Contains(c.Levels, "Warning") {
-		logrusB.SetOutput(c.Output)
+func (l *log) Warning(args ...interface{}) {
+	if strings.Contains(l.Levels, "Warning") {
+		logrusB.SetOutput(l.Output)
 		logrusB.SetFormatter(&logrus.JSONFormatter{})
 		logrusB.SetLevel(logrus.WarnLevel)
 
 		logrusB.WithFields(logrus.Fields{
-			"name":   c.Name,
-			"uid":    c.UID,
-			"srv":    c.Service,
-			"config": c.Config,
+			"name":   l.Name,
+			"uid":    l.UID,
+			"srv":    l.Service,
+			"config": l.Config,
 		}).Warn(args...)
 	}
 }
 
-func (c *Log) Error(err error, args ...interface{}) {
-	if strings.Contains(c.Levels, "Error") {
-		logrusB.SetOutput(c.Output)
+func (l *log) Error(err error, args ...interface{}) {
+	if strings.Contains(l.Levels, "Error") {
+		logrusB.SetOutput(l.Output)
 		logrusB.SetFormatter(&logrus.JSONFormatter{})
 		logrusB.SetLevel(logrus.ErrorLevel)
 
 		logrusB.WithFields(logrus.Fields{
-			"name":   c.Name,
-			"uid":    c.UID,
-			"srv":    c.Service,
-			"config": c.Config,
+			"name":   l.Name,
+			"uid":    l.UID,
+			"srv":    l.Service,
+			"config": l.Config,
 			"error":  fmt.Sprint(err),
 		}).Error(args...)
 	}
 }
 
-func (c *Log) Panic(err error, args ...interface{}) {
-	if strings.Contains(c.Levels, "Panic") {
-		logrusB.SetOutput(c.Output)
+func (l *log) Panic(err error, args ...interface{}) {
+	if strings.Contains(l.Levels, "Panic") {
+		logrusB.SetOutput(l.Output)
 		logrusB.SetFormatter(&logrus.JSONFormatter{})
 		logrusB.SetLevel(logrus.PanicLevel)
 
 		logrusB.WithFields(logrus.Fields{
-			"name":   c.Name,
-			"uid":    c.UID,
-			"srv":    c.Service,
-			"config": c.Config,
+			"name":   l.Name,
+			"uid":    l.UID,
+			"srv":    l.Service,
+			"config": l.Config,
 			"error":  fmt.Sprint(err),
 		}).Panic(args...)
 	}
 }
 
 // внутренняя ф-ция логирования и прекращения работы программы
-func (c *Log) Exit(err error, args ...interface{}) {
-	if strings.Contains(c.Levels, "Fatal") {
-		logrusB.SetOutput(c.Output)
+func (l *log) Exit(err error, args ...interface{}) {
+	if strings.Contains(l.Levels, "Fatal") {
+		logrusB.SetOutput(l.Output)
 		logrusB.SetFormatter(&logrus.JSONFormatter{})
 		logrusB.SetLevel(logrus.FatalLevel)
 
 		logrusB.WithFields(logrus.Fields{
-			"name":   c.Name,
-			"uid":    c.UID,
-			"srv":    c.Service,
-			"config": c.Config,
+			"name":   l.Name,
+			"uid":    l.UID,
+			"srv":    l.Service,
+			"config": l.Config,
 			"error":  fmt.Sprint(err),
 		}).Fatal(args...)
 	}
 }
 
 // Переинициализация файла логирования
-func (c *Log) RotateInit(ctx context.Context) {
+func (l *log) RotateInit(ctx context.Context) {
 
 	// попытка обновить файл (раз в 10 минут)
 	go func() {
-		ticker := time.NewTicker(c.IntervalReload)
+		ticker := time.NewTicker(l.IntervalReload)
 		defer ticker.Stop()
 
 		for {
@@ -210,42 +222,42 @@ func (c *Log) RotateInit(ctx context.Context) {
 			case <-ctx.Done():
 				return
 			case <-ticker.C:
-				b := New(c.Dir, c.Levels, c.UID, c.Name, c.Service, c.Config, c.IntervalReload, c.IntervalClearFiles, c.PeriodSaveFiles)
-				c.Output = b.Output
-				ticker = time.NewTicker(c.IntervalReload)
+				b := New(l.Dir, l.Levels, l.UID, l.Name, l.Service, l.Config, l.IntervalReload, l.IntervalClearFiles, l.PeriodSaveFiles)
+				l.Output = b.GetOutput()
+				ticker = time.NewTicker(l.IntervalReload)
 			}
 		}
 	}()
 
 	// попытка очистки старых файлов (каждые пол часа)
 	go func() {
-		ticker := time.NewTicker(c.IntervalClearFiles)
+		ticker := time.NewTicker(l.IntervalClearFiles)
 		defer ticker.Stop()
 
 		// получаем период, через который мы будем удалять файлы
-		period := c.PeriodSaveFiles
+		period := l.PeriodSaveFiles
 		if period == "" {
-			c.Error(fmt.Errorf("%s", "Fail perion save log files. (expected format: year-month-day; eg: 0-1-0)"))
+			l.Error(fmt.Errorf("%s", "Fail perion save log files. (expected format: year-month-day; eg: 0-1-0)"))
 			return
 		}
 		slPeriod := strings.Split(period, "-")
 		if len(slPeriod) < 3 {
-			c.Error(fmt.Errorf("%s", "Fail perion save log files. (expected format: year-month-day; eg: 0-1-0)"))
+			l.Error(fmt.Errorf("%s", "Fail perion save log files. (expected format: year-month-day; eg: 0-1-0)"))
 			return
 		}
 
 		// получаем числовые значения года месяца и дня для расчета даты удаления файлов
 		year, err := strconv.Atoi(slPeriod[0])
 		if err != nil {
-			c.Error(err, "Fail converted Year from period saved log files. (expected format: year-month-day; eg: 0-1-0)")
+			l.Error(err, "Fail converted Year from period saved log files. (expected format: year-month-day; eg: 0-1-0)")
 		}
 		month, err := strconv.Atoi(slPeriod[1])
 		if err != nil {
-			c.Error(err, "Fail converted Month from period saved log files. (expected format: year-month-day; eg: 0-1-0)")
+			l.Error(err, "Fail converted Month from period saved log files. (expected format: year-month-day; eg: 0-1-0)")
 		}
 		day, err := strconv.Atoi(slPeriod[2])
 		if err != nil {
-			c.Error(err, "Fail converted Day from period saved log files. (expected format: year-month-day; eg: 0-1-0)")
+			l.Error(err, "Fail converted Day from period saved log files. (expected format: year-month-day; eg: 0-1-0)")
 		}
 
 		for {
@@ -257,33 +269,37 @@ func (c *Log) RotateInit(ctx context.Context) {
 				fileMonthAgoDate := oneMonthAgo.Format("2006.01.02")
 
 				// пробегаем директорию и читаем все файлы, если имя меньше текущее время - месяц = удаляем
-				directory, _ := os.Open(c.Dir)
+				directory, _ := os.Open(l.Dir)
 				objects, err := directory.Readdir(-1)
 				if err != nil {
-					c.Error(err, "Error read directory: ", directory)
+					l.Error(err, "Error read directory: ", directory)
 					return
 				}
 
 				for _, obj := range objects {
 					filename := obj.Name()
-					filenameMonthAgoDate := fileMonthAgoDate + "_" + c.Service
+					filenameMonthAgoDate := fileMonthAgoDate + "_" + l.Service
 
 					if filenameMonthAgoDate > filename {
-						pathFile := c.Dir + sep + filename
+						pathFile := l.Dir + sep + filename
 						err = os.Remove(pathFile)
 						if err != nil {
-							c.Error(err, "Error deleted file: ", pathFile)
+							l.Error(err, "Error deleted file: ", pathFile)
 							return
 						}
 					}
 				}
-				ticker = time.NewTicker(c.IntervalClearFiles)
+				ticker = time.NewTicker(l.IntervalClearFiles)
 			}
 		}
 	}()
 }
 
-func New(logsDir, level, uid, name, srv, config string, intervalReload, intervalClearFiles time.Duration, periodSaveFiles string) *Log {
+func (l *log) GetOutput() io.Writer  {
+	return l.Output
+}
+
+func New(logsDir, level, uid, name, srv, config string, intervalReload, intervalClearFiles time.Duration, periodSaveFiles string) Log {
 	var output io.Writer
 	var err error
 	var mode os.FileMode
@@ -305,7 +321,7 @@ func New(logsDir, level, uid, name, srv, config string, intervalReload, interval
 		return nil
 	}
 
-	return &Log{
+	return &log{
 		Output:             output,
 		Levels:             level,
 		UID:                uid,

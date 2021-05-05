@@ -3,6 +3,7 @@ package httpserver
 import (
 	"context"
 	"fmt"
+	"github.com/buildboxapp/app/pkg/model"
 	"github.com/buildboxapp/app/pkg/service"
 	"github.com/buildboxapp/lib/log"
 	bbmetric "github.com/buildboxapp/lib/metric"
@@ -14,14 +15,12 @@ import (
 
 	// should be so!
 	_ "github.com/buildboxapp/app/pkg/servers/docs"
-
-	"github.com/buildboxapp/app/pkg/config"
 )
 
 type httpserver struct {
-	ctx context.Context
-	cfg config.Config
-	src service.Service
+	ctx    context.Context
+	cfg    model.Config
+	src    service.Service
 	metric bbmetric.ServiceMetric
 	logger log.Log
 }
@@ -58,7 +57,7 @@ func (h *httpserver) Run() error {
 
 func New(
 	ctx context.Context,
-	cfg config.Config,
+	cfg model.Config,
 	src service.Service,
 	metric bbmetric.ServiceMetric,
 	logger log.Log,

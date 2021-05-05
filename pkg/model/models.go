@@ -2,7 +2,6 @@ package model
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/buildboxapp/lib/log"
 	bbmetric "github.com/buildboxapp/lib/metric"
@@ -14,7 +13,7 @@ import (
 
 type App struct {
 	State 	map[string]string
-	Logger  *log.Log
+	Logger  log.Log
 	ServiceMetrics bbmetric.ServiceMetric
 	UrlGUI string `json:"url_gui"`
 	UrlAPI string `json:"url_api"`
@@ -395,8 +394,8 @@ func (p *Block) CSSPath() {
 func (s *App) Get(key string) (value string) {
 	value, found := s.State[key]
 	if !found {
-		err := errors.New("Key '" + key + "' from application state not found")
-		s.Logger.Error(err)
+		//err := errors.New("Key '" + key + "' from application state not found")
+		//s.Logger.Error(err)
 	}
 	return value
 }

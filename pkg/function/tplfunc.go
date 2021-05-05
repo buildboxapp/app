@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Masterminds/sprig"
-	"github.com/buildboxapp/app/pkg/config"
 	"github.com/buildboxapp/app/pkg/model"
 	"github.com/buildboxapp/app/pkg/utils"
 	"github.com/buildboxapp/lib/log"
@@ -28,7 +27,8 @@ import (
 var FuncMapS = sprig.FuncMap()
 
 type tplfunc struct {
-	cfg config.Config
+	cfg    model.Config
+	utl    utils.Utils
 	logger log.Log
 }
 
@@ -83,6 +83,7 @@ type TplFunc interface {
 	Unmarshal(i string) (res interface{})
 	Value(element string, configuration, data interface{}) (result interface{})
 	Output(element string, configuration, data interface{}, resulttype string) (result interface{})
+	ObjFromID(data interface{}, id string) (result interface{})
 }
 
 // возвращаем значение карты функции
@@ -92,6 +93,7 @@ func (t *tplfunc) GetFuncMap() template.FuncMap {
 		"attr":	 		 t.Attr,
 		"datetotext":	 t.Datetotext,
 		"output": 	 	 t.Output,
+		"objfromid": 	 t.ObjFromID,
 		"cut":			 t.Cut,
 		"concatination": t.Concatination,
 		"join": 		 t.Join,
@@ -275,7 +277,7 @@ func (t *tplfunc) Mulfloat(a float64, v ...float64) float64 {
 // обработка @-функций внутри конфигурации (в шаблонизаторе)
 func (t *tplfunc) Confparse(configuration string, r *http.Request, queryData interface{}) (result interface{})  {
 	var d model.Data
-	var frml = New(t.cfg, t.logger)
+	var frml = New(t.cfg, t.utl, t.logger)
 
 	b, err := json.Marshal(queryData)
 	json.Unmarshal(b, &d)
@@ -301,7 +303,7 @@ func (t *tplfunc) Confparse(configuration string, r *http.Request, queryData int
 
 // обработка @-функций внутри шаблонизатора
 func (t *tplfunc) Dogparse(p string, r *http.Request, queryData interface{}, values map[string]interface{}) (result string)  {
-	var frml = New(t.cfg, t.logger)
+	var frml = New(t.cfg, t.utl, t.logger)
 	var d model.Data
 
 	b, _ := json.Marshal(queryData)
@@ -861,6 +863,20 @@ func (t *tplfunc) Value(element string, configuration, data interface{}) (result
 	return result
 }
 
+
+// получить объект из массива объектов по id
+func (t *tplfunc) ObjFromID(data interface{}, id string) (result interface{}) {
+	var dt []model.Data
+	json.Unmarshal([]byte(t.Marshal(data)), &dt)
+	for _, v := range dt {
+		if v.Id == id {
+			return v
+		}
+	}
+
+	return "nil"
+}
+
 // получаем значение из массива данных по имени элемента
 // ПЕРЕДЕЛАТЬ! приходится постоянно сериализовать данные
 func (t *tplfunc) Output(element string, configuration, data interface{}, resulttype string) (result interface{}) {
@@ -952,9 +968,10 @@ func (t *tplfunc) requestToIn(r *http.Request) (result model.ServiceIn) {
 }
 
 
-func NewTplFunc(cfg config.Config, logger log.Log) TplFunc {
+func NewTplFunc(cfg model.Config, utl utils.Utils, logger log.Log) TplFunc {
 	r := &tplfunc{
 		cfg: cfg,
+		utl: utl,
 		logger: logger,
 	}
 

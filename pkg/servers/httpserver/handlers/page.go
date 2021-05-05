@@ -56,6 +56,7 @@ func pageDecodeRequest(ctx context.Context, r *http.Request) (in model.ServiceIn
 	in.Host = r.Host
 	in.Method = r.Method
 	in.Query = r.URL.Query()
+	in.RequestRaw = r
 
 	slURI := strings.Split(in.RequestURI, "?")
 	in.CachePath = slURI[0]

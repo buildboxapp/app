@@ -51,7 +51,6 @@ func (h *httpserver) NewRouter() *mux.Router {
 		Route{"Block", "GET", "/block/{block}/", handler.Block},
 		Route{"Block", "POST", "/block/{block}/", handler.Block},
 
-
 		// Регистрация pprof-обработчиков
 		Route{"pprofIndex", "GET", "/debug/pprof/", pprof.Index},
 		Route{"pprofIndex", "GET", "/debug/pprof/cmdline", pprof.Cmdline},

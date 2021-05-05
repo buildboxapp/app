@@ -11,7 +11,7 @@ func (s *service) Block(ctx context.Context, in model.ServiceIn) (out model.Serv
 
 	s.utils.Curl("GET", "_objs/"+in.Block, "", &objBlock, map[string]string{})
 
-	moduleResult := s.block.Generate(in, objBlock.Data[0], dataPage, nil)
+	moduleResult, err := s.block.Generate(in, objBlock.Data[0], dataPage, nil)
 	out.Result = moduleResult.Result
 
 	return

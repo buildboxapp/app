@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/buildboxapp/app/pkg/config"
 	"github.com/buildboxapp/app/pkg/function"
 	"github.com/buildboxapp/app/pkg/model"
 	"github.com/buildboxapp/app/pkg/utils"
@@ -23,15 +22,15 @@ import (
 const sep = string(filepath.Separator)
 
 type block struct {
-	cfg config.Config
-	logger log.Log
-	utils utils.Utils
+	cfg      model.Config
+	logger   log.Log
+	utils    utils.Utils
 	function function.Function
-	tplfunc function.TplFunc
+	tplfunc  function.TplFunc
 }
 
 type Block interface {
-	Generate(in model.ServiceIn, block model.Data, page model.Data, values map[string]interface{}) (result model.ModuleResult)
+	Generate(in model.ServiceIn, block model.Data, page model.Data, values map[string]interface{}) (result model.ModuleResult, err error)
 	ErrorModuleBuild(stat map[string]interface{}, buildChan chan model.ModuleResult, timerRun interface{}, errT error)
 	QueryWorker(queryUID, dataname string, source[]map[string]string, token, queryRaw, metod string, postForm url.Values) interface{}
 	ErrorPage(err interface{}, w http.ResponseWriter, r *http.Request)
@@ -39,9 +38,8 @@ type Block interface {
 	GUIQuery(tquery, token, queryRaw, method string, postForm url.Values) model.Response
 }
 
-func (b *block) Generate(in model.ServiceIn, block model.Data, page model.Data, values map[string]interface{}) (result model.ModuleResult) 	{
+func (b *block) Generate(in model.ServiceIn, block model.Data, page model.Data, values map[string]interface{}) (result model.ModuleResult, err error) 	{
 	var c bytes.Buffer
-	var err error
 
 	result.Id = block.Id
 
@@ -108,10 +106,13 @@ func (b *block) Generate(in model.ServiceIn, block model.Data, page model.Data, 
 	}
 
 	// добавляем в URL переданное значение из настроек модуля
+	// если этих значений еще нет (НЕ ЗАМЕНЯЕМ)
 	//var q url.Values
 	var blockQuery = in.Query // Get a copy of the query values.
 	for k, v := range m {
-		blockQuery.Add(k, strings.Join(v, ",")) // Add a new value to the set. Переводим обратно в строку из массива
+		if _, found := blockQuery[k]; !found {
+			blockQuery.Add(k, strings.Join(v, ",")) // Add a new value to the set. Переводим обратно в строку из массива
+		}
 	}
 	// //////////////////////////////////////////////////////////////////////////////
 
@@ -186,7 +187,7 @@ func (b *block) Generate(in model.ServiceIn, block model.Data, page model.Data, 
 	var source []map[string]string
 	if d, found := conf["datasets"]; found {
 		rm, _ := json.Marshal(d.Source)
-		err := json.Unmarshal(rm, &source)
+		err = json.Unmarshal(rm, &source)
 
 		if err != nil {
 			stat["status"] = "error"
@@ -197,7 +198,7 @@ func (b *block) Generate(in model.ServiceIn, block model.Data, page model.Data, 
 			result.Stat = stat
 			mes := "[Generate] Error generate datasets."
 			b.logger.Error(err, mes)
-			return result
+			return result, err
 		}
 	}
 
@@ -222,7 +223,10 @@ func (b *block) Generate(in model.ServiceIn, block model.Data, page model.Data, 
 				}
 			}
 
+			//fmt.Println(queryUID, dataname, source, in.Token, blockQuery.Encode(), in.Method, in.PostForm)
 			ress := b.QueryWorker(queryUID, dataname, source, in.Token, blockQuery.Encode(), in.Method, in.PostForm) //in.QueryRaw
+			//fmt.Println(ress)
+
 			dataSet[dataname] = ress
 		}
 	}
@@ -298,7 +302,7 @@ func (b *block) Generate(in model.ServiceIn, block model.Data, page model.Data, 
 	result.Result = template.HTML(blockBody)
 	result.Stat = stat
 
-	return result
+	return result, err
 }
 
 // генерируем блок из файла (для совместимости со старыми модулями)
@@ -518,7 +522,7 @@ func (b *block) GUIQuery(tquery, token, queryRaw, method string, postForm url.Va
 
 
 func New(
-	cfg config.Config,
+	cfg model.Config,
 	logger log.Log,
 	utils utils.Utils,
 	function function.Function,

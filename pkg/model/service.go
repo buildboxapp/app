@@ -2,6 +2,7 @@ package model
 
 import (
 	"html/template"
+	"net/http"
 	"net/url"
 )
 
@@ -27,6 +28,8 @@ type ServiceIn struct {
 
 	CachePath string `json:"cache_path"`
 	CacheQuery string `json:"cache_url"`
+
+	RequestRaw *http.Request
 }
 
 type ServiceBlockOut struct {
@@ -35,4 +38,9 @@ type ServiceBlockOut struct {
 
 type ServicePageOut struct {
 	Body string `json:"body"`
+}
+
+type AliveOut struct {
+	Cache  interface{} `json:"cache"`
+ 	Config interface{} `json:"config"`
 }

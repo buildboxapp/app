@@ -34,7 +34,8 @@ func (s *service) Page(ctx context.Context, in model.ServiceIn) (out model.Servi
 
 	if in.Page == "" {
 		ff, _ := json.Marshal(objPages)
-		err = fmt.Errorf("%s", "Error: not default page (" + string(ff) + ")")
+		err_url := "_link?obj="+s.cfg.DataUid+"&source="+s.cfg.TplAppPagesPointsrc+"&mode=in"
+		err = fmt.Errorf("%s", "Error: not default page (" + string(ff) + ") (url:" + err_url + ", orm: "+s.cfg.UrlApi+")")
 		return out, err
 	}
 
@@ -143,7 +144,7 @@ func (s *service) BPage(in model.ServiceIn, objPage model.ResponseData, values m
 	shemaJSON, _ := objPage.Data[0].Attr("shema", "value")
 	json.Unmarshal([]byte(shemaJSON), &i)
 	if i == nil {
-		return "", fmt.Errorf("%s", "Error! Fail json shema!")
+		return "", fmt.Errorf("%s (%s)", "Error! Fail json shema!", err)
 	}
 	p.Shema = i
 
@@ -335,7 +336,6 @@ func (s *service) GetBlock(in model.ServiceIn, block, page model.Data, shemaJSON
 				}
 			}
 
-
 			moduleResult = model.ModuleResult {
 				Id:     block.Id,
 				Result: template.HTML(result),
@@ -344,7 +344,14 @@ func (s *service) GetBlock(in model.ServiceIn, block, page model.Data, shemaJSON
 			}
 
 		} else {
-			moduleResult = s.block.Generate(in, block, page, values)
+			mResult, err := s.block.Generate(in, block, page, values)
+			if err != nil {
+				moduleResult.Result = ""
+				moduleResult.Err = err
+				return moduleResult, err
+			}
+
+			moduleResult = mResult
 		}
 
 	} else {
@@ -368,7 +375,12 @@ func (s *service) updateCache(key, cacheParams string, cacheInterval int, in mod
 		fmt.Println("err ", block.Id, err)
 	}
 
-	moduleResult := s.block.Generate(in, block, page, values)
+	moduleResult, err := s.block.Generate(in, block, page, values)
+	if err != nil {
+		result = fmt.Sprintf("Error [Generate] in updateCache from %s. Cache not saved. Time generate: %s. Error: %s", block.Id, time.Since(t1) ,err)
+		fmt.Println(result)
+		return result, err
+	}
 
 	err = s.cache.Write(key, cacheParams, cacheInterval, block.Uid, page.Uid, string(moduleResult.Result))
 	if err != nil {
@@ -376,7 +388,7 @@ func (s *service) updateCache(key, cacheParams string, cacheInterval int, in mod
 		fmt.Println("err ", block.Id, time.Since(t1) ,err)
 	}
 
-	fmt.Println("save:", time.Since(t1), block.Id, key, err)
+	//fmt.Println("save:", time.Since(t1), block.Id, key, err)
 
 	result = string(moduleResult.Result)
 

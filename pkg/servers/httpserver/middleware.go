@@ -2,7 +2,7 @@ package httpserver
 
 import (
 	"fmt"
-	"github.com/buildboxapp/app/pkg/config"
+	"github.com/buildboxapp/app/pkg/model"
 	"github.com/buildboxapp/lib"
 	"github.com/buildboxapp/lib/log"
 	bbmetric "github.com/buildboxapp/lib/metric"
@@ -32,7 +32,7 @@ func (h *httpserver) MiddleLogger(next http.Handler, name string, logger log.Log
 	})
 }
 
-func (h *httpserver) AuthProcessor(next http.Handler, cfg config.Config) http.Handler {
+func (h *httpserver) AuthProcessor(next http.Handler, cfg model.Config) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var authKey string
 
