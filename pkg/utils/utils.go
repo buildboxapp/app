@@ -3,6 +3,7 @@ package utils
 import (
 	"crypto/sha1"
 	"encoding/hex"
+	"encoding/json"
 	"github.com/buildboxapp/app/pkg/model"
 	"github.com/buildboxapp/lib/log"
 )
@@ -20,6 +21,7 @@ type Utils interface {
 	TreeShowIncl(in []*model.DataTree, obj string) (out []*model.DataTree)
 	SortItems(p []*model.DataTree, fieldsort string, typesort string)
 	Hash(str string) string
+	JsonEscape(i string) string
 }
 
 
@@ -58,7 +60,17 @@ func (u *utils) Hash(str string) string {
 	return sha1_hash
 }
 
-
+// экранируем "
+// fmt.Println(jsonEscape(`dog "fish" cat`))
+// output: dog \"fish\" cat
+func (u *utils) JsonEscape(i string) string {
+	b, err := json.Marshal(i)
+	if err != nil {
+		panic(err)
+	}
+	s := string(b)
+	return s[1:len(s)-1]
+}
 
 
 //func (c *App) GUIQuery(tquery string, r *http.Request) Response  {

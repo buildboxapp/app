@@ -84,6 +84,7 @@ type TplFunc interface {
 	Value(element string, configuration, data interface{}) (result interface{})
 	Output(element string, configuration, data interface{}, resulttype string) (result interface{})
 	ObjFromID(data interface{}, id string) (result interface{})
+	JsonEscape(i string) (result string)
 }
 
 // возвращаем значение карты функции
@@ -140,7 +141,7 @@ func (t *tplfunc) GetFuncMap() template.FuncMap {
 		"divfloat":		 t.Divfloat,
 		"mulfloat":		 t.Mulfloat,
 		"sendmail":		 t.Sendmail,
-
+		"jsonescape":	 t.JsonEscape,
 	}
 
 	// добавляем карту функций FuncMap функциями из библиотеки github.com/Masterminds/sprig
@@ -250,6 +251,21 @@ func (t *tplfunc) Sendmail(server, port, user, pass, from, to, subject, message,
 	fmt.Println("Email Sent! - ", result)
 
 	return result
+}
+
+// экранируем "
+// fmt.Println(jsonEscape(`dog "fish" cat`))
+// output: dog \"fish\" cat
+func (u *tplfunc) JsonEscape(i string) (result string) {
+	b, err := json.Marshal(i)
+	if err != nil {
+		panic(err)
+	}
+	s := string(b)
+	// возвращаем заэкранированный аперсанд
+	s = strings.Replace(s, "%5Cu0026", "&", -1)
+
+	return s[1:len(s)-1]
 }
 
 func (t *tplfunc) Divfloat(a, b interface{}) interface{} {
