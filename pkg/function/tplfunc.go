@@ -142,6 +142,7 @@ func (t *tplfunc) GetFuncMap() template.FuncMap {
 		"mulfloat":		 t.Mulfloat,
 		"sendmail":		 t.Sendmail,
 		"jsonescape":	 t.JsonEscape,
+		"jsonescapeunlessamp":	 t.JsonEscapeUnlessAmp,
 	}
 
 	// добавляем карту функций FuncMap функциями из библиотеки github.com/Masterminds/sprig
@@ -266,6 +267,13 @@ func (u *tplfunc) JsonEscape(i string) (result string) {
 	s = strings.Replace(s, "%5Cu0026", "&", -1)
 
 	return s[1:len(s)-1]
+}
+
+// экранируем " кроме аперсанда (&)
+func (u *tplfunc) JsonEscapeUnlessAmp(s string) (result string) {
+	result = u.JsonEscape(s)
+	result = strings.Replace(result, `\u0026`, "&", -1)
+	return result
 }
 
 func (t *tplfunc) Divfloat(a, b interface{}) interface{} {

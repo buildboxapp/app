@@ -28,7 +28,6 @@
     <list default="true" id="695e3ced-4e40-4126-a43d-f20a9b66d621" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pkg/function/tplfunc.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/function/tplfunc.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/utils/utils.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/utils/utils.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
