@@ -263,8 +263,6 @@ func (u *tplfunc) JsonEscape(i string) (result string) {
 		panic(err)
 	}
 	s := string(b)
-	// возвращаем заэкранированный аперсанд
-	s = strings.Replace(s, "%5Cu0026", "&", -1)
 
 	return s[1:len(s)-1]
 }
