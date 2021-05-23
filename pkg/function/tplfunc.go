@@ -85,6 +85,8 @@ type TplFunc interface {
 	Output(element string, configuration, data interface{}, resulttype string) (result interface{})
 	ObjFromID(data interface{}, id string) (result interface{})
 	JsonEscape(i string) (result string)
+
+	RequestToInRequest(r *http.Request) (result model.ServiceIn)
 }
 
 // возвращаем значение карты функции
@@ -308,7 +310,7 @@ func (t *tplfunc) Confparse(configuration string, r *http.Request, queryData int
 		return "Error! Failed marshal queryData: " + fmt.Sprint(err)
 	}
 	dv := []model.Data{d}
-	confParse, _ := frml.Exec(configuration, dv, nil, t.requestToIn(r), "")
+	confParse, _ := frml.Exec(configuration, dv, nil, t.RequestToInRequest(r), "")
 
 	// конфигурация с обработкой @-функции
 	var conf map[string]model.Element
@@ -332,7 +334,7 @@ func (t *tplfunc) Dogparse(p string, r *http.Request, queryData interface{}, val
 	json.Unmarshal(b, &d)
 
 	dv := []model.Data{d}
-	result, _ = frml.Exec(p, dv, values, t.requestToIn(r), "")
+	result, _ = frml.Exec(p, dv, values, t.RequestToInRequest(r), "")
 
 	return result
 }
@@ -968,7 +970,7 @@ func (t *tplfunc) Output(element string, configuration, data interface{}, result
 // вспомогательная функция только для HTTP
 // преобразуем полученный через прямой параметр запрос в темплейте
 // в формат model.ServiceIn в котором его понимаеют обработчики функций
-func (t *tplfunc) requestToIn(r *http.Request) (result model.ServiceIn) {
+func (t *tplfunc) RequestToInRequest(r *http.Request) (result model.ServiceIn) {
 	vars := mux.Vars(r)
 	result.Page = vars["page"]
 

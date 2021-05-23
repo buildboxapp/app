@@ -27,6 +27,9 @@
   <component name="ChangeListManager">
     <list default="true" id="695e3ced-4e40-4126-a43d-f20a9b66d621" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmd/app/app" beforeDir="false" afterPath="$PROJECT_DIR$/app" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/go.mod" beforeDir="false" afterPath="$PROJECT_DIR$/go.mod" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/function/tplfunc.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/function/tplfunc.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -200,9 +203,9 @@
       <screen x="0" y="0" width="1792" height="1120" />
     </state>
     <state x="697" y="478" key="com.intellij.openapi.vcs.update.UpdateOrStatusOptionsDialogupdate-v2/0.0.1792.1120@0.0.1792.1120" timestamp="1620251348156" />
-    <state x="551" y="60" width="850" height="977" key="find.popup" timestamp="1620890159199">
+    <state x="551" y="60" width="850" height="977" key="find.popup" timestamp="1621759685857">
       <screen x="0" y="0" width="1792" height="1120" />
     </state>
-    <state x="551" y="60" width="850" height="977" key="find.popup/0.0.1792.1120@0.0.1792.1120" timestamp="1620890159199" />
+    <state x="551" y="60" width="850" height="977" key="find.popup/0.0.1792.1120@0.0.1792.1120" timestamp="1621759685857" />
   </component>
 </project>
