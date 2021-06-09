@@ -36,7 +36,7 @@ type TplFunc interface {
 	GetFuncMap() template.FuncMap
 	Separator() string
 	Sendmail(server, port, user, pass, from, to, subject, message, turbo string) (result string)
-	Divfloat(a, b interface{}) interface{}
+	Divfloat(a, b interface{}) float64
 	Mulfloat(a float64, v ...float64) float64
 	Confparse(configuration string, r *http.Request, queryData interface{}) (result interface{})
 	Dogparse(p string, r *http.Request, queryData interface{}, values map[string]interface{}) (result string)
@@ -276,14 +276,14 @@ func (u *tplfunc) JsonEscapeUnlessAmp(s string) (result string) {
 	return result
 }
 
-func (t *tplfunc) Divfloat(a, b interface{}) interface{} {
+func (t *tplfunc) Divfloat(a, b interface{}) float64 {
 	aF := fmt.Sprint(a)
 	bF := fmt.Sprint(b)
 	fa, err := strconv.ParseFloat(aF, 64)
 	fb, err := strconv.ParseFloat(bF, 64)
 
 	if err != nil {
-		return nil
+		return 0
 	}
 
 	return fa / fb

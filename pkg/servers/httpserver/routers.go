@@ -76,6 +76,7 @@ func (h *httpserver) NewRouter() *mux.Router {
 
 	router.StrictSlash(true)
 
+	//router.PathPrefix("/.well-known/").Handler(http.StripPrefix("/.well-known/", http.FileServer(http.Dir(h.cfg.Workingdir + "/upload"))))
 	router.PathPrefix("/upload/").Handler(http.StripPrefix("/upload/", http.FileServer(http.Dir(h.cfg.Workingdir + "/upload"))))
 	router.PathPrefix("/templates/").Handler(http.StripPrefix("/templates/", http.FileServer(http.Dir(h.cfg.Workingdir + "/templates"))))
 
