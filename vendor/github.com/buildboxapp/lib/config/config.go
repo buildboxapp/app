@@ -89,7 +89,8 @@ func fullPathConfig(rootDir, configuration string) (configPath string, err error
 				}
 			} else {
 				if !strings.Contains(nextPath, "/.") {
-					if strings.Contains(obj.Name(), configuration) {
+					// проверяем только файлы конфигурации (игнорируем .json)
+					if strings.Contains(obj.Name(), configuration + ".cfg") {
 						return nextPath, err
 					}
 				}

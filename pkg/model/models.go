@@ -43,6 +43,7 @@ type Pong struct {
 	Pid  string `json:"pid"`
 	State string `json:"state"`
 	Replicas int `json:"replicas"`
+	Https bool `json:"https"`
 }
 
 

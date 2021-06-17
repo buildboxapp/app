@@ -244,12 +244,16 @@ func (s *service) BPage(in model.ServiceIn, objPage model.ResponseData, values m
 	maketFile = strings.Join(sliceMake[3:], "/")
 
 	maketFile = s.cfg.Workingdir + "/"+ maketFile
-	//fmt.Println(maketFile)
+	pt, err := template.ParseFiles(maketFile)
+	if err != nil {
+		s.logger.Error(err, "Error ParseFiles (", maketFile, ")")
+		//fmt.Println(err, maketFile)
+	}
 
 	// в режиме отладки пересборка шаблонов происходит при каждом запросе
 	//if !s.cfg.CompileTemplates.Value {
 		//t = template.Must(template.New(maketFile).Funcs(funcMap).ParseFiles(maketFile))
-		t = template.Must(template.ParseFiles(maketFile))
+		t = template.Must(pt, err)
 		t.Execute(&c, p)
 	//} else {
 		//t.ExecuteTemplate(&c, maketFile, p)

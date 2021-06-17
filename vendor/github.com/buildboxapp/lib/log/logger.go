@@ -8,6 +8,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"fmt"
@@ -83,6 +84,8 @@ type log struct {
 	IntervalClearFiles time.Duration `json:"interval_clear_files"`
 	// период хранения файлов лет-месяцев-дней (например: 0-1-0 - хранить 1 месяц)
 	PeriodSaveFiles string `json:"period_save_files"`
+
+	mux *sync.Mutex
 }
 
 type Log interface {
@@ -296,6 +299,9 @@ func (l *log) RotateInit(ctx context.Context) {
 }
 
 func (l *log) GetOutput() io.Writer  {
+	l.mux.Lock()
+	defer l.mux.Unlock()
+
 	return l.Output
 }
 
@@ -303,6 +309,7 @@ func New(logsDir, level, uid, name, srv, config string, intervalReload, interval
 	var output io.Writer
 	var err error
 	var mode os.FileMode
+	m := sync.Mutex{}
 
 	datefile := time.Now().Format("2006.01.02")
 	logName := datefile + "_" + srv + "_" + uid + ".log"
@@ -332,5 +339,6 @@ func New(logsDir, level, uid, name, srv, config string, intervalReload, interval
 		IntervalReload:     intervalReload,
 		IntervalClearFiles: intervalClearFiles,
 		PeriodSaveFiles:    periodSaveFiles,
+		mux: &m,
 	}
 }

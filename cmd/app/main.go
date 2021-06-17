@@ -37,7 +37,7 @@ func main()  {
 }
 
 // стартуем сервис приложения
-func Start(configfile, dir, port string) {
+func Start(configfile, dir, port, mode string) {
 	var cfg model.Config
 	done := color.Green("[OK]")
 	ctx, cancel := context.WithCancel(context.Background())
@@ -57,6 +57,7 @@ func Start(configfile, dir, port string) {
 	cfg.SetRootDir()
 	cfg.SetConfigName()
 
+	cfg.Workingdir = cfg.RootDir
 
 	///////////////// ЛОГИРОВАНИЕ //////////////////
 	// формирование пути к лог-файлам и метрикам

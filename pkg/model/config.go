@@ -2,6 +2,7 @@ package model
 
 type Config struct {
 
+	HttpsOnly						string 			`envconfig:"HTTPS_ONLY" default:""`
 	ProjectKey         				string         	`envconfig:"PROJECT_KEY" default:"LKHlhb899Y09olUi"`
 
 	// Cache

@@ -1,3 +1,198 @@
+# Version 3.2.1 (16.06.2021)
+## Core
+- [fea] Added optional fulltext index warmup after atomic namespace copy (EnableWarmupOnNsCopy)
+- [fix] Fixed assertion on namespace reconfiguration, while force-sync is in progress
+- [fix] Fixed fulltext index rebuilding after max_typos config update
+- [fix] Fixed sort by expression in joined queries
+- [fix] Fixed numeric strings handling (for cases, when value is greater than "2147483648")
+- [fix] Fixed assertion in upsert with multiple jsonpaths (now it returns error instead)
+- [fix] Fixed indexing for null-value
+- [fea] Covered more text representation for huge numbers in fulltext search
+
+## Reindexer tool
+- [fix] Fixed sigabort on remote's server disconnect
+
+## Face
+- [fix] Collate mode became required for the 'string' field type only
+- [fea] Added enable_warmup_on_ns_copy option to the full text index
+- [fix] Fixed issue with the namespace config during database switching
+- [fix] Slight design changes in the top menu and left sidebar
+- [fix] Fixed type errors for Namespace -> Grid
+
+# Version 3.2.0 (21.05.2021)
+## Core
+- [fea] Added fields ranks summation syntax for fulltext queries
+- [fea] Changed typos handling config for fulltext (new max_typos option)
+- [fix] Fixed error handling for fulltext PK
+
+## Reindexer server
+- [fea] Added separate options for http and rpc threading modes
+- [fea] Added option for max http request size
+- [fix] Fixed dangling threads for http-connections in dedicated threading mode
+
+## Reindexer tool
+- [fix] Fixed sigabort in \bench
+
+## Face
+- [fix] Fixed double requests during the sorting in the Performance table.
+- [fea] Changed the step of the Bm25 weight option 
+- [fea] Changed max_typos_in_word to max_typos 
+- [fea] Added the sum_ranks_by_fields_ratio option
+- [fea] Changed data type to integer for max_typo_len and max_rebuild_steps
+
+# Version 3.1.4 (30.04.2021)
+## Reindexer server
+- [fix] Disable dedicated threads mode for HTTP-server
+
+# Version 3.1.3 (26.04.2021)
+## Build
+- [fea] C++17 is now required to build reindexer from sources
+
+## Core
+- [fix] Fixed segfault in fulltext query with brackets
+- [fix] Fixed deadlock in selecter in case of concurrent namespace removing
+- [fix] Fixed true/false tokens parsing inside query to composite index
+
+## Reindexer server
+- [fea] Optional dedicated threads mode for RPC and HTTP server
+- [fix] Fixed heap use after free in concurrent requests to HTTP server
+- [fix] Fixed stack use after free on RPC client disconnect and server shutdown
+
+## Face
+- [fix] Fixed bug on Statistics -> Performance -> Selects/Updates 
+- [fix] Fixed default config for join_cache_mode
+- [fix] Centered table data 
+- [fea] Design changes on Performance statistics
+- [fix] Limited responsive layout by 1280px
+- [fea] Design changes for DB creation 
+- [fea] Added DB name to DB removing UI 
+- [fea] Added extra actions to Reset to default config and Save changes buttons
+- [fea] Added samples to namespace search panel 
+- [fix] Replaced color for rtree tips on Indexes
+- [fix] Changed font to Hack for code in popups
+- [fix] Removed sorting from Query table
+- [fix] Fixed Load more error on Query -> SQL
+- [fix] Fixed zero value displaying in Grid view
+
+# Version 3.1.2 (9.04.2021)
+## Face
+- [fix] Fixed hot-key S for SQL query on tablets
+- [fix] Fixed scroll issue for tables
+
+# Version 3.1.1 (29.03.2021)
+## Core
+- [fix] Bug in full text query with single mandatory word fixed
+- [fix] Bug in query with condition ALLSET by nonindexed field fixed
+- [fix] Bug in query with merge and join by the same namespace fixed
+- [fix] Simultaneous update of field and whole object fixed
+- [fix] Build on aarch64 architecture fixed
+- [fix] Fixed replication updates limit trackig, and possible inifity full namespace sync
+- [fix] Fixed web face page corruption on Windows builds
+
+## Reindexer server
+- [fea] GRPC module included in docker container and enabled by default
+- [fix] Select with DISTINCT by GRPC fixed
+
+## Face
+- [fix] Fix for removing a single database
+- [fix] Increased the edit label width of the index row
+- [fea] Added the server configs to the homepage
+- [fea] Added relevance between "Fields specific config" and "JSON paths" fields
+- [fix] Upgraded Lo-Dash to the last version.
+- [fix] Changed the font style of the "Create new database" menu.
+
+# Version 3.1.0 (12.03.2021)
+## Core
+- [fix] Start of reindexer with DB containing indexes with invalid names fixed
+- [fix] Mandatory terms with multiword synonyms in fulltext queries fixed
+- [fea] Verification of EQUAL_POSITION by the same field added
+- [fea] Added new syntax for update of array's elements
+- [fea] Impoved verification of fulltext index configuration
+
+## Reindexer server
+- [fea] api/v1/check returns more information
+- [fea] GRPC module moved to dynamic library
+
+## Go connector
+- [fea] Call of Go signal handler improved
+
+## Face
+- [fix] Fixed the tables sorting
+- [fix] Limited the modal window width
+- [fix] Fixed the Statistics -> Queries view
+- [fix] Fixed the horizontal scroll for /statistics-memory_stats and /statistics-perfstats
+- [fix] Fixed the memory issue for big data
+- [fea] Changes for the full-text config
+- [fea] Added new fields to the Clientstats
+- [fea] Added the ability to save column set for tables
+
+# Version 3.0.3 (15.02.2021)
+## Core
+- [fix] Crash on full text query with empty variants
+- [fix] Race namespace caches on transactions with atomic ns change
+- [fix] Race on force sync replication
+- [fea] Improved position search in fulltext
+- [fea] Improved timeouts handling in select operations
+
+## Reindexer server
+- [fea] Added support for Content-Encoding: gzip in http server
+
+## Go connector
+- [fix] Build builtin/builtinserver on mingw
+
+## Face
+- [fea] Added tooltips to longest query
+- [fix] Fixed the query view on the Query -> SQL page
+- [fix] Added checking for unsaved data during the window closing 
+- [fix] Bug with the pagination in the List mode
+- [fea] Added validation for the Server ID field 
+- [fea] Added validation for the positive value of the Cluster ID field
+
+# Version 3.0.2 (29.01.2021)
+## Core
+- [fea] Extra parameters added to fulltext config
+- [fea] Validate PK index to be not scan, strict index names validation
+- [fea] COUNT and COUNT_CACHED results added to aggregations results
+- [fix] DISTINCT with 800k+ unique value execution time on Linux improved
+- [fix] SQL representation of JOIN queries
+- [fea] Optimize indexes before atomic transactions ns exchange
+- [fea] Choose IN condition execution plan depend on another condition selectivity
+
+## Reindexer server
+- [fea] Added configurable size limit of online replication updates buffer
+- [fix] Cascade replication fixes
+- [fix] Shutdown time reduced
+
+# Version 3.0.1 (31.12.2020)
+
+## Core
+- [fix] Search by multi word synonyms is fixed
+- [fix] Comparator performance issue of condition IN (many strings) 
+
+## Face
+- [fix] List view performance issues
+- [fix] Enable edit items in query results page
+# Version 3.0 (22.12.2020)
+## Core
+- [fea] Sort by distance
+- [fea] Geo indexes performance improved
+- [fix] Disable rename ns on slave
+- [fix] Disable fulltext log in case loglevel is set to 0
+- [fix] Overlap and possible assert on serial int32 overflow
+
+## Reindexer server
+- [fea] Added GRPC support. [reindexer.proto](cpp_src/server/proto/reindexer.proto)
+- [fea] Added reindexer version to prometheus metrics
+- [fix] Decreased time of shutdown reindexer server with enabled prometheus
+## Reindexer tool
+- [fea] Completely rewritten network cproto client
+- [fix] reindexer.SetDefaultQueryDebug behavior fixed in case missed default namespace config 
+## Face
+- [fea] Completely redesigned
+
+## Go connector 
+- [fea] Added debug traces for Query and Iterator misuse. To enable tracer set REINDEXER_GODEBUG env
+
 # Version 2.14.1 (02.11.2020)
 
 ## Core

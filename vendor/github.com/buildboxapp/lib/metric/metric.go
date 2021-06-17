@@ -48,9 +48,10 @@ type ServiceMetric interface {
 }
 
 func (s *serviceMetric) SetState(){
-	s.mux.Lock()
+	//s.mux.Lock()
+	//defer s.mux.Unlock()
+
 	s.StateHost.Tick()
-	s.mux.Unlock()
 
 	return
 }
@@ -59,8 +60,9 @@ func (s *serviceMetric) SetState(){
 func (s *serviceMetric) SetTimeRequest(timeRequest time.Duration) {
 	go func() {
 		s.mux.Lock()
+		defer s.mux.Unlock()
+
 		s.tpr = append(s.tpr, timeRequest)
-		s.mux.Unlock()
 	}()
 
 	return
@@ -73,10 +75,11 @@ func (s *serviceMetric) SetTimeRequest(timeRequest time.Duration) {
 func (s *serviceMetric) SetConnectionIncrement(){
 	go func() {
 		s.mux.Lock()
+		defer s.mux.Unlock()
+
 		s.Connections = s.Connections + 1
 		s.connectionOpen = s.connectionOpen + 1
 		s.queue = append(s.queue,  s.connectionOpen)
-		s.mux.Unlock()
 	}()
 
 	return
@@ -87,11 +90,12 @@ func (s *serviceMetric) SetConnectionIncrement(){
 func (s *serviceMetric) SetConnectionDecrement(){
 	go func() {
 		s.mux.Lock()
+		defer s.mux.Unlock()
+
 		if s.connectionOpen != 0 {
 			s.connectionOpen = s.connectionOpen - 1
 		}
 		s.queue = append(s.queue,  s.connectionOpen)
-		s.mux.Unlock()
 	}()
 
 	return
@@ -100,8 +104,9 @@ func (s *serviceMetric) SetConnectionDecrement(){
 func (s *serviceMetric) SetP(value time.Duration){
 	go func() {
 		s.mux.Lock()
+		defer s.mux.Unlock()
+
 		s.tpr = append(s.tpr, value)
-		s.mux.Unlock()
 	}()
 
 	return
@@ -110,6 +115,8 @@ func (s *serviceMetric) SetP(value time.Duration){
 // сохраняем текущее значение расчитанных метрик в кармане
 func (s *serviceMetric) SaveToStash() {
 	s.mux.Lock()
+	defer s.mux.Unlock()
+
 	s.Stash.StateHost = s.StateHost
 	s.Stash.Connections = s.Connections
 	s.Stash.RPS = s.RPS
@@ -123,11 +130,14 @@ func (s *serviceMetric) SaveToStash() {
 	s.Stash.TPR_QTL_MS_80 = s.TPR_QTL_MS_80
 	s.Stash.TPR_QTL_MS_90 = s.TPR_QTL_MS_90
 	s.Stash.TPR_QTL_MS_99 = s.TPR_QTL_MS_99
-	s.mux.Unlock()
+
+	return
 }
 
 func (s *serviceMetric) Clear() {
 	s.mux.Lock()
+	defer s.mux.Unlock()
+
 	s.Connections = 0
 	s.connectionOpen = 0
 	s.queue = []int{}
@@ -144,11 +154,13 @@ func (s *serviceMetric) Clear() {
 	s.TPR_QTL_MS_90 = 0.0
 	s.TPR_QTL_MS_99 = 0.0
 
-	s.mux.Unlock()
 	return
 }
 
 func (s *serviceMetric) Get() (result Metrics) {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+
 	return s.Stash
 }
 
@@ -157,7 +169,11 @@ func (s *serviceMetric) Generate() {
 	var Queue_AVG, Queue_QTL_80, Queue_QTL_90, Queue_QTL_99 float32
 	var val_TPR_80, val_TPR_90, val_TPR_99, val_TPR float32
 	var AVG_TPR, QTL_TPR_80, QTL_TPR_90, QTL_TPR_99 float32
-	s.SetState()	// получаю текущие метрики загрузки хоста
+
+	s.mux.Lock()
+	defer s.mux.Unlock()
+
+	s.SetState()	// БЕЗ БЛОКИРОВКИ получаю текущие метрики загрузки хоста
 
 	//////////////////////////////////////////////////////////
 	// расчитываем среднее кол-во запросо и квартили (средние значения после 80-90-99 процентов всех запросов)

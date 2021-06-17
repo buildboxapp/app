@@ -28,8 +28,12 @@ func (s *service) Ping(ctx context.Context) (result []model.Pong, err error) {
 	pid := strconv.Itoa(os.Getpid())+":"+s.cfg.UidService
 	state, _ := json.Marshal(s.metrics.Get())
 
+	https := false
+	if s.cfg.HttpsOnly != "" {
+		https = true
+	}
 	var r = []model.Pong{
-		{name, version, "run",pg, pid, string(state),s.cfg.ReplicasApp.Value},
+		{name, version, "run",pg, pid, string(state),s.cfg.ReplicasApp.Value, https},
 	}
 
 	return r, err

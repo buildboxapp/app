@@ -22,7 +22,7 @@ type Route struct {
 
 type Routes []Route
 
-func (h *httpserver) NewRouter() *mux.Router {
+func (h *httpserver) NewRouter(checkHttpsOnly bool) *mux.Router {
 	router := mux.NewRouter().StrictSlash(true)
 	handler := handlers.New(h.src, h.logger, h.cfg)
 
@@ -71,8 +71,13 @@ func (h *httpserver) NewRouter() *mux.Router {
 			Handler(handler)
 	}
 
-	router.Use(h.Recover)
+	//router.Use(h.Recover)
 	router.Use(h.metric.Middleware)
+
+	// проверяем на возможность переадресации только для HTTP запросов
+	if checkHttpsOnly && h.cfg.HttpsOnly != "" {
+		router.Use(h.HttpsOnly)
+	}
 
 	router.StrictSlash(true)
 

@@ -351,7 +351,7 @@ func Destroy(portProxy string) (err error) {
 //}
 
 // обраатываем параметры с консоли и вызываем переданую функцию
-func RunServiceFuncCLI(funcStart func(configfile, dir, port string))  {
+func RunServiceFuncCLI(funcStart func(configfile, dir, port, mode string))  {
 	var err error
 
 	appCLI := cli.NewApp()
@@ -376,17 +376,23 @@ func RunServiceFuncCLI(funcStart func(configfile, dir, port string))  {
 					Usage:	"Порт, на котором запустить процесс",
 					Value:	"",
 				},
+				cli.StringFlag{
+					Name:	"mode, m",
+					Usage:	"Доп.режимы запуска: debug (логирования stdout в файл)",
+					Value:	"",
+				},
 			},
 			Action: func(c *cli.Context) error {
 				configfile := c.String("config")
 				port := c.String("port")
 				dir := c.String("dir")
+				mode := c.String("mode")
 
 				if dir == "default" {
 					dir, err = RootDir()
 				}
 
-				funcStart(configfile, dir, port)
+				funcStart(configfile, dir, port, mode)
 				return nil
 			},
 		},
@@ -395,4 +401,3 @@ func RunServiceFuncCLI(funcStart func(configfile, dir, port string))  {
 
 	return
 }
-

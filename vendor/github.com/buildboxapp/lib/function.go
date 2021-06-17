@@ -15,6 +15,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 // если status не из списка, то вставляем статус - 501 и Descraption из статуса
@@ -64,8 +65,8 @@ func ResponseJSON(w http.ResponseWriter, objResponse interface{}, status string,
 }
 
 // стартуем сервис из конфига
-func RunProcess(path, config, command string) (pid int, err error) {
-
+func RunProcess(path, config, command, mode string) (pid int, err error) {
+	var cmd *exec.Cmd
 	if config == "" {
 		return 0, fmt.Errorf("%s", "Configuration file is not found")
 	}
@@ -73,13 +74,21 @@ func RunProcess(path, config, command string) (pid int, err error) {
 		command = "start"
 	}
 
-	cmd := exec.Command(path, command, "--config", config)
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	cmd = exec.Command(path, command, "--config", config)
+	if mode == "debug" {
+		t := time.Now().Format("2006.01.02-15-04-05")
+		s := strings.Split(path, sep)
+		srv := s[len(s)-1]
+		CreateDir("debug" + sep + srv, 0777)
+		config_name := strings.Replace(config, "-", "", -1)
 
-	//stdout, err := cmd.StdoutPipe()
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
+		f, _ := os.Create(  "debug" + sep + srv + sep + config_name + "_" + fmt.Sprint(t) + ".log")
+
+		cmd.Stdout = f
+		cmd.Stderr = f
+	}
+
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 	err = cmd.Start()
 	if err != nil {
 		return 0, err

@@ -83,3 +83,16 @@ func (h *httpserver) JsonHeaders(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 }
+
+func (h *httpserver) HttpsOnly(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		// remove/add not default ports from req.Host
+		target := "https://" + req.Host + req.URL.Path
+		if len(req.URL.RawQuery) > 0 {
+			target += "?" + req.URL.RawQuery
+		}
+		// see comments below and consider the codes 308, 302, or 301
+		http.Redirect(w, req, target, http.StatusTemporaryRedirect)
+	})
+}
+
