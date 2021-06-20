@@ -7,7 +7,7 @@ require (
 	github.com/Masterminds/semver v1.5.0 // indirect
 	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
-	github.com/buildboxapp/lib v1.1.32
+	github.com/buildboxapp/lib v1.1.33
 	github.com/cpuguy83/go-md2man/v2 v2.0.0 // indirect
 	github.com/golang/snappy v0.0.3 // indirect
 	github.com/google/uuid v1.2.0

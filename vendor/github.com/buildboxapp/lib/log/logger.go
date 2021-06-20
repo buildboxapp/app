@@ -10,9 +10,8 @@ import (
 	"strings"
 	"sync"
 	"time"
-
-	"fmt"
 	"io"
+	"fmt"
 	"os"
 	"path/filepath"
 )
@@ -85,6 +84,8 @@ type log struct {
 	// период хранения файлов лет-месяцев-дней (например: 0-1-0 - хранить 1 месяц)
 	PeriodSaveFiles string `json:"period_save_files"`
 
+	File *os.File
+
 	mux *sync.Mutex
 }
 
@@ -98,6 +99,8 @@ type Log interface {
 	Exit(err error, args ...interface{})
 	RotateInit(ctx context.Context)
 	GetOutput() io.Writer
+	GetFile() *os.File
+	Close()
 }
 
 func (l *log) Trace(args ...interface{}) {
@@ -215,6 +218,8 @@ func (l *log) Exit(err error, args ...interface{}) {
 // Переинициализация файла логирования
 func (l *log) RotateInit(ctx context.Context) {
 
+	l.IntervalReload = 5 * time.Second
+
 	// попытка обновить файл (раз в 10 минут)
 	go func() {
 		ticker := time.NewTicker(l.IntervalReload)
@@ -225,8 +230,11 @@ func (l *log) RotateInit(ctx context.Context) {
 			case <-ctx.Done():
 				return
 			case <-ticker.C:
+				l.File.Close()	// закрыл старый файл
 				b := New(l.Dir, l.Levels, l.UID, l.Name, l.Service, l.Config, l.IntervalReload, l.IntervalClearFiles, l.PeriodSaveFiles)
+
 				l.Output = b.GetOutput()
+				l.File = b.GetFile() // передал указатель на новый файл в структуру лога
 				ticker = time.NewTicker(l.IntervalReload)
 			}
 		}
@@ -305,8 +313,18 @@ func (l *log) GetOutput() io.Writer  {
 	return l.Output
 }
 
+func (l *log) GetFile() *os.File  {
+
+	return l.File
+}
+
+func (l *log) Close() {
+	l.File.Close()
+}
+
 func New(logsDir, level, uid, name, srv, config string, intervalReload, intervalClearFiles time.Duration, periodSaveFiles string) Log {
 	var output io.Writer
+	var file *os.File
 	var err error
 	var mode os.FileMode
 	m := sync.Mutex{}
@@ -322,7 +340,8 @@ func New(logsDir, level, uid, name, srv, config string, intervalReload, interval
 		return nil
 	}
 
-	output, err = os.OpenFile(logsDir+"/"+logName, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	file, err = os.OpenFile(logsDir+"/"+logName, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	output = file
 	if err != nil {
 		logrus.Panic(err, "error opening file")
 		return nil
@@ -340,5 +359,6 @@ func New(logsDir, level, uid, name, srv, config string, intervalReload, interval
 		IntervalClearFiles: intervalClearFiles,
 		PeriodSaveFiles:    periodSaveFiles,
 		mux: &m,
+		File: file,
 	}
 }

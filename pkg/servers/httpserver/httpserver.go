@@ -33,6 +33,12 @@ type Server interface {
 func (h *httpserver) Run() error {
 	done := color.Green("[OK]")
 
+	// закрываем логи при завешрении работы сервера
+	defer func() {
+		h.logger.Warning("Service is stopped. Logfile is closed.")
+		h.logger.Close()
+	}()
+
 	//err := httpscerts.Check(h.cfg.SSLCertPath, h.cfg.SSLPrivateKeyPath)
 	//if err != nil {
 	//	panic(err)

@@ -15,25 +15,19 @@ import (
 	"os/signal"
 	"runtime/debug"
 	"strings"
+	"syscall"
 
 	"github.com/buildboxapp/lib"
 	"github.com/buildboxapp/lib/log"
 	"github.com/buildboxapp/lib/config"
 	"github.com/buildboxapp/lib/metric"
 
-	"io"
 )
 
 const sep = string(os.PathSeparator)
 
-var fileLog *os.File
-var outpurLog io.Writer
-
 func main()  {
 	lib.RunServiceFuncCLI(Start)
-
-	// закрываем файл с логами
-	defer fileLog.Close()
 }
 
 // стартуем сервис приложения
@@ -148,9 +142,9 @@ func Start(configfile, dir, port, mode string) {
 	)
 
 	// для завершения сервиса ждем сигнал в процесс
-	ch := make(chan os.Signal)
-	signal.Notify(ch, os.Kill)
-	go ListenForShutdown(ch)
+	ch := make(chan os.Signal, 1)
+	signal.Notify(ch, syscall.SIGTERM, syscall.SIGINT)
+	go ListenForShutdown(ch, logger)
 
 	srv := servers.New(
 		"http",
@@ -163,7 +157,12 @@ func Start(configfile, dir, port, mode string) {
 
 }
 
-func ListenForShutdown(ch <- chan os.Signal)  {
+func ListenForShutdown(ch <- chan os.Signal, logger log.Log)  {
+	var done = color.Grey("[OK]")
+
 	<- ch
+	logger.Warning("Service is stopped. Logfile is closed.")
+	logger.Close()
+	fmt.Printf("%s Service is stopped. Logfile is closed.\n", done)
 	os.Exit(0)
 }

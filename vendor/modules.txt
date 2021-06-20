@@ -21,7 +21,7 @@ github.com/StackExchange/wmi
 ## explicit
 github.com/alecthomas/template
 github.com/alecthomas/template/parse
-# github.com/buildboxapp/lib v1.1.32
+# github.com/buildboxapp/lib v1.1.33
 ## explicit
 github.com/buildboxapp/lib
 github.com/buildboxapp/lib/config
