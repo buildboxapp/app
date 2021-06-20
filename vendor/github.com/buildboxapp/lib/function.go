@@ -74,7 +74,9 @@ func RunProcess(path, config, command, mode string) (pid int, err error) {
 		command = "start"
 	}
 
-	cmd = exec.Command(path, command, "--config", config)
+	fmt.Println(config, mode)
+
+	cmd = exec.Command(path, command, "--config", config, "--mode", mode)
 	if mode == "debug" {
 		t := time.Now().Format("2006.01.02-15-04-05")
 		s := strings.Split(path, sep)
