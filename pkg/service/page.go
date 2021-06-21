@@ -114,6 +114,10 @@ func (s *service) BPage(in model.ServiceIn, objPage model.ResponseData, values m
 	// 3 запрос на объект макета
 	s.utils.Curl("GET", "_objs/"+maketUID, "", &objMaket, map[string]string{})
 
+	if len(objMaket.Data) == 0 {
+		return result, fmt.Errorf("%s (uid: %s)", "Error. Object maket is empty.", maketUID)
+	}
+
 	// 4 из объекта макета берем путь к шаблону + css и js
 	maketFile, _ := objMaket.Data[0].Attr("file", "value")
 	maketCSS, _ := objMaket.Data[0].Attr("css", "value")
