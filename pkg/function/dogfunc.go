@@ -80,6 +80,7 @@ type DogFunc interface {
 	Time(arg []string) (result string, err error)
 	TimeFormat(arg []string) (result string, err error)
 	FuncURL(r model.ServiceIn, arg []string) (result string, err error)
+	Cookie(r model.ServiceIn, arg []string) (result string, err error)
 	Path(d []model.Data, arg []string) (result string, err error)
 	DReplace(arg []string) (result string, err error)
 	UserObj(r model.ServiceIn, arg []string) (result string, err error)
@@ -230,6 +231,8 @@ func (p *formula) Calculate() (err error) {
 			result, err = p.dogfunc.Obj(p.document, v.dogfuncs.arguments)
 		case "URL":
 			result, err = p.dogfunc.FuncURL(p.request, v.dogfuncs.arguments)
+		case "COOKIE":
+			result, err = p.dogfunc.Cookie(p.request, v.dogfuncs.arguments)
 
 		case "SPLITINDEX":
 			result, err = p.dogfunc.SplitIndex(v.dogfuncs.arguments)
@@ -490,6 +493,37 @@ func (d *dogfunc) FuncURL(r model.ServiceIn, arg []string) (result string, err e
 	}
 
 	return
+}
+
+// Получение cookie
+// параметры: 	1-й параметр - name (имя куки)
+//				2-й параметр - field (поле куки: VALUE, EXPIRES, MAXAGE, PATH, SECURE)
+func (d *dogfunc) Cookie(r model.ServiceIn, arg []string) (result string, err error) {
+	if len(arg) > 0 {
+
+		name := arg[0]
+		field := strings.ToUpper(arg[1])
+
+		c, err := r.RequestRaw.Cookie(name)
+		if err != nil {
+			return "", err
+		}
+
+		field = strings.ToUpper(field)
+		switch field {
+		case "EXPIRES":
+			result = c.Expires.String()
+		case "MAXAGE":
+			result = fmt.Sprint(c.MaxAge)
+		case "PATH":
+			result = c.Path
+		case "SECURE":
+			result = fmt.Sprint(c.Secure)
+		default:
+			result = c.Value
+		}
+	}
+	return result, err
 }
 
 // Вставляем значения системных полей объекта

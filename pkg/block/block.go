@@ -140,6 +140,8 @@ func (b *block) Generate(in model.ServiceIn, block model.Data, page model.Data, 
 	bl.Value["RequestURI"] = in.RequestURI
 	bl.Value["Referer"] = in.Referer
 	bl.Value["Profile"] = in.Profile
+	bl.Value["Cookie"] = in.RequestRaw.Cookies()
+	bl.Value["Request"] = in.RequestRaw
 
 
 	//fmt.Println("tconfiguration: block", block.Id, tconfiguration, "\n")

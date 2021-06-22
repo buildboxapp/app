@@ -69,6 +69,8 @@ func (s *service) Page(ctx context.Context, in model.ServiceIn) (out model.Servi
 	values["Referer"] = in.Referer
 	values["RequestURI"] = in.RequestURI
 	values["Profile"] = in.Profile
+	values["Cookie"] = in.RequestRaw.Cookies()
+	values["Request"] = in.RequestRaw
 
 	out.Body, err = s.BPage(in, objPage, values)
 

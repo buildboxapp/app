@@ -33,6 +33,7 @@ type tplfunc struct {
 }
 
 type TplFunc interface {
+	Cookie(name string, field string, r *http.Request) (result string)
 	GetFuncMap() template.FuncMap
 	Separator() string
 	Sendmail(server, port, user, pass, from, to, subject, message, turbo string) (result string)
@@ -92,6 +93,7 @@ type TplFunc interface {
 // возвращаем значение карты функции
 func (t *tplfunc) GetFuncMap() template.FuncMap {
 	funcMap := template.FuncMap{
+		"cookie": 		 t.Cookie,
 		"separator": 	 t.Separator,
 		"attr":	 		 t.Attr,
 		"datetotext":	 t.Datetotext,
@@ -156,6 +158,30 @@ func (t *tplfunc) GetFuncMap() template.FuncMap {
 	}
 
 	return funcMap
+}
+
+// отдаем значение куки
+func (t *tplfunc) Cookie(name string, field string, r *http.Request) (result string) {
+	c, err := r.Cookie(name)
+	if err != nil {
+		return fmt.Sprint(err)
+	}
+
+	field = strings.ToUpper(field)
+	switch field {
+	case "EXPIRES":
+		result = c.Expires.String()
+	case "MAXAGE":
+		result = fmt.Sprint(c.MaxAge)
+	case "PATH":
+		result = c.Path
+	case "SECURE":
+		result = fmt.Sprint(c.Secure)
+	default:
+		result = c.Value
+	}
+
+	return result
 }
 
 // формируем сепаратор для текущей ОС
