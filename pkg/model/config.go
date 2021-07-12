@@ -28,6 +28,7 @@ type Config struct {
 	UrlProxy						string         	`envconfig:"URL_PROXY" default:""`
 	UrlGui         					string         	`envconfig:"URL_GUI" default:""`
 	UrlApi							string         	`envconfig:"URL_API" default:""`
+	UrlIam							string         	`envconfig:"URL_IAM" default:""`
 	UidService         				string         	`envconfig:"UID_SERVICE" default:""`
 
 	// Logger
@@ -107,6 +108,10 @@ type Config struct {
 
 	ReplicasApp Int    `envconfig:"REPLICAS_APP" default:""`
 	Robot       string `envconfig:"ROBOT" default:""`
+
+	Signin      string `envconfig:"SIGNIN" default:""`
+	SigninUrl  	string `envconfig:"SIGNIN_URL" default:""`
+
 
 	Title	string `envconfig:"TITLE" default:""`
 	ToBuild	string `envconfig:"TO_BUILD" default:""`

@@ -5,10 +5,14 @@ import (
 	"fmt"
 	"github.com/buildboxapp/app/pkg/cache"
 	"github.com/buildboxapp/app/pkg/function"
+	"github.com/buildboxapp/app/pkg/i18n"
+	"github.com/buildboxapp/app/pkg/jwtoken"
 	"github.com/buildboxapp/app/pkg/model"
+	"github.com/buildboxapp/app/pkg/api"
 	"github.com/buildboxapp/app/pkg/servers"
 	"github.com/buildboxapp/app/pkg/servers/httpserver"
 	"github.com/buildboxapp/app/pkg/service"
+	"github.com/buildboxapp/app/pkg/session"
 	"github.com/buildboxapp/app/pkg/utils"
 	"github.com/labstack/gommon/color"
 	"os"
@@ -18,10 +22,9 @@ import (
 	"syscall"
 
 	"github.com/buildboxapp/lib"
-	"github.com/buildboxapp/lib/log"
 	"github.com/buildboxapp/lib/config"
+	"github.com/buildboxapp/lib/log"
 	"github.com/buildboxapp/lib/metric"
-
 )
 
 const sep = string(os.PathSeparator)
@@ -101,17 +104,42 @@ func Start(configfile, dir, port, mode string) {
 		}
 	}()
 
+	msg := i18n.New()
+
 	ult := utils.New(
 		cfg,
 		logger,
+		msg,
+	)
+
+	api := api.New(
+		logger,
+		ult,
+		cfg,
+		metrics,
 	)
 
 	fnc := function.New(
 		cfg,
 		ult,
 		logger,
+		msg,
+		api,
 	)
 
+	jtk := jwtoken.New(
+		logger,
+		ult,
+		cfg,
+		metrics,
+		msg,
+	)
+
+	ses := session.New(
+		logger,
+		cfg,
+		api,
+	)
 
 	port = ult.AddressProxy()
 	cfg.PortApp = port
@@ -130,6 +158,9 @@ func Start(configfile, dir, port, mode string) {
 		metrics,
 		ult,
 		cach,
+		msg,
+		ses,
+		api,
 	)
 
 	// httpserver
@@ -139,6 +170,9 @@ func Start(configfile, dir, port, mode string) {
 		src,
 		metrics,
 		logger,
+		ult,
+		jtk,
+		ses,
 	)
 
 	// для завершения сервиса ждем сигнал в процесс

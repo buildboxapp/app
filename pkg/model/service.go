@@ -23,7 +23,7 @@ type ServiceIn struct {
 	Query url.Values `json:"query"`
 	QueryRaw string `json:"query_raw"`
 	PostForm url.Values `json:"post_form"`
-	Token string `json:"token"`
+	Token string `json:"jwtoken"`
 	Method string `json:"method"`
 
 	CachePath string `json:"cache_path"`
@@ -43,4 +43,5 @@ type ServicePageOut struct {
 type AliveOut struct {
 	Cache  interface{} `json:"cache"`
  	Config interface{} `json:"config"`
+	Session interface{} `json:"session"`
 }

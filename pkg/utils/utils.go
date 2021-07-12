@@ -4,13 +4,15 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 	"encoding/json"
+	"github.com/buildboxapp/app/pkg/i18n"
 	"github.com/buildboxapp/app/pkg/model"
 	"github.com/buildboxapp/lib/log"
 )
 
 type utils struct {
-	cfg    model.Config
-	logger log.Log
+	cfg    	model.Config
+	logger 	log.Log
+	msg  	i18n.I18n
 }
 
 type Utils interface {
@@ -25,10 +27,11 @@ type Utils interface {
 }
 
 
-func New(cfg model.Config, logger log.Log) Utils {
+func New(cfg model.Config, logger log.Log, msg i18n.I18n) Utils {
 	return &utils{
 		cfg,
 		logger,
+		msg,
 	}
 }
 
@@ -93,17 +96,17 @@ func (u *utils) JsonEscape(i string) string {
 //	// это нужно для случая, если мы вызываем запрос из запроса и кука не передается
 //	// а если куки нет, то сбрасывается авторизация
 //	cookieCurrent, err := r.Cookie("sessionID")
-//	token := ""
+//	jwtoken := ""
 //	if err == nil {
 //		tokenI := strings.Split(fmt.Sprint(cookieCurrent), "=")
 //		if len(tokenI) > 1 {
-//			token = tokenI[1]
+//			jwtoken = tokenI[1]
 //		}
-//		if token != "" {
+//		if jwtoken != "" {
 //			if strings.Contains(filters, "?") {
-//				filters = filters + "&token=" + token
+//				filters = filters + "&jwtoken=" + jwtoken
 //			} else {
-//				filters = filters + "?token=" + token
+//				filters = filters + "?jwtoken=" + jwtoken
 //			}
 //		}
 //	}

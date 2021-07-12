@@ -3,8 +3,10 @@ package function
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/buildboxapp/app/pkg/api"
 	"github.com/buildboxapp/app/pkg/model"
 	"github.com/buildboxapp/app/pkg/utils"
+	"github.com/buildboxapp/app/pkg/i18n"
 	"github.com/buildboxapp/lib/log"
 	uuid "github.com/satori/go.uuid"
 	"net/http"
@@ -21,6 +23,7 @@ type function struct {
 	formula Formula
 	dogfunc DogFunc
 	tplfunc TplFunc
+	api 	api.Api
 }
 
 type Function interface {
@@ -70,6 +73,7 @@ type dogfunc struct {
 	cfg       model.Config `json:"cfg"`
 	utl       utils.Utils
 	tplfunc   TplFunc
+	api 	  api.Api
 }
 
 type DogFunc interface {
@@ -320,7 +324,8 @@ func (d *dogfunc) Query(r *http.Request, arg []string) (result interface{}, err 
 		filters = "?" + filters
 	}
 
-	d.utl.Curl("GET", "query/"+arg[0]+filters, string(bodyJSON), &objs, map[string]string{})
+	d.api.Query(arg[0]+filters, "GET", string(bodyJSON), &objs)
+	//d.utl.Curl("GET", "query/"+arg[0]+filters, string(bodyJSON), &objs, map[string]string{})
 
 	switch mode {
 	case "data":
@@ -906,11 +911,12 @@ func (d *dogfunc) DogSendmail(arg []string) (result string, err error) {
 	return
 }
 
-func NewDogFunc(cfg model.Config, utl utils.Utils, tplfunc TplFunc) DogFunc {
+func NewDogFunc(cfg model.Config, utl utils.Utils, tplfunc TplFunc, api api.Api) DogFunc {
 	return &dogfunc{
 		cfg: cfg,
 		utl: utl,
 		tplfunc: tplfunc,
+		api: api,
 	}
 }
 
@@ -951,9 +957,9 @@ func (d *function) TplFunc() TplFunc {
 	return d.tplfunc
 }
 
-func New(cfg model.Config, utl utils.Utils, logger log.Log) Function {
-	tplfunc := NewTplFunc(cfg, utl, logger)
-	dogfunc := NewDogFunc(cfg, utl, tplfunc)
+func New(cfg model.Config, utl utils.Utils, logger log.Log, msg i18n.I18n, api api.Api) Function {
+	tplfunc := NewTplFunc(cfg, utl, logger, msg, api)
+	dogfunc := NewDogFunc(cfg, utl, tplfunc, api)
 	formula := NewFormula(cfg, dogfunc)
 
 	return &function{
@@ -961,5 +967,6 @@ func New(cfg model.Config, utl utils.Utils, logger log.Log) Function {
 		formula: formula,
 		dogfunc: dogfunc,
 		tplfunc: tplfunc,
+		api: api,
 	}
 }

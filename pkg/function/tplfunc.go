@@ -7,8 +7,10 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Masterminds/sprig"
+	"github.com/buildboxapp/app/pkg/api"
 	"github.com/buildboxapp/app/pkg/model"
 	"github.com/buildboxapp/app/pkg/utils"
+	"github.com/buildboxapp/app/pkg/i18n"
 	"github.com/buildboxapp/lib/log"
 	"github.com/gorilla/mux"
 	"github.com/satori/go.uuid"
@@ -30,6 +32,8 @@ type tplfunc struct {
 	cfg    model.Config
 	utl    utils.Utils
 	logger log.Log
+	msg i18n.I18n
+	api api.Api
 }
 
 type TplFunc interface {
@@ -73,6 +77,7 @@ type TplFunc interface {
 	Sum(res,i int) int
 	Cut(res string, i int, sep string) string
 	Substring(str string, args ...int) string
+	AddFloat(i ...interface{}) float64
 	Tostring(i interface{}) (res string)
 	Totree(i interface{}, objstart string) (res interface{})
 	Tohtml(i interface{}) (template.HTML)
@@ -96,6 +101,7 @@ func (t *tplfunc) GetFuncMap() template.FuncMap {
 		"cookie": 		 t.Cookie,
 		"separator": 	 t.Separator,
 		"attr":	 		 t.Attr,
+		"addfloat":	 	 t.AddFloat,
 		"datetotext":	 t.Datetotext,
 		"output": 	 	 t.Output,
 		"objfromid": 	 t.ObjFromID,
@@ -181,6 +187,14 @@ func (t *tplfunc) Cookie(name string, field string, r *http.Request) (result str
 		result = c.Value
 	}
 
+	return result
+}
+
+// получаем значение из переданного объекта
+func (t *tplfunc) AddFloat(i ...interface{}) (result float64) {
+	for _, b := range i {
+		result += t.Tofloat(b)
+	}
 	return result
 }
 
@@ -327,7 +341,7 @@ func (t *tplfunc) Mulfloat(a float64, v ...float64) float64 {
 // обработка @-функций внутри конфигурации (в шаблонизаторе)
 func (t *tplfunc) Confparse(configuration string, r *http.Request, queryData interface{}) (result interface{})  {
 	var d model.Data
-	var frml = New(t.cfg, t.utl, t.logger)
+	var frml = New(t.cfg, t.utl, t.logger, t.msg, t.api)
 
 	b, err := json.Marshal(queryData)
 	json.Unmarshal(b, &d)
@@ -353,7 +367,7 @@ func (t *tplfunc) Confparse(configuration string, r *http.Request, queryData int
 
 // обработка @-функций внутри шаблонизатора
 func (t *tplfunc) Dogparse(p string, r *http.Request, queryData interface{}, values map[string]interface{}) (result string)  {
-	var frml = New(t.cfg, t.utl, t.logger)
+	var frml = New(t.cfg, t.utl, t.logger, t.msg, t.api)
 	var d model.Data
 
 	b, _ := json.Marshal(queryData)
@@ -780,7 +794,8 @@ func (t *tplfunc) Totree(i interface{}, objstart string) (res interface{}) {
 	var objD []model.Data
 	var objRes []interface{}
 	var objTree []model.DataTreeOut
-	utl := utils.New(t.cfg, t.logger)
+
+	utl := utils.New(t.cfg, t.logger, t.msg)
 
 	b3, _ := json.Marshal(i)
 	err := json.Unmarshal(b3, &objD)
@@ -1018,11 +1033,13 @@ func (t *tplfunc) RequestToInRequest(r *http.Request) (result model.ServiceIn) {
 }
 
 
-func NewTplFunc(cfg model.Config, utl utils.Utils, logger log.Log) TplFunc {
+func NewTplFunc(cfg model.Config, utl utils.Utils, logger log.Log, msg i18n.I18n, api api.Api) TplFunc {
 	r := &tplfunc{
 		cfg: cfg,
 		utl: utl,
 		logger: logger,
+		msg: msg,
+		api: api,
 	}
 
 	return r

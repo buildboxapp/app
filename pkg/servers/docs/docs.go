@@ -45,7 +45,7 @@ var doc = `{
         },
         "/api/v1/pass/forgot": {
             "post": {
-                "summary": "issue reset token",
+                "summary": "issue reset jwtoken",
                 "parameters": [
                     {
                         "description": "pass forgot data",
@@ -89,7 +89,7 @@ var doc = `{
         },
         "/api/v1/pass/reset": {
             "post": {
-                "summary": "issue reset token",
+                "summary": "issue reset jwtoken",
                 "parameters": [
                     {
                         "description": "pass reset data",
@@ -682,7 +682,7 @@ var doc = `{
                 "template_id": {
                     "type": "string"
                 },
-                "token": {
+                "jwtoken": {
                     "type": "string"
                 }
             }

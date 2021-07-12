@@ -3,8 +3,11 @@ package httpserver
 import (
 	"context"
 	"fmt"
+	"github.com/buildboxapp/app/pkg/jwtoken"
 	"github.com/buildboxapp/app/pkg/model"
 	"github.com/buildboxapp/app/pkg/service"
+	"github.com/buildboxapp/app/pkg/session"
+	"github.com/buildboxapp/app/pkg/utils"
 	"github.com/buildboxapp/lib/log"
 	bbmetric "github.com/buildboxapp/lib/metric"
 	"github.com/labstack/gommon/color"
@@ -18,11 +21,14 @@ import (
 )
 
 type httpserver struct {
-	ctx    context.Context
-	cfg    model.Config
-	src    service.Service
-	metric bbmetric.ServiceMetric
-	logger log.Log
+	ctx    	context.Context
+	cfg    	model.Config
+	src    	service.Service
+	metric 	bbmetric.ServiceMetric
+	logger 	log.Log
+	utl 	utils.Utils
+	jtk 	jwtoken.JWToken
+	session session.Session
 }
 
 type Server interface {
@@ -62,11 +68,14 @@ func (h *httpserver) Run() error {
 
 
 func New(
-	ctx context.Context,
-	cfg model.Config,
-	src service.Service,
-	metric bbmetric.ServiceMetric,
-	logger log.Log,
+	ctx 	context.Context,
+	cfg 	model.Config,
+	src 	service.Service,
+	metric 	bbmetric.ServiceMetric,
+	logger 	log.Log,
+	utl 	utils.Utils,
+	jtk 	jwtoken.JWToken,
+	session session.Session,
 ) Server {
 	return &httpserver{
 		ctx,
@@ -74,5 +83,8 @@ func New(
 		src,
 		metric,
 		logger,
+		utl,
+		jtk,
+		session,
 	}
 }

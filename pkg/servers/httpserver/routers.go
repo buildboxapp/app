@@ -79,6 +79,11 @@ func (h *httpserver) NewRouter(checkHttpsOnly bool) *mux.Router {
 		router.Use(h.HttpsOnly)
 	}
 
+	// проверяем на защищенный доступ через авторизацию
+	if h.cfg.Signin == "checked" && h.cfg.SigninUrl != "" {
+		router.Use(h.AuthProcessor)
+	}
+
 	router.StrictSlash(true)
 
 	//router.PathPrefix("/.well-known/").Handler(http.StripPrefix("/.well-known/", http.FileServer(http.Dir(h.cfg.Workingdir + "/upload"))))

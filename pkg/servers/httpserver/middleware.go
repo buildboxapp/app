@@ -2,8 +2,6 @@ package httpserver
 
 import (
 	"fmt"
-	"github.com/buildboxapp/app/pkg/model"
-	"github.com/buildboxapp/lib"
 	"github.com/buildboxapp/lib/log"
 	bbmetric "github.com/buildboxapp/lib/metric"
 	"net/http"
@@ -32,9 +30,16 @@ func (h *httpserver) MiddleLogger(next http.Handler, name string, logger log.Log
 	})
 }
 
-func (h *httpserver) AuthProcessor(next http.Handler, cfg model.Config) http.Handler {
+func (h *httpserver) AuthProcessor(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var authKey string
+		var sessionOnDeleted = ""
+
+		// пропускаем пинги
+		if r.URL.Path == "/ping" || r.URL.Path == "/auth" || strings.Contains(r.URL.Path, "/templates") || strings.Contains(r.URL.Path, "/upload") {
+			next.ServeHTTP(w, r)
+			return
+		}
 
 		authKeyHeader := r.Header.Get("X-Auth-Key")
 		if authKeyHeader != "" {
@@ -46,16 +51,53 @@ func (h *httpserver) AuthProcessor(next http.Handler, cfg model.Config) http.Han
 			}
 		}
 
-		// не передали ключ (пропускаем пинги)
-		if strings.TrimSpace(authKey) == "" && r.URL.Path != "/ping" {
-			lib.ResponseJSON(w, nil, "Unauthorized", nil, nil)
+		// не передали ключ - вход не осуществлен. войди
+		if strings.TrimSpace(authKey) == "" {
+			http.Redirect(w, r, h.cfg.SigninUrl+"?ref="+h.cfg.ClientPath+r.RequestURI, 302)
 			return
 		}
 
-		// не соответствие переданного ключа и UID-а API (пропускаем пинги)
-		if strings.TrimSpace(authKey) != cfg.UidService && r.URL.Path != "/ping" {
-			lib.ResponseJSON(w, nil, "Unauthorized", nil, nil)
+		// валидируем токен
+		status, token, refreshToken, err := h.jtk.Verify(authKey)
+
+		// пробуем обновить пришедший токен
+		if !status {
+			if token != nil {
+				sessionOnDeleted = token.Session
+			}
+
+			XAuthToken, err := h.jtk.Refresh(refreshToken)
+			if err == nil {
+
+				// заменяем куку у пользователя в браузере
+				cookie := &http.Cookie{
+					Path: "/",
+					Name:   "X-Auth-Key",
+					Value:  XAuthToken,
+					MaxAge: 30000,
+				}
+
+				// после обновления получаем текущий токен
+				_, token, _, _ = h.jtk.Verify(XAuthToken)
+
+				// переписываем куку у клиента
+				http.SetCookie(w, cookie)
+			}
+		}
+
+		// выкидываем если обновление невозможно
+		if !status || err != nil {
+			http.Redirect(w, r, h.cfg.SigninUrl+"?ref="+h.cfg.ClientPath+r.RequestURI, 302)
 			return
+		}
+
+		// проверяем на наличие в реестре сессий текущей сессии
+		// если ее нет - берем профиль и обновляем реестр
+		if sessionOnDeleted != "" {
+			h.session.Delete(sessionOnDeleted)
+		}
+		if token != nil {
+			h.session.Set(token)
 		}
 
 		next.ServeHTTP(w, r)

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/buildboxapp/app/pkg/api"
 	"github.com/buildboxapp/app/pkg/function"
 	"github.com/buildboxapp/app/pkg/model"
 	"github.com/buildboxapp/app/pkg/utils"
@@ -27,6 +28,7 @@ type block struct {
 	utils    utils.Utils
 	function function.Function
 	tplfunc  function.TplFunc
+	api		 api.Api
 }
 
 type Block interface {
@@ -259,16 +261,18 @@ func (b *block) Generate(in model.ServiceIn, block model.Data, page model.Data, 
 		var objModule model.ResponseData
 
 		// запрос на объект HTML
-		_, err = b.utils.Curl("GET", "_objs/"+uidModule, "", &objModule, map[string]string{})
+		objModule, err = b.api.ObjGet(uidModule)
+		//_, err = b.utils.Curl("GET", "_objs/"+uidModule, "", &objModule, map[string]string{})
+
 		if err != nil {
 			err = fmt.Errorf("%s (%s)","Error: Get object Module is failed!", err)
 			result.Result = template.HTML(fmt.Sprint(err))
-			return
+			return result, err
 		}
 		if len(objModule.Data) == 0 {
 			err = fmt.Errorf("%s","Error: Object Module is null!")
 			result.Result = template.HTML(fmt.Sprint(err))
-			return
+			return result, err
 		}
 
 		// если выбрано несколько блоков, их все объединяем в один (очередность случайная)
@@ -499,13 +503,13 @@ func (b *block) GUIQuery(tquery, token, queryRaw, method string, postForm url.Va
 	// а если куки нет, то сбрасывается авторизация
 	if token != "" {
 		if strings.Contains(filters, "?") {
-			filters = filters + "&token=" + token
+			filters = filters + "&jwtoken=" + token
 		} else {
-			filters = filters + "?token=" + token
+			filters = filters + "?jwtoken=" + token
 		}
 	}
 
-	resultInterface, _ = b.utils.Curl(method, "/query/" + tquery + filters, string(bodyJSON), &dataResp, map[string]string{})
+	resultInterface, _ = b.api.Query(tquery+filters, method, string(bodyJSON), &dataResp)
 
 	// нам тут нужен Response, но бывают внешние запросы,
 	// поэтому если не Response то дописываем в Data полученное тело
@@ -529,6 +533,7 @@ func New(
 	utils utils.Utils,
 	function function.Function,
 	tplfunc function.TplFunc,
+	api	api.Api,
 ) Block {
 	return &block {
 		cfg: cfg,
@@ -536,6 +541,7 @@ func New(
 		utils: utils,
 		function: function,
 		tplfunc: tplfunc,
+		api: api,
 	}	
 }
 

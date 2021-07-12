@@ -22,7 +22,9 @@ func (s *service) Page(ctx context.Context, in model.ServiceIn) (out model.Servi
 	// ПЕРЕДЕЛАТЬ или на кеширование страниц и на доп.проверку
 	if in.Page == "" {
 		// получаем все страницы текущего приложения
-		s.utils.Curl("GET", "_link?obj="+s.cfg.DataUid+"&source="+s.cfg.TplAppPagesPointsrc+"&mode=in", "", &objPages, map[string]string{})
+		objPages, err = s.api.LinkGet(s.cfg.TplAppPagesPointsrc, s.cfg.DataUid,"in", "")
+		//s.utils.Curl("GET", "_link?obj="+s.cfg.DataUid+"&source="+s.cfg.TplAppPagesPointsrc+"&mode=in", "", &objPages, map[string]string{})
+
 		for _, v := range objPages.Data {
 			if def, _ := v.Attr("default", "value"); def == "checked" {
 				if appUid, _ := v.Attr("app", "src"); appUid == s.cfg.UidService {
@@ -40,7 +42,8 @@ func (s *service) Page(ctx context.Context, in model.ServiceIn) (out model.Servi
 	}
 
 	// запрос объекта страницы
-	_, err = s.utils.Curl("GET", "_objs/"+in.Page, "", &objPage, map[string]string{})
+	objPage, err = s.api.ObjGet(in.Page)
+	//_, err = s.utils.Curl("GET", "_objs/"+in.Page, "", &objPage, map[string]string{})
 	if err != nil {
 		err = fmt.Errorf("%s (%s)", "Error: Fail GET-request!", err)
 		return out, err
@@ -107,14 +110,16 @@ func (s *service) BPage(in model.ServiceIn, objPage model.ResponseData, values m
 	maketUID, _ := objPage.Data[0].Attr("maket", "src")
 	page := objPage.Data[0]
 
+
 	// 1.0 проверка на принадлежность страницы текущему проекту
 	// ДОДЕЛАТЬ СРОЧНО!!!
 
 	// 2 запрос на объекты блоков страницы
-	s.utils.Curl("GET", "_link?obj="+pageUID+"&source="+s.cfg.TplAppBlocksPointsrc+"&mode=in", "", &objBlocks, map[string]string{})
+	objBlocks, err = s.api.LinkGet(s.cfg.TplAppBlocksPointsrc, pageUID,"in", "")
 
 	// 3 запрос на объект макета
-	s.utils.Curl("GET", "_objs/"+maketUID, "", &objMaket, map[string]string{})
+	objMaket, err = s.api.ObjGet(maketUID)
+	//s.utils.Curl("GET", "_objs/"+maketUID, "", &objMaket, map[string]string{})
 
 	if len(objMaket.Data) == 0 {
 		return result, fmt.Errorf("%s (uid: %s)", "Error. Object maket is empty.", maketUID)
