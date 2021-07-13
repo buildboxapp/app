@@ -27,8 +27,20 @@
   <component name="ChangeListManager">
     <list default="true" id="695e3ced-4e40-4126-a43d-f20a9b66d621" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/servers/httpserver/middleware.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/servers/httpserver/middleware.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmd/app/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/cmd/app/main.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/block/block.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/block/block.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/i18n/interface.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/i18n/interface.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/jwtoken/client.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/iam/client.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/jwtoken/interface.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/iam/interface.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/jwtoken/utils.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/iam/utils.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/model/service.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/model/service.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/servers/docs/docs.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/servers/docs/docs.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/servers/docs/swagger.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/servers/docs/swagger.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/servers/httpserver/handlers/block.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/servers/httpserver/handlers/block.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/servers/httpserver/httpserver.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/servers/httpserver/httpserver.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/session/interface.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/session/interface.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pkg/session/session.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/session/session.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/utils/utils.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/utils/utils.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

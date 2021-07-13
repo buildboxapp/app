@@ -44,7 +44,7 @@ func New() I18n {
 
 	i.TokenValidateFail = Localization{map[string]string{}}
 	i.TokenValidateFail.Value["RU"] = "Ошибка валидации токена"
-	i.TokenValidateFail.Value["EN"] = "Error. Validate jwtoken is failed."
+	i.TokenValidateFail.Value["EN"] = "Error. Validate iam is failed."
 
 	i.TokenValidateOK = Localization{map[string]string{}}
 	i.TokenValidateOK.Value["RU"] = "Токен валиден"

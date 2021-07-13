@@ -1,4 +1,4 @@
-package jwtoken
+package iam
 
 import (
 	"encoding/json"
@@ -7,7 +7,7 @@ import (
 	"github.com/dgrijalva/jwt-go"
 )
 
-func (s *jwtoken) Verify(tokenString string) (statue bool, body *model.Token, refreshToken string, err error) {
+func (s *iam) Verify(tokenString string) (statue bool, body *model.Token, refreshToken string, err error) {
 	var in model.Token
 	var jtoken = map[string]string{}
 

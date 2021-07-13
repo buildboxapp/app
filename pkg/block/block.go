@@ -503,9 +503,9 @@ func (b *block) GUIQuery(tquery, token, queryRaw, method string, postForm url.Va
 	// а если куки нет, то сбрасывается авторизация
 	if token != "" {
 		if strings.Contains(filters, "?") {
-			filters = filters + "&jwtoken=" + token
+			filters = filters + "&iam=" + token
 		} else {
-			filters = filters + "?jwtoken=" + token
+			filters = filters + "?iam=" + token
 		}
 	}
 

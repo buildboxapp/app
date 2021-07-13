@@ -3,7 +3,7 @@ package httpserver
 import (
 	"context"
 	"fmt"
-	"github.com/buildboxapp/app/pkg/jwtoken"
+	"github.com/buildboxapp/app/pkg/iam"
 	"github.com/buildboxapp/app/pkg/model"
 	"github.com/buildboxapp/app/pkg/service"
 	"github.com/buildboxapp/app/pkg/session"
@@ -21,13 +21,13 @@ import (
 )
 
 type httpserver struct {
-	ctx    	context.Context
-	cfg    	model.Config
-	src    	service.Service
-	metric 	bbmetric.ServiceMetric
-	logger 	log.Log
-	utl 	utils.Utils
-	jtk 	jwtoken.JWToken
+	ctx     context.Context
+	cfg     model.Config
+	src     service.Service
+	metric  bbmetric.ServiceMetric
+	logger  log.Log
+	utl     utils.Utils
+	jtk     iam.IAM
 	session session.Session
 }
 
@@ -74,7 +74,7 @@ func New(
 	metric 	bbmetric.ServiceMetric,
 	logger 	log.Log,
 	utl 	utils.Utils,
-	jtk 	jwtoken.JWToken,
+	jtk 	iam.IAM,
 	session session.Session,
 ) Server {
 	return &httpserver{

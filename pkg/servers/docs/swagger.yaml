@@ -345,7 +345,7 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/responses.Response'
-      summary: issue reset jwtoken
+      summary: issue reset iam
   /api/v1/pass/reset:
     post:
       parameters:
@@ -373,7 +373,7 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/responses.Response'
-      summary: issue reset jwtoken
+      summary: issue reset iam
   /api/v1/user:
     post:
       parameters:

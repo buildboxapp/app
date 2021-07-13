@@ -6,7 +6,7 @@ import (
 	"github.com/buildboxapp/app/pkg/cache"
 	"github.com/buildboxapp/app/pkg/function"
 	"github.com/buildboxapp/app/pkg/i18n"
-	"github.com/buildboxapp/app/pkg/jwtoken"
+	"github.com/buildboxapp/app/pkg/iam"
 	"github.com/buildboxapp/app/pkg/model"
 	"github.com/buildboxapp/app/pkg/api"
 	"github.com/buildboxapp/app/pkg/servers"
@@ -127,7 +127,7 @@ func Start(configfile, dir, port, mode string) {
 		api,
 	)
 
-	jtk := jwtoken.New(
+	iam := iam.New(
 		logger,
 		ult,
 		cfg,
@@ -139,6 +139,7 @@ func Start(configfile, dir, port, mode string) {
 		logger,
 		cfg,
 		api,
+		iam,
 	)
 
 	port = ult.AddressProxy()
@@ -171,7 +172,7 @@ func Start(configfile, dir, port, mode string) {
 		metrics,
 		logger,
 		ult,
-		jtk,
+		iam,
 		ses,
 	)
 

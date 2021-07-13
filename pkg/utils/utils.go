@@ -96,17 +96,17 @@ func (u *utils) JsonEscape(i string) string {
 //	// это нужно для случая, если мы вызываем запрос из запроса и кука не передается
 //	// а если куки нет, то сбрасывается авторизация
 //	cookieCurrent, err := r.Cookie("sessionID")
-//	jwtoken := ""
+//	iam := ""
 //	if err == nil {
 //		tokenI := strings.Split(fmt.Sprint(cookieCurrent), "=")
 //		if len(tokenI) > 1 {
-//			jwtoken = tokenI[1]
+//			iam = tokenI[1]
 //		}
-//		if jwtoken != "" {
+//		if iam != "" {
 //			if strings.Contains(filters, "?") {
-//				filters = filters + "&jwtoken=" + jwtoken
+//				filters = filters + "&iam=" + iam
 //			} else {
-//				filters = filters + "?jwtoken=" + jwtoken
+//				filters = filters + "?iam=" + iam
 //			}
 //		}
 //	}

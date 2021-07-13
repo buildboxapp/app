@@ -58,14 +58,14 @@ func blockDecodeRequest(ctx context.Context, r *http.Request) (in model.ServiceI
 	in.RequestRaw = r
 
 	//cookieCurrent, err := r.Cookie("sessionID")
-	//jwtoken := ""
+	//iam := ""
 	//if err == nil {
 	//	tokenI := strings.Split(fmt.Sprint(cookieCurrent), "=")
 	//	if len(tokenI) > 1 {
-	//		jwtoken = tokenI[1]
+	//		iam = tokenI[1]
 	//	}
 	//}
-	//in.Token = jwtoken
+	//in.Token = iam
 	//
 	//// указатель на профиль текущего пользователя
 	//var profile model.ProfileData
