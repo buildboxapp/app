@@ -33,7 +33,8 @@ func (h *httpserver) MiddleLogger(next http.Handler, name string, logger log.Log
 func (h *httpserver) AuthProcessor(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var authKey string
-		var sessionOnDeleted = ""
+		var err error
+		var XAuthToken string
 
 		// пропускаем пинги
 		if r.URL.Path == "/ping" || r.URL.Path == "/auth" || strings.Contains(r.URL.Path, "/templates") || strings.Contains(r.URL.Path, "/upload") {
@@ -62,13 +63,17 @@ func (h *httpserver) AuthProcessor(next http.Handler) http.Handler {
 
 		// пробуем обновить пришедший токен
 		if !status {
-			if token != nil {
-				sessionOnDeleted = token.Session
+			XAuthToken, err = h.jtk.Refresh(refreshToken)
+
+			// если токен был обновлен чуть ранее, то текущий запрос надо пропустить
+			// чтобы избежать повторного обновления и дать возможность завершиться отправленным
+			// единовременно нескольким запросам (как правило это интервал 5-10 секунд)
+			if XAuthToken == "skip" {
+				next.ServeHTTP(w, r)
+				return
 			}
 
-			XAuthToken, err := h.jtk.Refresh(refreshToken)
-			if err == nil {
-
+			if err == nil && XAuthToken != "<nil>" && XAuthToken != "" {
 				// заменяем куку у пользователя в браузере
 				cookie := &http.Cookie{
 					Path: "/",
@@ -78,7 +83,7 @@ func (h *httpserver) AuthProcessor(next http.Handler) http.Handler {
 				}
 
 				// после обновления получаем текущий токен
-				_, token, _, _ = h.jtk.Verify(XAuthToken)
+				status, token, _, err = h.jtk.Verify(XAuthToken)
 
 				// переписываем куку у клиента
 				http.SetCookie(w, cookie)
@@ -91,11 +96,7 @@ func (h *httpserver) AuthProcessor(next http.Handler) http.Handler {
 			return
 		}
 
-		// проверяем на наличие в реестре сессий текущей сессии
-		// если ее нет - берем профиль и обновляем реестр
-		if sessionOnDeleted != "" {
-			h.session.Delete(sessionOnDeleted)
-		}
+		// добавляем значение токена в локальный реестр сесссий (ПЕРЕДЕЛАТЬ)
 		if token != nil {
 			h.session.Set(token)
 		}

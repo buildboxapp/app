@@ -35,14 +35,8 @@ func (s *session) Set(token *model.Token) (err error)  {
 	if s.Registry.M == nil {
 		s.Registry.M = map[string]SessionRec{}
 	}
-
-	fmt.Println(s.Registry.M)
-
 	expiration := time.Now().Add(300 * time.Hour)
-
 	profile, err := s.Profile(token)
-
-	fmt.Println(token.Uid, profile, err)
 
 	if err != nil {
 		return err
